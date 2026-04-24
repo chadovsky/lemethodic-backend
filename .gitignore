@@ -1,0 +1,28 @@
+# Secrets
+.env
+
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+
+# Local virtualenvs
+.venv/
+venv/
+
+# SQLite DBs
+*.db
+
+# Runtime artifacts
+uploads/
+data/
+
+# Local Claude Code state
+.claude/
+
+# Manual backups + stray shell-accident dirs
+backup/
+{app/
+
+# Stray empty test artifact at repo root
+_get16.json

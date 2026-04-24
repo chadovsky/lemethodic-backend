@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — TCF Prep Practice</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#08090e;--card:#111420;--card2:#161a28;--card-hover:#1a1f30;
+  --border:#1c2035;--border2:#252a40;
+  --accent:#3d7cf5;--accent2:#5b93ff;--accent-soft:rgba(61,124,245,.1);
+  --violet:#8b6cf6;--violet-soft:rgba(139,108,246,.1);
+  --emerald:#10b981;--emerald-soft:rgba(16,185,129,.08);
+  --rose:#f43f5e;--rose-soft:rgba(244,63,94,.08);
+  --amber:#f59e0b;--amber-soft:rgba(245,158,11,.08);
+  --text:#e4e8f1;--text2:#a8b0c5;--muted:#5e6682;
+  --surface:#131622;
+  --r:10px;--rl:14px;
+}
+html{font-size:15px;scroll-behavior:smooth}
+body{font-family:'Outfit',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;-webkit-font-smoothing:antialiased}
+body::before{content:'';position:fixed;top:0;left:0;right:0;height:400px;background:radial-gradient(ellipse 80% 50% at 50% -10%,rgba(61,124,245,.06),transparent);pointer-events:none;z-index:0}
+.mono{font-family:'JetBrains Mono',monospace}
+.container{max-width:960px;margin:0 auto;padding:20px 16px;position:relative;z-index:1}
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:24px;margin-bottom:14px}
+h1{font-size:1.45rem;font-weight:700;letter-spacing:-.03em}
+h2{font-size:.72rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px}
+.subtitle{color:var(--muted);font-size:.78rem}
+.section-title{font-size:1rem;font-weight:700;margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.section-title .dot{width:8px;height:8px;border-radius:50%;display:inline-block}
+
+button{cursor:pointer;border:none;border-radius:var(--r);padding:10px 20px;font-size:.85rem;font-weight:600;font-family:inherit;transition:all .15s}
+.btn-primary{background:var(--accent);color:#fff}.btn-primary:hover{background:var(--accent2);transform:translateY(-1px)}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);font-size:.8rem;padding:7px 14px}
+.btn-ghost:hover{color:var(--text);border-color:var(--text2)}
+.btn-sm{padding:6px 14px;font-size:.78rem;border-radius:7px}
+.btn-danger{background:var(--rose-soft);color:var(--rose);border:1px solid rgba(244,63,94,.2)}.btn-danger:hover{background:rgba(244,63,94,.15)}
+
+input,select,textarea{width:100%;padding:11px 14px;border-radius:var(--r);border:1px solid var(--border);background:var(--card2);color:var(--text);font-size:.88rem;font-family:inherit;margin-bottom:10px;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+select option{background:var(--card);color:var(--text)}
+textarea{resize:vertical;min-height:60px}
+
+.nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:20px}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--rl);padding:18px 14px;text-align:center}
+.stat .val{font-size:1.8rem;font-weight:800;font-family:'JetBrains Mono',monospace;color:var(--accent)}
+.stat .lbl{font-size:.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:4px;font-weight:600}
+
+/* Tables */
+table{width:100%;border-collapse:collapse;font-size:.84rem}
+th{text-align:left;padding:10px 8px;border-bottom:2px solid var(--border);color:var(--muted);font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;font-weight:700}
+td{padding:10px 8px;border-bottom:1px solid var(--border)}
+tr:hover td{background:rgba(255,255,255,.02)}
+
+/* Theme accordion */
+.theme-group{margin-bottom:12px;border:1px solid var(--border);border-radius:var(--rl);overflow:hidden}
+.theme-header{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;background:var(--card2);cursor:pointer;transition:background .1s;user-select:none}
+.theme-header:hover{background:var(--card-hover)}
+.theme-header .th-left{display:flex;align-items:center;gap:10px}
+.theme-header .th-name{font-weight:600;font-size:.9rem}
+.theme-header .th-count{font-size:.72rem;color:var(--muted);background:var(--card);padding:3px 10px;border-radius:10px;font-weight:600}
+.theme-header .th-arrow{color:var(--muted);transition:transform .2s;font-size:.8rem}
+.theme-header.open .th-arrow{transform:rotate(180deg)}
+.theme-body{max-height:0;overflow:hidden;transition:max-height .3s ease}
+.theme-body.open{max-height:2000px}
+.theme-topic{display:flex;justify-content:space-between;align-items:center;padding:10px 18px 10px 32px;border-top:1px solid var(--border);font-size:.82rem}
+.theme-topic:hover{background:rgba(255,255,255,.02)}
+.theme-topic .tt-sous{font-size:.72rem;color:var(--muted);margin-left:8px}
+.theme-topic .tt-actions{display:flex;gap:6px}
+
+/* Add form */
+.add-form{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.add-form .full{grid-column:1/-1}
+.add-form label{font-size:.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px;display:block}
+
+/* Tabs */
+.tabs{display:flex;gap:3px;margin-bottom:20px;background:var(--card);border-radius:var(--r);padding:3px;border:1px solid var(--border)}
+.tab{padding:8px 16px;border-radius:8px;font-size:.8rem;font-weight:600;color:var(--muted);background:transparent;border:none;cursor:pointer;transition:all .15s;flex:1;text-align:center}
+.tab.active{color:var(--text);background:var(--card2);box-shadow:0 1px 4px rgba(0,0,0,.3)}
+.tab:hover:not(.active){color:var(--text2)}
+
+.hidden{display:none!important}
+.toast{position:fixed;bottom:24px;right:24px;background:var(--emerald);color:#fff;padding:12px 20px;border-radius:var(--r);font-size:.85rem;font-weight:600;z-index:200;opacity:0;transform:translateY(10px);transition:all .3s}
+.toast.show{opacity:1;transform:translateY(0)}
+
+@media(max-width:640px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .add-form{grid-template-columns:1fr}
+  .nav{flex-wrap:wrap;gap:10px}
+}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <div class="nav">
+    <div style="display:flex;align-items:center;gap:10px">
+      <span style="font-size:1.3rem">🛠️</span>
+      <div><h1>Admin — TCF Prep</h1><span class="subtitle">Tableau de bord</span></div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <a href="/" style="text-decoration:none"><button class="btn-ghost">← Retour à l'app</button></a>
+    </div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats" id="stats">
+    <div class="stat"><div class="val">—</div><div class="lbl">Utilisateurs</div></div>
+    <div class="stat"><div class="val">—</div><div class="lbl">Enregistrements</div></div>
+    <div class="stat"><div class="val">—</div><div class="lbl">Score moyen</div></div>
+    <div class="stat"><div class="val">—</div><div class="lbl">Sujets</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" onclick="showAdminTab('topics')">Sujets</div>
+    <div class="tab" onclick="showAdminTab('recordings')">Enregistrements</div>
+    <div class="tab" onclick="showAdminTab('users')">Utilisateurs</div>
+  </div>
+
+  <!-- TAB: Topics -->
+  <div id="tab-topics">
+
+    <!-- Add Topic Form -->
+    <div class="card">
+      <div class="section-title"><span class="dot" style="background:var(--emerald)"></span> Ajouter un sujet</div>
+      <div class="add-form">
+        <div class="full">
+          <label>Titre du sujet</label>
+          <input id="t-title" placeholder="Ex: Faut-il interdire les smartphones à l'école ?">
+        </div>
+        <div>
+          <label>Thème</label>
+          <select id="t-theme">
+            <option value="Technologie">💻 Technologie</option>
+            <option value="Santé">🏥 Santé</option>
+            <option value="Éducation">📚 Éducation</option>
+            <option value="Environnement">🌍 Environnement</option>
+            <option value="Société">🏛️ Société</option>
+            <option value="Culture & Loisirs">🎭 Culture & Loisirs</option>
+            <option value="Travail & Économie">💼 Travail & Économie</option>
+          </select>
+        </div>
+        <div>
+          <label>Sous-thème (optionnel)</label>
+          <input id="t-sous" placeholder="Ex: Technologies de communication">
+        </div>
+        <div class="full" style="text-align:right;margin-top:4px">
+          <button class="btn-primary" onclick="addTopic()">Ajouter le sujet</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topics by Theme -->
+    <div class="card">
+      <div class="section-title"><span class="dot" style="background:var(--accent)"></span> Sujets par thème</div>
+      <div id="themes-accordion"></div>
+    </div>
+
+  </div>
+
+  <!-- TAB: Recordings -->
+  <div id="tab-recordings" class="hidden">
+    <div class="card">
+      <div class="section-title"><span class="dot" style="background:var(--violet)"></span> Enregistrements récents</div>
+      <table id="rec-table">
+        <thead><tr><th>Date</th><th>Étudiant</th><th>Niveau</th><th>Score</th><th>Statut</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TAB: Users -->
+  <div id="tab-users" class="hidden">
+    <div class="card">
+      <div class="section-title"><span class="dot" style="background:var(--amber)"></span> Utilisateurs</div>
+      <table id="user-table">
+        <thead><tr><th>Email</th><th>Nom</th><th>Enregistrements</th><th>Score moyen</th><th>Inscrit le</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const themeIcons={'Technologie':'💻','Santé':'🏥','Éducation':'📚','Environnement':'🌍','Société':'🏛️','Culture & Loisirs':'🎭','Travail & Économie':'💼'};
+let allThemes=[];
+
+/* ══ Init ══ */
+document.addEventListener('DOMContentLoaded',()=>{loadDashboard();loadTopicsByTheme();loadRecordings();loadUsers()});
+
+/* ══ Tabs ══ */
+function showAdminTab(t){
+  ['topics','recordings','users'].forEach(x=>document.getElementById('tab-'+x).classList.toggle('hidden',x!==t));
+  document.querySelectorAll('.tabs .tab').forEach((e,i)=>{
+    const map=['topics','recordings','users'];
+    e.classList.toggle('active',map[i]===t);
+  });
+}
+
+/* ══ Dashboard Stats ══ */
+async function loadDashboard(){
+  try{
+    const r=await fetch('/api/admin/dashboard');const d=await r.json();
+    const thr=await fetch('/api/admin/themes');const themes=await thr.json();
+    const totalTopics=themes.reduce((s,t)=>s+t.count,0);
+    document.getElementById('stats').innerHTML=
+      '<div class="stat"><div class="val">'+d.total_users+'</div><div class="lbl">Utilisateurs</div></div>'+
+      '<div class="stat"><div class="val">'+d.total_recordings+'</div><div class="lbl">Enregistrements</div></div>'+
+      '<div class="stat"><div class="val">'+(d.avg_score||'—')+'</div><div class="lbl">Score moyen</div></div>'+
+      '<div class="stat"><div class="val">'+totalTopics+'</div><div class="lbl">Sujets</div></div>';
+  }catch(e){console.error(e)}
+}
+
+/* ══ Topics by Theme ══ */
+async function loadTopicsByTheme(){
+  try{
+    const thr=await fetch('/api/admin/themes');allThemes=await thr.json();
+    const acc=document.getElementById('themes-accordion');
+    acc.innerHTML='';
+
+    for(const theme of allThemes){
+      const tr=await fetch('/api/admin/topics?theme='+encodeURIComponent(theme.theme));
+      const topics=await tr.json();
+      const icon=themeIcons[theme.theme]||'📌';
+      const id='theme-'+theme.theme.replace(/[^a-zA-Z]/g,'');
+
+      // Group by sous_theme
+      const groups={};
+      topics.forEach(t=>{
+        const st=t.sous_theme||'Général';
+        if(!groups[st])groups[st]=[];
+        groups[st].push(t);
+      });
+
+      let topicsHtml='';
+      for(const[st,items]of Object.entries(groups)){
+        if(Object.keys(groups).length>1){
+          topicsHtml+='<div style="padding:8px 18px 4px 18px;font-size:.68rem;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;border-top:1px solid var(--border);background:var(--surface)">'+st+'</div>';
+        }
+        items.forEach(t=>{
+          topicsHtml+='<div class="theme-topic"><div>'+t.title+(t.sous_theme?'<span class="tt-sous">'+t.sous_theme+'</span>':'')+'</div><div class="tt-actions"><button class="btn-danger btn-sm" onclick="deleteTopic('+t.id+')">✕</button></div></div>';
+        });
+      }
+
+      acc.innerHTML+='<div class="theme-group"><div class="theme-header" onclick="toggleTheme(\''+id+'\',this)"><div class="th-left"><span>'+icon+'</span><span class="th-name">'+theme.theme+'</span></div><div style="display:flex;align-items:center;gap:10px"><span class="th-count">'+theme.count+' sujets</span><span class="th-arrow">▼</span></div></div><div class="theme-body" id="'+id+'">'+topicsHtml+'</div></div>';
+    }
+  }catch(e){console.error(e)}
+}
+
+function toggleTheme(id,header){
+  const body=document.getElementById(id);
+  body.classList.toggle('open');
+  header.classList.toggle('open');
+}
+
+/* ══ Add Topic ══ */
+async function addTopic(){
+  const title=document.getElementById('t-title').value.trim();
+  const theme=document.getElementById('t-theme').value;
+  const sous=document.getElementById('t-sous').value.trim();
+  if(!title){toast('Entrez un titre','var(--rose)');return}
+  try{
+    const params=new URLSearchParams({title:title,theme:theme});
+    if(sous)params.append('sous_theme',sous);
+    const r=await fetch('/api/admin/topics?'+params.toString(),{method:'POST'});
+    if(!r.ok){const d=await r.json();throw new Error(d.detail||'Erreur')}
+    document.getElementById('t-title').value='';
+    document.getElementById('t-sous').value='';
+    toast('Sujet ajouté ✓','var(--emerald)');
+    loadTopicsByTheme();
+    loadDashboard();
+  }catch(e){toast(e.message,'var(--rose)')}
+}
+
+/* ══ Delete Topic ══ */
+async function deleteTopic(id){
+  if(!confirm('Supprimer ce sujet ?'))return;
+  try{
+    const r=await fetch('/api/admin/topics/'+id,{method:'DELETE'});
+    if(!r.ok&&r.status!==404){throw new Error('Erreur suppression')}
+    toast('Sujet supprimé','var(--amber)');
+    loadTopicsByTheme();
+    loadDashboard();
+  }catch(e){toast(e.message,'var(--rose)')}
+}
+
+/* ══ Recordings ══ */
+async function loadRecordings(){
+  try{
+    const r=await fetch('/api/admin/dashboard');const d=await r.json();
+    const tb=document.querySelector('#rec-table tbody');
+    tb.innerHTML='';
+    (d.recent_recordings||[]).forEach(x=>{
+      const dt=x.created_at?new Date(x.created_at).toLocaleDateString('fr-FR',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'';
+      const sc=x.score!=null?x.score.toFixed(1):'—';
+      const scCol=x.score>=14?'var(--emerald)':x.score>=10?'var(--amber)':'var(--rose)';
+      tb.innerHTML+='<tr><td>'+dt+'</td><td>'+x.user_email+'</td><td>'+(x.target_level||'—')+'</td><td style="font-weight:700;color:'+scCol+';font-family:JetBrains Mono,monospace">'+sc+'</td><td>'+x.status+'</td></tr>';
+    });
+  }catch(e){}
+}
+
+/* ══ Users ══ */
+async function loadUsers(){
+  try{
+    const r=await fetch('/api/admin/users');const d=await r.json();
+    const tb=document.querySelector('#user-table tbody');
+    tb.innerHTML='';
+    d.forEach(u=>{
+      const dt=u.created_at?new Date(u.created_at).toLocaleDateString('fr-FR'):'';
+      const avg=u.avg_score!=null?u.avg_score.toFixed(1):'—';
+      tb.innerHTML+='<tr><td>'+u.email+'</td><td>'+(u.full_name||'—')+'</td><td style="font-family:JetBrains Mono,monospace">'+u.recordings_count+'</td><td style="font-family:JetBrains Mono,monospace">'+avg+'</td><td>'+dt+'</td></tr>';
+    });
+  }catch(e){}
+}
+
+/* ══ Toast ══ */
+function toast(msg,bg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.style.background=bg||'var(--emerald)';
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2500);
+}
+</script>
+</body>
+</html>

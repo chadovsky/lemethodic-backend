@@ -1,0 +1,73 @@
+{
+  "id": "nuance_reflex",
+  "name_fr": "Le Réflexe de la Nuance",
+  "name_en": "The Nuance Reflex",
+  "category": "discourse_structure",
+  "severity": 5,
+  "active": true,
+  "L1_interference_description_fr": "Repensez à la dernière fois où vous avez dit \"I agree\" ou \"I think yes.\" En anglais, c'est une pensée complète. Vous vous êtes entendu prendre position. Maintenant, écoutez un francophone répondre à la même question. Il ne fait jamais ça. Il reconnaît d'abord l'autre point de vue — même quand il est évident qu'il n'est pas d'accord. \"Certes, on pourrait penser que... mais en réalité...\" Ce réflexe à trois temps tourne automatiquement dans sa tête, dans une discussion entre potes sur le foot ou à table en famille. Vous, vous n'avez pas ce réflexe. Quand vous répondez en français comme vous répondez en anglais, vous ne donnez pas l'impression d'avoir une position forte. Vous donnez l'impression de ne pas y avoir réfléchi. C'est là toute la différence entre un français B1 et un français B2+.",
+  "L1_interference_description_en": "Think of the last time you said \"I agree\" or \"I think yes.\" In English, that's a complete thought. You heard yourself take a position. Now listen to a French person answer the same question. They never do that. They acknowledge the opposite view first — even when it's obvious they disagree with it. \"Certes, on pourrait penser que... mais en réalité...\" That three-beat reflex runs in their heads automatically, in casual chat about football or at the dinner table. You don't have that reflex. When you answer in French the way you answer in English, you don't sound like you have a strong position. You sound like you haven't thought about it. That's the gap between sounding B1 and sounding B2+.",
+  "detection_criteria": {
+    "keywords_wrong": [
+      "je suis d'accord",
+      "je ne suis pas d'accord",
+      "je pense que oui",
+      "je pense que non",
+      "c'est vrai",
+      "c'est faux",
+      "oui, absolument",
+      "tout à fait",
+      "je suis pour",
+      "je suis contre"
+    ],
+    "grammatical_signals": [
+      "position statement followed by no concession clause (certes, toutefois, néanmoins, cela dit, il est vrai que, on pourrait penser que)",
+      "response to an opinion question limited to one clause",
+      "use of only basic connectors (et, mais, parce que) with zero load-bearing connectors (en revanche, d'ailleurs, en effet, certes)",
+      "absence of the three-beat rhythm: concession → pivot → position",
+      "direct 'je + opinion verb' without impersonal framing or concession setup"
+    ],
+    "contextual_triggers": [
+      "open-ended opinion questions (que pensez-vous, quel est votre avis, êtes-vous d'accord)",
+      "comparative framings (préférez-vous X ou Y, lequel est mieux)",
+      "questions inviting value judgment (est-ce une bonne idée, faut-il faire X)",
+      "T3 argumentative monologue prompts",
+      "T2 role-plays asking the candidate to recommend or weigh options",
+      "T1 interview questions about preferences or values (qu'est-ce qui vous plaît le plus, quelles sont vos priorités)"
+    ]
+  },
+  "examples": [
+    {
+      "context": "T1 interview — examiner asks about hobbies or preferences",
+      "wrong_utterance": "Oui, j'aime bien voyager. C'est intéressant.",
+      "corrected_utterance": "C'est vrai que voyager coûte cher et demande du temps. Mais pour moi, ça vaut la peine. Découvrir de nouvelles cultures, c'est ce que j'aime le plus.",
+      "explanation_fr": "La version fautive nomme la préférence et s'arrête. La version corrigée reconnaît le contre-argument évident, pivote avec \"mais,\" puis pose la position avec une raison. Vocabulaire simple, rythme naturel. La structure à trois temps est visible : concession, pivot, position justifiée.",
+      "explanation_en": "The wrong version names the preference and stops. The corrected version acknowledges the obvious counter, pivots with \"mais,\" then lands the personal take with a reason. Simple vocabulary, natural spoken rhythm. The three-beat structure is visible: concession, pivot, position with reason."
+    },
+    {
+      "context": "T2 role-play — candidate asked to recommend or weigh options at the travel agency",
+      "wrong_utterance": "Je préfère la plage. C'est mieux pour se reposer.",
+      "corrected_utterance": "La montagne, c'est bien pour les gens qui aiment bouger. Mais moi, pour vraiment me reposer, je préfère la plage. On n'a rien à faire, et c'est exactement ce que je cherche.",
+      "explanation_fr": "La version fautive choisit une option et la justifie. La version corrigée reconnaît brièvement que l'autre option a sa valeur pour quelqu'un, pivote avec \"mais,\" puis pose le choix personnel avec une raison claire. Pas besoin de connecteurs complexes — \"mais\" fait le travail structurel.",
+      "explanation_en": "The wrong version picks one option and justifies it. The corrected version briefly notes the other option has value for someone, pivots with \"mais,\" then states the personal choice with a clear reason. No complex connectors needed — \"mais\" does the structural work."
+    },
+    {
+      "context": "T3 argumentative monologue — debate prompt on social media impact",
+      "wrong_utterance": "Les réseaux sociaux sont négatifs. Ils créent de la dépendance et nous isolent des autres.",
+      "corrected_utterance": "Il est vrai que les réseaux sociaux nous permettent de rester en contact avec nos proches, surtout quand on vit loin. Mais cet avantage a un coût : on devient dépendants, on se compare sans arrêt, on finit par se sentir seul malgré tout le monde qu'on voit. C'est pour ça que je pense que leur effet est plus négatif que positif.",
+      "explanation_fr": "La version fautive prend une position binaire. La version corrigée déroule la structure à trois temps avec un vocabulaire accessible. \"Il est vrai que... mais... c'est pour ça que\" — un modèle reproductible.",
+      "explanation_en": "The wrong version takes a binary stance. The corrected version runs the three-beat structure using accessible vocabulary. \"Il est vrai que... mais... c'est pour ça que\" — a reproducible template students can copy with different content."
+    }
+  ],
+  "content_refs": [
+    {
+      "type": "inline_markdown",
+      "display_order": 1,
+      "content_fr": "## La formule à trois temps\n\nEn français, une opinion complète contient toujours trois mouvements :\n\n**1. Concession** → Vous reconnaissez que l'autre côté a du mérite.\n**2. Pivot** → Vous signalez le changement de direction.\n**3. Position** → Vous posez votre avis, avec une raison.\n\nExemple : *\"Il est vrai que X... **mais** Y... **c'est pour ça que** Z.\"*\n\nCe qui se passe dans votre tête en anglais, c'est que \"I agree\" suffit. Vous avez répondu. La question est classée. En français, **la même réponse sonne incomplète**. Pas fausse, pas incorrecte grammaticalement — incomplète. Comme si vous aviez arrêté votre phrase au milieu.\n\n**Le réflexe à rewirer :** Avant de poser une position en français, votre cerveau doit d'abord chercher le contre-argument. Pas pour y céder — pour le reconnaître. Les francophones font ça automatiquement, même dans une conversation banale au café.\n\n## Trois modèles à copier\n\nUtilisez-les dans votre prochaine session :\n\n1. *\"Certes X, mais à y regarder de plus près, Y.\"* (formel)\n2. *\"C'est vrai que X. Ceci dit, Y.\"* (intermédiaire)\n3. *\"X, d'accord, mais moi je pense plutôt Y.\"* (oral, spontané)\n\n## Votre prochaine phrase\n\nAvant de dire \"je pense que oui\" ou \"je préfère X,\" arrêtez-vous. Posez-vous la question : *quel serait l'argument opposé ?* Nommez-le en une phrase. **Ensuite** posez votre avis.\n\nUne fois, deux fois, trois fois — le réflexe commence à tourner tout seul.",
+      "content_en": "## The three-beat formula\n\nIn French, a complete opinion always has three moves:\n\n**1. Concession** → Acknowledge the other side has merit.\n**2. Pivot** → Signal the turn.\n**3. Position** → Land your take, with a reason.\n\nTemplate: *\"Il est vrai que X... **mais** Y... **c'est pour ça que** Z.\"*\n\nIn English, \"I agree\" is a complete thought. You've answered. The question is handled. In French, **the same answer sounds incomplete**. Not wrong, not grammatically incorrect — incomplete. Like you stopped mid-sentence and didn't notice.\n\n**The reflex to rewire:** Before landing any position in French, your brain has to first reach for the counter-argument. Not to agree with it — to acknowledge it. French speakers do this automatically, even in small talk at the café. You don't. That's the gap.\n\n## Three templates to copy\n\nUse these in your next session:\n\n1. *\"Certes X, mais à y regarder de plus près, Y.\"* — formal\n2. *\"C'est vrai que X. Ceci dit, Y.\"* — intermediate\n3. *\"X, d'accord, mais moi je pense plutôt Y.\"* — casual speech\n\n## Your next sentence\n\nBefore you say \"je pense que oui\" or \"je préfère X,\" stop. Ask yourself: *what's the opposite argument?* Name it in one sentence. **Then** state your position.\n\nOnce, twice, three times — the reflex starts running on its own."
+    }
+  ],
+  "drill_ids": [],
+  "prerequisite_module_ids": [],
+  "raccourci_lesson_id": null
+}

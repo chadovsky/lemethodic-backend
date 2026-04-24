@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FluentPath — TCF Prep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Sacramento&family=Lora:wght@500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e1a;--card:rgba(255,255,255,.05);--card2:rgba(255,255,255,.03);--border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.15);--accent:#7b9fff;--accent2:#97b3ff;--accent-dim:rgba(123,159,255,.12);--green:#34e0aa;--green-dim:rgba(52,224,170,.12);--red:#ff7b7b;--red-dim:rgba(255,123,123,.12);--orange:#ffc05c;--orange-dim:rgba(255,192,92,.12);--purple:#c49eff;--purple-dim:rgba(196,158,255,.12);--cyan:#2ee8f7;--cyan-dim:rgba(46,232,247,.12);--text:#edf0f7;--text2:#94a0b8;--text3:#606d85;--surface:rgba(255,255,255,.03);--surface2:rgba(255,255,255,.06);--glass-bg:rgba(255,255,255,.05);--glass-border:1px solid rgba(255,255,255,.1);--glass-shadow:0 8px 32px rgba(0,0,0,.3);--glass-blur:blur(16px);--font:'Plus Jakarta Sans',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;--radius:14px;--transition:all .3s ease;
+--layer1:#7b9fff;--layer1-dim:rgba(123,159,255,.12);
+--layer2:#34e0aa;--layer2-dim:rgba(52,224,170,.12);
+--layer3:#ffc05c;--layer3-dim:rgba(255,192,92,.12);
+--layer4:#ff7b7b;--layer4-dim:rgba(255,123,123,.12)}
+@keyframes gradient-shift{0%{background-position:0% 50%}50%{background-position:100% 50%}100%{background-position:0% 50%}}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;line-height:1.5;background:linear-gradient(-45deg,#070b18,#0d1130,#150d2e,#0a0e1a,#0b1028);background-size:400% 400%;animation:gradient-shift 25s ease infinite}
+.container{max-width:880px;margin:0 auto;padding:16px}.hidden{display:none!important}
+.app-header{display:flex;align-items:center;justify-content:space-between;padding:14px 0;margin-bottom:10px;border-bottom:1px solid rgba(255,255,255,.08)}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-icon{width:32px;height:32px;border-radius:8px;background:linear-gradient(135deg,var(--accent),var(--purple));display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.9rem;color:#fff}
+.logo h1{font-size:1.15rem;font-weight:700}.logo h1 .fluentpath-logo{font-family:'Sacramento',cursive;font-size:2.5rem;line-height:1;letter-spacing:.02em;font-weight:400}.logo h1 small{font-size:.7rem;font-weight:400;color:var(--text3);margin-left:6px}
+.header-right{display:flex;gap:6px;align-items:center}
+.user-badge{font-size:.72rem;color:var(--text2);padding:4px 10px;background:rgba(255,255,255,.04);border-radius:6px;backdrop-filter:var(--glass-blur)}
+button{cursor:pointer;border:none;border-radius:8px;padding:9px 18px;font-size:.8rem;font-weight:600;font-family:var(--font);transition:var(--transition)}
+.btn-primary{background:var(--accent);color:#fff;box-shadow:0 4px 16px rgba(123,159,255,.25)}.btn-primary:hover{background:#6a8ef0;box-shadow:0 6px 24px rgba(123,159,255,.35);transform:translateY(-1px)}.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.btn-ghost{background:rgba(255,255,255,.04);color:var(--text2);border:1px solid var(--border);backdrop-filter:var(--glass-blur)}.btn-ghost:hover{color:var(--text);border-color:var(--border2);background:rgba(255,255,255,.08)}.btn-sm{padding:6px 12px;font-size:.72rem}
+.card{background:var(--glass-bg);backdrop-filter:var(--glass-blur);-webkit-backdrop-filter:var(--glass-blur);border:var(--glass-border);border-radius:var(--radius);padding:20px;margin-bottom:12px;box-shadow:var(--glass-shadow);transition:var(--transition)}.card-sm{padding:16px}
+.card-label{font-size:.63rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);margin-bottom:8px}
+
+/* Nav links */
+.nav-links{display:flex;gap:4px;align-items:center}
+.nav-link{padding:6px 14px;border-radius:8px;font-size:.76rem;font-weight:600;color:var(--text3);text-decoration:none;transition:var(--transition)}.nav-link:hover{color:var(--text2);background:rgba(255,255,255,.05)}.nav-link.active{color:var(--text);background:rgba(255,255,255,.08)}
+
+/* Auth */
+#auth-screen{display:flex;align-items:center;justify-content:center;min-height:90vh}
+.auth-box{width:100%;max-width:380px;text-align:center}
+.auth-logo{font-family:'Sacramento',cursive;font-size:3.5rem;font-weight:400;margin-bottom:4px;background:linear-gradient(135deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.auth-sub{color:var(--text2);font-size:.85rem;margin-bottom:24px}
+.auth-toggle{text-align:center;margin-top:12px;font-size:.8rem;color:var(--text3)}.auth-toggle a{color:var(--accent);cursor:pointer;text-decoration:none}
+input,select,textarea{width:100%;padding:9px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);backdrop-filter:var(--glass-blur);color:var(--text);font-size:.85rem;font-family:var(--font);margin-bottom:10px;outline:none;transition:var(--transition)}input:focus,select:focus,textarea:focus{border-color:var(--accent);background:rgba(255,255,255,.07);box-shadow:0 0 16px rgba(123,159,255,.15)}
+
+/* Level bar */
+.level-bar{display:flex;gap:6px;margin-bottom:16px}
+.level-btn{flex:1;text-align:center;padding:10px;border-radius:10px;font-size:.8rem;font-weight:700;cursor:pointer;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);backdrop-filter:var(--glass-blur);color:var(--text3);transition:var(--transition)}.level-btn:hover{border-color:rgba(255,255,255,.18);background:rgba(255,255,255,.06)}.level-btn.active{border-color:var(--accent);background:var(--accent-dim);color:var(--accent);box-shadow:0 0 20px rgba(123,159,255,.15)}
+
+/* Prompt cards */
+.prompt-grid{display:grid;gap:8px}
+.prompt-card{padding:14px 16px;border-radius:var(--radius);border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);cursor:pointer;transition:var(--transition)}.prompt-card:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.15);transform:translateY(-1px)}.prompt-card.active{border-color:var(--accent);background:var(--accent-dim)}
+.prompt-meta{display:flex;gap:6px;align-items:center;margin-bottom:6px;flex-wrap:wrap}
+.prompt-badge{font-size:.58rem;font-weight:700;padding:2px 8px;border-radius:5px;text-transform:uppercase}
+.badge-b1{background:var(--green-dim);color:var(--green)}.badge-b2{background:var(--accent-dim);color:var(--accent)}.badge-c1{background:var(--purple-dim);color:var(--purple)}
+.badge-type{background:rgba(255,255,255,.06);color:var(--text3)}
+.prompt-text{font-size:.82rem;line-height:1.5;color:var(--text2)}.prompt-card.active .prompt-text{color:var(--accent2)}
+
+/* Writing area */
+.writing-zone{position:relative}
+.writing-area{width:100%;min-height:280px;resize:vertical;font-size:.88rem;line-height:1.7;padding:16px;border-radius:var(--radius);border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:var(--text);font-family:var(--font);transition:var(--transition)}
+.writing-area:focus{border-color:var(--accent);background:rgba(255,255,255,.06);box-shadow:0 0 20px rgba(123,159,255,.12)}
+.writing-area::placeholder{color:var(--text3)}
+.writing-toolbar{display:flex;justify-content:space-between;align-items:center;margin-top:8px;padding:0 4px}
+.word-counter{font-family:var(--mono);font-size:.76rem;color:var(--text3)}.word-counter .wc-count{font-weight:700}.word-counter.over-limit{color:var(--red)}.word-counter.in-range{color:var(--green)}
+.timer-display{display:flex;align-items:center;gap:8px}
+.timer-text{font-family:var(--mono);font-size:.88rem;font-weight:600;color:var(--text2)}
+.timer-text.warning{color:var(--orange)}.timer-text.expired{color:var(--red)}
+.timer-toggle{font-size:.72rem;padding:4px 10px}
+
+/* Prompt info bar */
+.prompt-info{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.prompt-info-item{font-size:.72rem;color:var(--text3);display:flex;align-items:center;gap:4px}
+.prompt-info-item strong{color:var(--text2)}
+
+/* Submit */
+.submit-btn{width:100%;padding:14px;border-radius:10px;font-size:.88rem;font-weight:700;background:var(--accent);color:#fff;border:none;cursor:pointer;font-family:var(--font);transition:var(--transition);box-shadow:0 4px 20px rgba(123,159,255,.25);display:flex;align-items:center;justify-content:center;gap:8px;margin-top:12px}
+.submit-btn:hover{background:#6a8ef0;transform:translateY(-1px);box-shadow:0 8px 28px rgba(123,159,255,.35)}
+.submit-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.submit-spinner{width:18px;height:18px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Loading */
+.loading-overlay{position:fixed;inset:0;background:rgba(10,14,26,.88);backdrop-filter:blur(24px);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:100;padding:24px}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite}
+.loading-text{margin-top:16px;font-size:.85rem;color:var(--text2)}
+
+/* Score display */
+.score-hero{text-align:center;padding:20px 0}
+.score-ring-main{width:140px;height:140px;position:relative;margin:0 auto 8px}
+.score-ring-main svg{width:100%;height:100%;transform:rotate(-90deg)}
+.score-ring-main circle{fill:none;stroke-width:7;stroke-linecap:round}
+.score-ring-main .ring-bg{stroke:rgba(255,255,255,.08)}
+.score-ring-main .ring-fg{transition:stroke-dashoffset 1s ease}
+.score-ring-main .score-ring-inner{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.score-big{font-family:var(--mono);font-size:2.8rem;font-weight:700;line-height:1}.denom{font-size:1rem;font-weight:400;color:var(--text3)}
+
+/* Error groups */
+.layer-group{margin-bottom:16px;border-radius:var(--radius);overflow:hidden;border:1px solid rgba(255,255,255,.08)}
+.layer-header{padding:12px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;transition:var(--transition);user-select:none}
+.layer-header:hover{filter:brightness(1.1)}
+.layer-header .layer-title{font-size:.82rem;font-weight:700;display:flex;align-items:center;gap:8px}
+.layer-header .layer-count{font-size:.68rem;font-weight:600;padding:2px 8px;border-radius:10px;background:rgba(255,255,255,.1)}
+.layer-header .arrow{color:rgba(255,255,255,.5);transition:transform .3s ease;font-size:.65rem}.layer-group.open .layer-header .arrow{transform:rotate(90deg)}
+.layer-body{max-height:0;overflow:hidden;transition:max-height .4s ease}.layer-group.open .layer-body{max-height:5000px}
+
+.layer-1 .layer-header{background:var(--layer1-dim)}.layer-1 .layer-title{color:var(--layer1)}
+.layer-2 .layer-header{background:var(--layer2-dim)}.layer-2 .layer-title{color:var(--layer2)}
+.layer-3 .layer-header{background:var(--layer3-dim)}.layer-3 .layer-title{color:var(--layer3)}
+.layer-4 .layer-header{background:var(--layer4-dim)}.layer-4 .layer-title{color:var(--layer4)}
+
+.error-item{padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.05);transition:var(--transition)}.error-item:last-child{border-bottom:none}.error-item:hover{background:rgba(255,255,255,.02)}
+.error-severity{font-size:.58rem;font-weight:700;padding:2px 6px;border-radius:4px;text-transform:uppercase;display:inline-block;margin-bottom:6px}
+.sev-minor{background:rgba(255,255,255,.06);color:var(--text3)}.sev-moderate{background:var(--orange-dim);color:var(--orange)}.sev-major{background:var(--red-dim);color:var(--red)}
+.error-original{font-size:.8rem;color:rgba(255,255,255,.45);text-decoration:line-through;margin-bottom:4px;line-height:1.5}
+.error-corrected{font-size:.8rem;color:var(--text);font-weight:600;margin-bottom:6px;line-height:1.5}
+.error-explain{font-size:.76rem;color:var(--text2);line-height:1.5}
+
+/* History tab */
+.history-item{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;border:1px solid rgba(255,255,255,.06);background:rgba(255,255,255,.02);margin-bottom:6px;transition:var(--transition);cursor:pointer}.history-item:hover{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.18);transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,0,0,.2)}
+.student-text-box{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:var(--radius);padding:16px;font-size:.85rem;line-height:1.7;color:var(--text2);white-space:pre-wrap;max-height:300px;overflow-y:auto;margin-bottom:12px}
+.detail-actions{display:flex;gap:8px;margin-top:16px}
+.history-score{font-family:var(--mono);font-size:1.1rem;font-weight:700;min-width:40px;text-align:center}
+.history-info{flex:1;min-width:0}
+.history-prompt{font-size:.78rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-meta{font-size:.65rem;color:var(--text3);margin-top:2px}
+
+/* Tabs */
+.nav-tabs{display:flex;gap:4px;margin-bottom:16px;background:rgba(255,255,255,.03);backdrop-filter:var(--glass-blur);padding:3px;border-radius:12px;border:1px solid rgba(255,255,255,.06)}
+.tab-btn{flex:1;text-align:center;padding:9px 0;border-radius:9px;font-size:.76rem;font-weight:600;color:var(--text3);cursor:pointer;transition:var(--transition);background:none;border:none}.tab-btn:hover{color:var(--text2)}.tab-btn.active{color:var(--text);background:rgba(255,255,255,.08);box-shadow:0 2px 8px rgba(0,0,0,.2)}
+
+/* Back button */
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:.76rem;color:var(--text3);cursor:pointer;padding:6px 0;margin-bottom:12px;background:none;border:none;font-family:var(--font);transition:var(--transition)}.back-btn:hover{color:var(--text)}
+
+/* Empty state */
+.empty-state{text-align:center;padding:40px 20px;color:var(--text3)}.empty-state .empty-icon{font-size:2rem;margin-bottom:8px;opacity:.5}.empty-state p{font-size:.85rem}
+
+@media(max-width:600px){.container{padding:12px}.app-header{flex-wrap:wrap;gap:8px}.header-right{flex-wrap:wrap}.prompt-grid{grid-template-columns:1fr}.writing-area{min-height:200px}}
+.so-card{text-align:center;padding:24px 20px}
+.so-score-main{display:flex;align-items:baseline;justify-content:center;gap:4px;margin-bottom:14px}
+.so-score-big{font-family:'Lora',Georgia,serif;font-size:48px;font-weight:500;line-height:1;color:var(--text);letter-spacing:.01em}
+.so-score-denom{font-size:18px;color:var(--text3);font-weight:400;font-family:'Lora',Georgia,serif}
+.so-pills{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.so-pill{padding:6px 14px;border-radius:999px;font-size:.74rem;font-weight:700;letter-spacing:.02em;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:var(--text2)}
+.so-pill-framework{color:var(--text3);font-weight:500;text-transform:none;letter-spacing:0}
+.crit-card .crit-layout{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+.crit-list{display:flex;flex-direction:column;gap:16px;min-width:0}
+.crit-row{display:flex;flex-direction:column;gap:5px}
+.crit-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.crit-label{font-size:14px;font-weight:700;color:var(--text)}
+.crit-score{font-family:var(--mono);font-size:13px;color:var(--text2);white-space:nowrap}
+.crit-bar{height:6px;border-radius:3px;background:rgba(255,255,255,.06);overflow:hidden}
+.crit-bar-fill{height:100%;border-radius:3px;width:0;transition:width .8s cubic-bezier(.22,1,.36,1)}
+.crit-feedback{font-size:13px;color:var(--text2);line-height:1.5;margin-top:3px}
+.crit-radar{display:flex;justify-content:center;min-width:0;align-self:start}
+.crit-radar svg{width:100%;max-width:480px;height:auto}
+.crit-legacy-note{font-size:.82rem;color:var(--text3);text-align:center;font-style:italic;padding:14px 0}
+@media(max-width:767px){.crit-card .crit-layout{grid-template-columns:1fr}.crit-radar{max-width:420px;margin:0 auto;padding:8px}}
+
+.examiner-remark{font-size:13px;color:var(--text2);line-height:1.55;font-style:italic;margin-top:6px;padding-left:2px}
+
+/* F-032/F-033: Analyse par couche 2x2 grid + wide next-step cell */
+.apc-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.apc-cell{border-left:3px solid var(--accent);background:rgba(255,255,255,.02);padding:14px 16px;border-radius:0 var(--radius) var(--radius) 0}
+.apc-cell-what_works{border-left-color:var(--green)}
+.apc-cell-what_doesnt_work{border-left-color:var(--red)}
+.apc-cell-english_habits{border-left-color:var(--orange)}
+.apc-cell-structure_quality{border-left-color:var(--purple)}
+.apc-cell-title{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text2);margin-bottom:8px}
+.apc-cell-content{font-size:.88rem;line-height:1.6;color:var(--text)}
+.apc-next-step-card{border-left:3px solid var(--purple);background:rgba(196,158,255,.06);padding:18px 20px;border-radius:0 var(--radius) var(--radius) 0}
+.apc-next-step-label{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--purple);margin-bottom:8px}
+.apc-next-step-text{font-family:'Lora',Georgia,serif;font-size:1.05rem;line-height:1.5;color:var(--text);font-weight:500}
+.apc-legacy-note{font-size:.82rem;color:var(--text3);text-align:center;font-style:italic;padding:24px 0}
+
+/* F-044: locale notices (Spanish beta banner + stale-feedback notice) */
+.locale-notice{font-size:.78rem;color:var(--text2);background:rgba(123,159,255,.08);border:1px solid rgba(123,159,255,.22);border-radius:8px;padding:10px 14px;margin-bottom:12px;line-height:1.5}
+.locale-notice-warn{background:rgba(234,132,68,.08);border-color:rgba(234,132,68,.28);color:var(--text2)}
+.lang-select{background:rgba(255,255,255,.04);color:var(--text2);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:4px 8px;font-size:.72rem;font-family:var(--font);cursor:pointer}
+@media(max-width:767px){.apc-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<!-- ═══ AUTH ═══ -->
+<div id="auth-screen"><div class="container"><div class="auth-box">
+  <div class="auth-logo">FluentPath</div>
+  <p class="auth-sub" data-i18n="auth_subtitle">Practice your French writing</p>
+  <select class="lang-select" id="auth-lang-select" onchange="setLang(this.value)" style="width:auto;display:inline;margin:0 auto 8px;display:block"><option value="en">EN</option><option value="fr">FR</option><option value="es">ES</option></select>
+  <div id="register-fields" class="hidden"><input type="text" id="reg-name" placeholder="Full name" data-i18n-placeholder="placeholder_fullname"></div>
+  <input type="email" id="auth-email" placeholder="Email" data-i18n-placeholder="placeholder_email">
+  <input type="password" id="auth-pass" placeholder="Password" data-i18n-placeholder="placeholder_password">
+  <button class="btn-primary" style="width:100%" onclick="doAuth()" data-i18n="login">Log in</button>
+  <p id="auth-error" style="color:var(--red);font-size:.78rem;margin-top:8px"></p>
+  <p class="auth-toggle"><span data-i18n="no_account">No account?</span> <a onclick="toggleAuth()"><span id="auth-toggle-link" data-i18n="create_account">Create one</span></a></p>
+</div></div></div>
+
+<!-- ═══ APP ═══ -->
+<div id="app-screen" class="hidden"><div class="container">
+  <div id="es-beta-notice" class="locale-notice hidden" data-i18n="spanish_beta_notice">Spanish interface (beta). Detailed feedback currently provided in English.</div>
+
+  <!-- Header -->
+  <div class="app-header">
+    <div class="logo">
+      <div class="logo-icon">F</div>
+      <h1><span class="fluentpath-logo">FluentPath</span><small data-i18n="brand_subtitle">TCF Prep</small></h1>
+    </div>
+    <div class="header-right">
+      <select class="lang-select" id="app-lang-select" onchange="setLang(this.value)"><option value="en">EN</option><option value="fr">FR</option><option value="es">ES</option></select>
+      <span class="user-badge" id="user-email"></span>
+      <button class="btn-ghost btn-sm" onclick="logout()" data-i18n="logout">Log out</button>
+    </div>
+  </div>
+
+  <!-- Nav -->
+  <div class="nav-tabs">
+    <a href="/" class="tab-btn" style="text-decoration:none" data-i18n="tab_practice">Practice</a>
+    <a href="/writing" class="tab-btn active" style="text-decoration:none" data-i18n="tab_writing">Writing</a>
+    <button class="tab-btn" onclick="switchTab('history')" data-i18n="tab_history">History</button>
+  </div>
+
+  <!-- ═══ PRACTICE TAB ═══ -->
+  <div id="tab-practice">
+
+    <!-- Step 1: Select prompt -->
+    <div id="step-select">
+      <div class="card card-sm">
+        <div class="card-label" data-i18n="target_level">Target level</div>
+        <div class="level-bar">
+          <div class="level-btn" data-level="B1" onclick="setLevel('B1')">B1</div>
+          <div class="level-btn active" data-level="B2" onclick="setLevel('B2')">B2</div>
+          <div class="level-btn" data-level="C1" onclick="setLevel('C1')">C1</div>
+        </div>
+      </div>
+
+      <div class="card card-sm">
+        <div class="card-label" data-i18n="choose_prompt">Choose a writing prompt</div>
+        <div class="prompt-grid" id="prompt-grid">
+          <div style="text-align:center;padding:20px;color:var(--text3);font-size:.82rem" data-i18n="loading_prompts">Loading prompts...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Step 2: Write -->
+    <div id="step-write" class="hidden">
+      <button class="back-btn" onclick="backToSelect()" data-i18n="back_choose_prompt">&larr; Choose another prompt</button>
+
+      <div class="card card-sm">
+        <div class="card-label" data-i18n="prompt_label">Prompt</div>
+        <div id="active-prompt-text" style="font-size:.88rem;line-height:1.6;color:var(--text)"></div>
+        <div class="prompt-info" id="active-prompt-info" style="margin-top:10px"></div>
+      </div>
+
+      <div class="card card-sm">
+        <div class="card-label" data-i18n="your_response">Your response</div>
+        <div class="writing-zone">
+          <textarea class="writing-area" id="writing-area" placeholder="Write your response in French..." data-i18n-placeholder="placeholder_response" oninput="updateWordCount()"></textarea>
+          <div class="writing-toolbar">
+            <div class="word-counter" id="word-counter"><span class="wc-count">0</span> <span data-i18n="words">words</span></div>
+            <div class="timer-display">
+              <span class="timer-text" id="timer-text">--:--</span>
+              <button class="btn-ghost btn-sm timer-toggle" id="timer-btn" onclick="toggleTimer()" data-i18n="start_timer">Start timer</button>
+            </div>
+          </div>
+        </div>
+        <button class="submit-btn" id="submit-btn" onclick="submitWriting()" disabled>
+          <span id="submit-label" data-i18n="submit_feedback">Submit for Feedback</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 3: Results -->
+    <div id="step-results" class="hidden">
+      <button class="back-btn" onclick="backToSelect()" data-i18n="back_new_prompt">&larr; New prompt</button>
+      <div id="stale-lang-notice" class="locale-notice locale-notice-warn hidden"></div>
+
+      <div class="card so-card hidden" id="score-overview-card">
+        <div class="card-label" data-i18n="official_score">Official score</div>
+        <div class="so-score-main"><span class="so-score-big" id="so-score-big">0.0</span><span class="so-score-denom">&nbsp;/ 20</span></div>
+        <div class="so-pills">
+          <span class="so-pill hidden" id="so-pill-cefr">B2</span>
+          <span class="so-pill hidden" id="so-pill-clb">CLB 7</span>
+          <span class="so-pill so-pill-framework" id="so-pill-framework">TCF Canada framework</span>
+        </div>
+      </div>
+      <div class="card crit-card hidden" id="criteria-card">
+        <div class="card-label" data-i18n="criteria_breakdown">Criteria breakdown</div>
+        <div class="crit-layout">
+          <div class="crit-list" id="crit-list"></div>
+          <div class="crit-radar"><svg id="crit-radar-svg" viewBox="-130 -20 500 260"></svg></div>
+        </div>
+        <div class="crit-legacy-note hidden" id="crit-legacy-note" data-i18n="legacy_no_breakdown">Detailed breakdown not available for older submissions.</div>
+      </div>
+
+      <div class="card hidden">
+        <div class="score-hero">
+          <div class="score-ring-main">
+            <svg viewBox="0 0 120 120">
+              <circle class="ring-bg" cx="60" cy="60" r="52"/>
+              <circle class="ring-fg" id="score-ring-fg" cx="60" cy="60" r="52" stroke="var(--accent)" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+            </svg>
+            <div class="score-ring-inner">
+              <span class="score-big" id="score-value">0</span>
+              <span class="denom">/20</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- F-032/F-033: Analyse par couche 2x2 grid + wide next-step cell -->
+      <div class="card" id="apc-card">
+        <div class="card-label" data-i18n="analysis_by_layer">Analysis by layer</div>
+        <div class="apc-grid" id="apc-grid-body"></div>
+        <div class="apc-next-step-card" id="apc-next-step-wrap">
+          <div class="apc-next-step-label" data-i18n="next_step_label">Next step</div>
+          <div class="apc-next-step-text" id="apc-next-step"></div>
+        </div>
+      </div>
+
+      <!-- Errors by layer -->
+      <div id="errors-container"></div>
+    </div>
+  </div>
+
+  <!-- ═══ HISTORY TAB ═══ -->
+  <div id="tab-history" class="hidden">
+    <div class="card card-sm">
+      <div class="card-label" data-i18n="your_submissions">Your writing submissions</div>
+      <div id="history-list">
+        <div class="empty-state"><div class="empty-icon">&#9997;</div><p data-i18n="no_submissions">No submissions yet. Start writing!</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ SUBMISSION DETAIL VIEW ═══ -->
+  <div id="tab-detail" class="hidden">
+    <button class="back-btn" onclick="backToHistory()" data-i18n="back_to_history">&larr; Back to History</button>
+    <div id="detail-stale-lang-notice" class="locale-notice locale-notice-warn hidden"></div>
+
+    <div class="card so-card hidden" id="detail-score-overview-card">
+      <div class="card-label" data-i18n="official_score">Official score</div>
+      <div class="so-score-main"><span class="so-score-big" id="detail-so-score-big">0.0</span><span class="so-score-denom">&nbsp;/ 20</span></div>
+      <div class="so-pills">
+        <span class="so-pill hidden" id="detail-so-pill-cefr">B2</span>
+        <span class="so-pill hidden" id="detail-so-pill-clb">CLB 7</span>
+        <span class="so-pill so-pill-framework" id="detail-so-pill-framework">TCF Canada framework</span>
+      </div>
+    </div>
+    <div class="card crit-card hidden" id="detail-criteria-card">
+      <div class="card-label" data-i18n="criteria_breakdown">Criteria breakdown</div>
+      <div class="crit-layout">
+        <div class="crit-list" id="detail-crit-list"></div>
+        <div class="crit-radar"><svg id="detail-crit-radar-svg" viewBox="-130 -20 500 260"></svg></div>
+      </div>
+      <div class="crit-legacy-note hidden" id="detail-crit-legacy-note" data-i18n="legacy_no_breakdown">Detailed breakdown not available for older submissions.</div>
+    </div>
+
+    <div class="card hidden">
+      <div class="score-hero">
+        <div class="score-ring-main">
+          <svg viewBox="0 0 120 120">
+            <circle class="ring-bg" cx="60" cy="60" r="52"/>
+            <circle class="ring-fg" id="detail-ring-fg" cx="60" cy="60" r="52" stroke="var(--accent)" stroke-dasharray="326.7" stroke-dashoffset="326.7"/>
+          </svg>
+          <div class="score-ring-inner">
+            <span class="score-big" id="detail-score">0</span>
+            <span class="denom">/20</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- F-032/F-033: Analyse par couche 2x2 grid + wide next-step cell (detail view) -->
+    <div class="card" id="detail-apc-card">
+      <div class="card-label" data-i18n="analysis_by_layer">Analysis by layer</div>
+      <div class="apc-grid" id="detail-apc-grid-body"></div>
+      <div class="apc-next-step-card" id="detail-apc-next-step-wrap">
+        <div class="apc-next-step-label" data-i18n="next_step_label">Next step</div>
+        <div class="apc-next-step-text" id="detail-apc-next-step"></div>
+      </div>
+    </div>
+
+    <div class="card card-sm">
+      <div class="card-label" data-i18n="prompt_label">Prompt</div>
+      <div id="detail-prompt" style="font-size:.85rem;color:var(--text2);line-height:1.5;margin-bottom:6px"></div>
+      <div id="detail-meta" style="font-size:.68rem;color:var(--text3)"></div>
+    </div>
+
+    <div class="card card-sm">
+      <div class="card-label" data-i18n="your_text">Your text</div>
+      <div class="student-text-box" id="detail-student-text"></div>
+    </div>
+
+    <div id="detail-errors-container"></div>
+
+    <div class="detail-actions">
+      <button class="btn-ghost btn-sm" onclick="backToHistory()" data-i18n="back_to_history">&larr; Back to History</button>
+      <button class="btn-primary btn-sm" onclick="switchTab('practice')" data-i18n="try_another_prompt">Try another prompt</button>
+    </div>
+  </div>
+
+</div></div>
+
+<!-- Loading overlay -->
+<div class="loading-overlay hidden" id="loading-overlay">
+  <div class="spinner"></div>
+  <div class="loading-text" id="loading-text" data-i18n="analyzing">Analyzing your writing...</div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════════
+let currentUser = null;
+let token = '';
+let selectedLevel = 'B2';
+let prompts = [];
+let selectedPrompt = null;
+let timerInterval = null;
+let timerSeconds = 0;
+let timerRunning = false;
+let isRegistering = false;
+// F-044: track lang at which feedback was generated (for stale notice).
+let renderedFeedbackLang = null;
+
+// ═══════════════════════════════════════════════════════════════
+// i18n (F-044)
+// ═══════════════════════════════════════════════════════════════
+const LANG = {
+en:{brand_subtitle:"TCF Prep",auth_subtitle:"Practice your French writing",tab_practice:"Practice",tab_writing:"Writing",tab_history:"History",logout:"Log out",language_label:"Language:",login:"Log in",no_account:"No account?",create_account:"Create one",log_in_instead:"Log in instead",fill_all_fields:"Fill in all fields",registration_failed:"Registration failed",login_failed:"Login failed",network_error:"Network error",placeholder_email:"Email",placeholder_password:"Password",placeholder_fullname:"Full name",placeholder_response:"Write your response in French...",target_level:"Target level",choose_prompt:"Choose a writing prompt",loading_prompts:"Loading prompts...",no_prompts:"No prompts available for this level.",your_response:"Your response",start_timer:"Start timer",pause:"Pause",resume:"Resume",words:"words",submit_feedback:"Submit for Feedback",analyzing:"Analyzing your writing...",back_choose_prompt:"\u2190 Choose another prompt",back_new_prompt:"\u2190 New prompt",back_to_history:"\u2190 Back to History",try_another_prompt:"Try another prompt",official_score:"Official score",criteria_breakdown:"Criteria breakdown",framework_word:"framework",legacy_no_breakdown:"Detailed breakdown not available for older submissions.",analysis_by_layer:"Analysis by layer",next_step_label:"Next step",c_what_works:"What works",c_what_doesnt_work:"What isn't working",c_english_habits:"English habits",c_structure_quality:"Sentence structure",legacy_grid_notice:"Detailed feedback will appear on your next submission.",your_submissions:"Your writing submissions",no_submissions:"No submissions yet. Start writing!",loading_submission:"Loading submission...",prompt_label:"Prompt",your_text:"Your text",no_errors:"No errors detected. Excellent work!",wlayer1_name:"How you built the sentence",wlayer2_name:"Grammar",wlayer3_name:"Word choice",wlayer4_name:"English habits",could_not_load:"Could not load submission",network_error_retry:"Network error. Please try again.",stale_language_notice:"Feedback was generated in another language. Submit again to see it in English.",spanish_beta_notice:"Spanish interface (beta). Detailed feedback currently provided in English.",word_error:"error",word_errors:"errors"},
+fr:{brand_subtitle:"Pr\u00e9paration TCF",auth_subtitle:"Entra\u00eenez votre \u00e9crit en fran\u00e7ais",tab_practice:"Pratiquer",tab_writing:"\u00c9criture",tab_history:"Historique",logout:"D\u00e9connexion",language_label:"Langue :",login:"Connexion",no_account:"Pas de compte ?",create_account:"Cr\u00e9er un compte",log_in_instead:"Se connecter plut\u00f4t",fill_all_fields:"Remplissez tous les champs",registration_failed:"\u00c9chec de l'inscription",login_failed:"\u00c9chec de la connexion",network_error:"Erreur r\u00e9seau",placeholder_email:"E-mail",placeholder_password:"Mot de passe",placeholder_fullname:"Nom complet",placeholder_response:"\u00c9crivez votre r\u00e9ponse en fran\u00e7ais...",target_level:"Niveau cible",choose_prompt:"Choisissez un sujet",loading_prompts:"Chargement des sujets...",no_prompts:"Aucun sujet disponible pour ce niveau.",your_response:"Votre r\u00e9ponse",start_timer:"D\u00e9marrer le minuteur",pause:"Pause",resume:"Reprendre",words:"mots",submit_feedback:"Soumettre pour analyse",analyzing:"Analyse en cours...",back_choose_prompt:"\u2190 Choisir un autre sujet",back_new_prompt:"\u2190 Nouveau sujet",back_to_history:"\u2190 Retour \u00e0 l'historique",try_another_prompt:"Essayer un autre sujet",official_score:"Score officiel",criteria_breakdown:"D\u00e9tail par crit\u00e8re",framework_word:"(r\u00e9f\u00e9rentiel)",legacy_no_breakdown:"Le d\u00e9tail par crit\u00e8re n'est pas disponible pour les anciennes soumissions.",analysis_by_layer:"Analyse par couche",next_step_label:"Prochaine \u00e9tape",c_what_works:"Ce qui marche",c_what_doesnt_work:"Ce qui ne marche pas",c_english_habits:"Habitudes anglaises",c_structure_quality:"Structure et construction",legacy_grid_notice:"Le diagnostic d\u00e9taill\u00e9 appara\u00eetra \u00e0 la prochaine soumission.",your_submissions:"Vos soumissions \u00e9crites",no_submissions:"Aucune soumission. Commencez \u00e0 \u00e9crire !",loading_submission:"Chargement de la soumission...",prompt_label:"Sujet",your_text:"Votre texte",no_errors:"Aucune erreur d\u00e9tect\u00e9e. Excellent travail !",wlayer1_name:"Architecture des phrases",wlayer2_name:"Grammaire",wlayer3_name:"Vocabulaire",wlayer4_name:"Habitudes anglaises",could_not_load:"Impossible de charger la soumission",network_error_retry:"Erreur r\u00e9seau. Veuillez r\u00e9essayer.",stale_language_notice:"Ce diagnostic a \u00e9t\u00e9 g\u00e9n\u00e9r\u00e9 dans une autre langue. Soumettez \u00e0 nouveau pour l'afficher en fran\u00e7ais.",spanish_beta_notice:"Interface en espagnol (beta). Le diagnostic d\u00e9taill\u00e9 est fourni en anglais pour le moment.",word_error:"erreur",word_errors:"erreurs"},
+es:{brand_subtitle:"Preparaci\u00f3n TCF",auth_subtitle:"Practica tu escritura en franc\u00e9s",tab_practice:"Practicar",tab_writing:"Escritura",tab_history:"Historial",logout:"Cerrar sesi\u00f3n",language_label:"Idioma:",login:"Iniciar sesi\u00f3n",no_account:"\u00bfSin cuenta?",create_account:"Crear una",log_in_instead:"Iniciar sesi\u00f3n",fill_all_fields:"Completa todos los campos",registration_failed:"Registro fallido",login_failed:"Inicio fallido",network_error:"Error de red",placeholder_email:"Correo",placeholder_password:"Contrase\u00f1a",placeholder_fullname:"Nombre completo",placeholder_response:"Escribe tu respuesta en franc\u00e9s...",target_level:"Nivel objetivo",choose_prompt:"Elige un tema",loading_prompts:"Cargando temas...",no_prompts:"No hay temas disponibles para este nivel.",your_response:"Tu respuesta",start_timer:"Iniciar cron\u00f3metro",pause:"Pausa",resume:"Reanudar",words:"palabras",submit_feedback:"Enviar para an\u00e1lisis",analyzing:"Analizando tu escrito...",back_choose_prompt:"\u2190 Elegir otro tema",back_new_prompt:"\u2190 Nuevo tema",back_to_history:"\u2190 Volver al historial",try_another_prompt:"Probar otro tema",official_score:"Puntuaci\u00f3n oficial",criteria_breakdown:"Desglose por criterio",framework_word:"(marco)",legacy_no_breakdown:"El desglose detallado no est\u00e1 disponible para env\u00edos antiguos.",analysis_by_layer:"An\u00e1lisis por capa",next_step_label:"Pr\u00f3ximo paso",c_what_works:"Lo que funciona",c_what_doesnt_work:"Lo que no funciona",c_english_habits:"H\u00e1bitos ingleses",c_structure_quality:"Estructura de la frase",legacy_grid_notice:"El diagn\u00f3stico detallado aparecer\u00e1 en el pr\u00f3ximo env\u00edo.",your_submissions:"Tus env\u00edos escritos",no_submissions:"Sin env\u00edos. \u00a1Empieza a escribir!",loading_submission:"Cargando env\u00edo...",prompt_label:"Tema",your_text:"Tu texto",no_errors:"Sin errores detectados. \u00a1Excelente trabajo!",wlayer1_name:"Estructura de frases",wlayer2_name:"Gram\u00e1tica",wlayer3_name:"Vocabulario",wlayer4_name:"H\u00e1bitos ingleses",could_not_load:"No se pudo cargar el env\u00edo",network_error_retry:"Error de red. Int\u00e9ntalo de nuevo.",stale_language_notice:"Este diagn\u00f3stico se gener\u00f3 en otro idioma. Env\u00edalo de nuevo para verlo en espa\u00f1ol.",spanish_beta_notice:"Interfaz en espa\u00f1ol (beta). El diagn\u00f3stico detallado se proporciona actualmente en ingl\u00e9s.",word_error:"error",word_errors:"errores"}
+};
+let lang = localStorage.getItem('fp_lang') || 'en';
+function t(k) { return (LANG[lang] && LANG[lang][k]) || LANG.en[k] || k; }
+function setLang(l) {
+  lang = l;
+  localStorage.setItem('fp_lang', l);
+  document.querySelectorAll('#auth-lang-select,#app-lang-select').forEach(s => s.value = l);
+  // Apply text content for all data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el => el.textContent = t(el.dataset.i18n));
+  // Apply placeholder translations
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => el.setAttribute('placeholder', t(el.dataset.i18nPlaceholder)));
+  syncLocaleNotices();
+}
+function syncLocaleNotices() {
+  const esBanner = document.getElementById('es-beta-notice');
+  if (esBanner) esBanner.classList.toggle('hidden', lang !== 'es');
+  const staleEl = document.getElementById('stale-lang-notice');
+  if (staleEl) {
+    const stale = renderedFeedbackLang && renderedFeedbackLang !== lang;
+    staleEl.classList.toggle('hidden', !stale);
+    if (stale) staleEl.textContent = t('stale_language_notice');
+  }
+  const detailStaleEl = document.getElementById('detail-stale-lang-notice');
+  if (detailStaleEl) {
+    const stale = renderedFeedbackLang && renderedFeedbackLang !== lang;
+    detailStaleEl.classList.toggle('hidden', !stale);
+    if (stale) detailStaleEl.textContent = t('stale_language_notice');
+  }
+}
+
+const LAYER_NAMES = { 1: 'wlayer1_name', 2: 'wlayer2_name', 3: 'wlayer3_name', 4: 'wlayer4_name' };
+const LAYER_COLORS = { 1: 'var(--layer1)', 2: 'var(--layer2)', 3: 'var(--layer3)', 4: 'var(--layer4)' };
+
+// ═══════════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════════
+function getCookie(name) {
+  const v = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+  return v ? v.pop() : '';
+}
+
+async function checkAuth() {
+  try {
+    const r = await fetch('/api/auth/me', { credentials: 'include' });
+    if (r.ok) {
+      currentUser = await r.json();
+      showApp();
+    }
+  } catch(e) {}
+}
+
+async function doAuth() {
+  const email = document.getElementById('auth-email').value.trim();
+  const pass = document.getElementById('auth-pass').value;
+  const errEl = document.getElementById('auth-error');
+  errEl.textContent = '';
+
+  if (!email || !pass) { errEl.textContent = t('fill_all_fields'); return; }
+
+  if (isRegistering) {
+    const name = document.getElementById('reg-name').value.trim();
+    try {
+      const r = await fetch('/api/auth/register', {
+        method: 'POST', headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ email, password: pass, full_name: name })
+      });
+      if (!r.ok) { const d = await r.json(); errEl.textContent = d.detail || t('registration_failed'); return; }
+      isRegistering = false;
+    } catch(e) { errEl.textContent = t('network_error'); return; }
+  }
+
+  try {
+    const r = await fetch('/api/auth/login', {
+      method: 'POST', headers: {'Content-Type':'application/json'}, credentials: 'include',
+      body: JSON.stringify({ email, password: pass })
+    });
+    if (!r.ok) { const d = await r.json(); errEl.textContent = d.detail || t('login_failed'); return; }
+    const data = await r.json();
+    token = data.access_token || '';
+    currentUser = data.user || { email };
+    showApp();
+  } catch(e) { errEl.textContent = 'Network error'; }
+}
+
+function toggleAuth() {
+  isRegistering = !isRegistering;
+  document.getElementById('register-fields').classList.toggle('hidden', !isRegistering);
+  document.getElementById('auth-toggle-link').textContent = isRegistering ? t('log_in_instead') : t('create_account');
+}
+
+function logout() {
+  fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  document.cookie = 'access_token=;max-age=0;path=/';
+  currentUser = null; token = '';
+  document.getElementById('app-screen').classList.add('hidden');
+  document.getElementById('auth-screen').classList.remove('hidden');
+}
+
+function showApp() {
+  document.getElementById('auth-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.remove('hidden');
+  document.getElementById('user-email').textContent = currentUser.email || '';
+  loadPrompts();
+}
+
+function authHeaders() {
+  const h = { 'Content-Type': 'application/json' };
+  if (token) h['Authorization'] = 'Bearer ' + token;
+  return h;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════════
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === tab));
+  document.getElementById('tab-practice').classList.toggle('hidden', tab !== 'practice');
+  document.getElementById('tab-history').classList.toggle('hidden', tab !== 'history');
+  document.getElementById('tab-detail').classList.add('hidden');
+  if (tab === 'history') loadHistory();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LEVEL SELECTION
+// ═══════════════════════════════════════════════════════════════
+function setLevel(level) {
+  selectedLevel = level;
+  document.querySelectorAll('.level-btn').forEach(b => b.classList.toggle('active', b.dataset.level === level));
+  loadPrompts();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PROMPTS
+// ═══════════════════════════════════════════════════════════════
+async function loadPrompts() {
+  try {
+    const r = await fetch(`/api/writing/prompts?level=${selectedLevel}`, { credentials: 'include', headers: authHeaders() });
+    if (!r.ok) return;
+    prompts = await r.json();
+    renderPrompts();
+  } catch(e) { console.error('Failed to load prompts', e); }
+}
+
+function renderPrompts() {
+  const grid = document.getElementById('prompt-grid');
+  if (!prompts.length) {
+    grid.innerHTML = `<div class="empty-state"><p>${esc(t('no_prompts'))}</p></div>`;
+    return;
+  }
+  grid.innerHTML = prompts.map(p => `
+    <div class="prompt-card" onclick="selectPrompt(${p.id})" data-id="${p.id}">
+      <div class="prompt-meta">
+        <span class="prompt-badge badge-${p.level.toLowerCase()}">${p.level}</span>
+        <span class="prompt-badge badge-type">${formatType(p.prompt_type)}</span>
+        <span class="prompt-badge badge-type">${p.theme}</span>
+      </div>
+      <div class="prompt-text">${p.prompt_text}</div>
+    </div>
+  `).join('');
+}
+
+function formatType(t) {
+  return t.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function selectPrompt(id) {
+  selectedPrompt = prompts.find(p => p.id === id);
+  if (!selectedPrompt) return;
+
+  // Show write step
+  document.getElementById('step-select').classList.add('hidden');
+  document.getElementById('step-write').classList.remove('hidden');
+  document.getElementById('step-results').classList.add('hidden');
+
+  document.getElementById('active-prompt-text').textContent = selectedPrompt.prompt_text;
+  document.getElementById('active-prompt-info').innerHTML = `
+    <span class="prompt-info-item"><strong>${selectedPrompt.level}</strong></span>
+    <span class="prompt-info-item">${formatType(selectedPrompt.prompt_type)}</span>
+    <span class="prompt-info-item">${selectedPrompt.min_words}-${selectedPrompt.max_words} words</span>
+    <span class="prompt-info-item">${selectedPrompt.time_limit_minutes} min</span>
+  `;
+
+  // Reset writing area
+  document.getElementById('writing-area').value = '';
+  updateWordCount();
+  resetTimer();
+}
+
+function backToSelect() {
+  document.getElementById('step-select').classList.remove('hidden');
+  document.getElementById('step-write').classList.add('hidden');
+  document.getElementById('step-results').classList.add('hidden');
+  selectedPrompt = null;
+  resetTimer();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WORD COUNTER
+// ═══════════════════════════════════════════════════════════════
+function updateWordCount() {
+  const text = document.getElementById('writing-area').value.trim();
+  const count = text ? text.split(/\s+/).length : 0;
+  const el = document.getElementById('word-counter');
+  el.innerHTML = `<span class="wc-count">${count}</span> words`;
+  el.className = 'word-counter';
+
+  if (selectedPrompt) {
+    if (count > selectedPrompt.max_words) el.classList.add('over-limit');
+    else if (count >= selectedPrompt.min_words) el.classList.add('in-range');
+  }
+
+  // Enable/disable submit
+  document.getElementById('submit-btn').disabled = count < 10;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// TIMER
+// ═══════════════════════════════════════════════════════════════
+function toggleTimer() {
+  if (timerRunning) {
+    pauseTimer();
+  } else {
+    startTimer();
+  }
+}
+
+function startTimer() {
+  timerRunning = true;
+  document.getElementById('timer-btn').textContent = t('pause');
+  const limit = selectedPrompt ? selectedPrompt.time_limit_minutes * 60 : 0;
+  timerInterval = setInterval(() => {
+    timerSeconds++;
+    updateTimerDisplay(limit);
+  }, 1000);
+}
+
+function pauseTimer() {
+  timerRunning = false;
+  clearInterval(timerInterval);
+  document.getElementById('timer-btn').textContent = t('resume');
+}
+
+function resetTimer() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  timerSeconds = 0;
+  document.getElementById('timer-text').textContent = '--:--';
+  document.getElementById('timer-text').className = 'timer-text';
+  document.getElementById('timer-btn').textContent = t('start_timer');
+}
+
+function updateTimerDisplay(limit) {
+  const m = Math.floor(timerSeconds / 60);
+  const s = timerSeconds % 60;
+  const el = document.getElementById('timer-text');
+  el.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  el.className = 'timer-text';
+  if (limit > 0) {
+    const remaining = limit - timerSeconds;
+    if (remaining <= 0) el.classList.add('expired');
+    else if (remaining <= 120) el.classList.add('warning');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SUBMIT
+// ═══════════════════════════════════════════════════════════════
+async function submitWriting() {
+  if (!selectedPrompt) return;
+  const text = document.getElementById('writing-area').value.trim();
+  if (!text || text.split(/\s+/).length < 10) return;
+
+  // Pause timer
+  if (timerRunning) pauseTimer();
+
+  // Show loading
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true;
+  document.getElementById('loading-overlay').classList.remove('hidden');
+
+  const messages = [
+    'Analyzing your writing...',
+    'Checking sentence architecture...',
+    'Evaluating grammar accuracy...',
+    'Identifying vocabulary patterns...',
+    'Detecting L1 interference...',
+    'Generating feedback...'
+  ];
+  let msgIdx = 0;
+  const msgInterval = setInterval(() => {
+    msgIdx = (msgIdx + 1) % messages.length;
+    document.getElementById('loading-text').textContent = messages[msgIdx];
+  }, 3000);
+
+  try {
+    const r = await fetch('/api/writing/submit', {
+      method: 'POST',
+      credentials: 'include',
+      headers: authHeaders(),
+      body: JSON.stringify({
+        prompt_id: selectedPrompt.id,
+        student_text: text,
+        time_taken_seconds: timerSeconds,
+        ui_language: lang
+      })
+    });
+
+    clearInterval(msgInterval);
+    document.getElementById('loading-overlay').classList.add('hidden');
+
+    if (!r.ok) {
+      const d = await r.json();
+      alert(d.detail || 'Submission failed');
+      btn.disabled = false;
+      return;
+    }
+
+    const data = await r.json();
+    showResults(data.feedback);
+  } catch(e) {
+    clearInterval(msgInterval);
+    document.getElementById('loading-overlay').classList.add('hidden');
+    alert(t('network_error_retry'));
+    btn.disabled = false;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// RESULTS
+// ═══════════════════════════════════════════════════════════════
+const CEFR_COLORS = {'A1 not achieved':'#b91c1c','A1':'#dc2626','A2':'#ea580c','B1':'#ca8a04','B2':'#16a34a','C1':'#2563eb','C2':'#7c3aed'};
+function cefrHex(l) { return CEFR_COLORS[l] || '#606d85'; }
+function scoreHex(s) { if(s<1)return'#b91c1c';if(s<2)return'#dc2626';if(s<6)return'#ea580c';if(s<10)return'#ca8a04';if(s<14)return'#16a34a';if(s<18)return'#2563eb';return'#7c3aed'; }
+function critLabelW(row) { return row.label_en_student || row.criterion_key; }
+function biW(text) { if(!text)return''; const parts=String(text).split('|||'); return (parts.length>1?parts[1]:parts[0]).trim(); }
+
+function renderExamProfileInto(ep, ids) {
+  const soCard = document.getElementById(ids.soCard);
+  const critCard = document.getElementById(ids.critCard);
+  if (!ep) { soCard.classList.add('hidden'); critCard.classList.add('hidden'); return; }
+  soCard.classList.remove('hidden'); critCard.classList.remove('hidden');
+
+  const shown = ep.frameworks_shown || ['raw20','cefr','clb'];
+  const score = typeof ep.overall_score === 'number' ? ep.overall_score : 0;
+  document.getElementById(ids.scoreBig).textContent = score.toFixed(1);
+
+  const cefr = ep.cefr_level || '';
+  const cefrPill = document.getElementById(ids.pillCefr);
+  if (shown.includes('cefr') && cefr) {
+    cefrPill.textContent = cefr;
+    const c = cefrHex(cefr);
+    cefrPill.style.color = c; cefrPill.style.borderColor = c+'66'; cefrPill.style.background = c+'1a';
+    cefrPill.classList.remove('hidden');
+  } else { cefrPill.classList.add('hidden'); }
+
+  const secPill = document.getElementById(ids.pillClb);
+  const secVal = ep.secondary_framework_value;
+  const secLabel = ep.secondary_framework_label || '';
+  if (shown.includes('clb') && secVal != null) {
+    secPill.textContent = (secLabel ? secLabel+' ' : '') + secVal;
+    secPill.classList.remove('hidden');
+  } else { secPill.classList.add('hidden'); }
+
+  document.getElementById(ids.pillFramework).textContent = (ep.display_name || 'TCF Canada') + ' ' + t('framework_word');
+
+  const rows = ep.criteria_breakdown || [];
+  const list = document.getElementById(ids.list);
+  const note = document.getElementById(ids.note);
+  const svg = document.getElementById(ids.radar);
+  if (!rows.length) { list.innerHTML=''; svg.innerHTML=''; note.classList.remove('hidden'); return; }
+  note.classList.add('hidden');
+
+  list.innerHTML = rows.map(r => {
+    const label = critLabelW(r);
+    const sc = r.score || 0, max = r.max_score || 20;
+    const pct = Math.max(0, Math.min(100, (sc/max)*100));
+    const color = scoreHex(sc);
+    const exR = r.examiner_remark_fr || '';
+    const tc = r.teacher_coaching || {};
+    const hasCoach = !!(tc.coaching_en || tc.coaching_fr || tc.transformation);
+    const legacyFb = (!exR && !hasCoach) ? biW(r.feedback || '') : '';
+    return `<div class="crit-row">
+      <div class="crit-head"><span class="crit-label">${esc(label)}</span><span class="crit-score">${sc}/${max}</span></div>
+      <div class="crit-bar"><div class="crit-bar-fill" data-pct="${pct}" style="background:${color}"></div></div>
+      ${exR?`<div class="examiner-remark">${esc(exR)}</div>`:''}
+      ${legacyFb?`<div class="crit-feedback">${esc(legacyFb)}</div>`:''}
+    </div>`;
+  }).join('');
+  requestAnimationFrame(() => {
+    document.querySelectorAll('#'+ids.list+' .crit-bar-fill').forEach(el => { el.style.width = el.dataset.pct + '%'; });
+  });
+  drawRadarW(rows, svg);
+}
+
+function drawRadarW(rows, svg) {
+  const cx=120, cy=110, r=70, n=rows.length, max=20;
+  if (n < 3) { svg.innerHTML=''; return; }
+  const pt = (i,val) => { const ang = -Math.PI/2 + (2*Math.PI*i/n); const d = (val/max)*r; return [cx+Math.cos(ang)*d, cy+Math.sin(ang)*d]; };
+  let out = '';
+  for (let k=1; k<=4; k++) {
+    const pts = []; for (let i=0;i<n;i++) pts.push(pt(i, max*k/4).join(','));
+    out += `<polygon points="${pts.join(' ')}" fill="none" stroke="rgba(255,255,255,.08)" stroke-width="1"/>`;
+  }
+  for (let i=0;i<n;i++) { const p=pt(i,max); out += `<line x1="${cx}" y1="${cy}" x2="${p[0]}" y2="${p[1]}" stroke="rgba(255,255,255,.08)" stroke-width="1"/>`; }
+  const dataPts = rows.map((r,i) => pt(i, r.score||0).join(',')).join(' ');
+  out += `<polygon points="${dataPts}" fill="rgba(124,58,237,.28)" stroke="#7c3aed" stroke-width="2" stroke-linejoin="round"/>`;
+  rows.forEach((r,i) => { const p=pt(i, r.score||0); out += `<circle cx="${p[0]}" cy="${p[1]}" r="3" fill="#7c3aed"/>`; });
+  for (let i=0;i<n;i++) {
+    const p = pt(i, max+14);
+    const label = critLabelW(rows[i]);
+    const a = p[0] < cx-5 ? 'end' : p[0] > cx+5 ? 'start' : 'middle';
+    out += `<text x="${p[0]}" y="${p[1]}" text-anchor="${a}" font-size="11" fill="#94a0b8" dominant-baseline="middle">${esc(label)}</text>`;
+  }
+  svg.innerHTML = out;
+}
+
+const RESULT_IDS = {soCard:'score-overview-card',critCard:'criteria-card',scoreBig:'so-score-big',pillCefr:'so-pill-cefr',pillClb:'so-pill-clb',pillFramework:'so-pill-framework',list:'crit-list',note:'crit-legacy-note',radar:'crit-radar-svg'};
+const DETAIL_IDS = {soCard:'detail-score-overview-card',critCard:'detail-criteria-card',scoreBig:'detail-so-score-big',pillCefr:'detail-so-pill-cefr',pillClb:'detail-so-pill-clb',pillFramework:'detail-so-pill-framework',list:'detail-crit-list',note:'detail-crit-legacy-note',radar:'detail-crit-radar-svg'};
+
+// F-032/F-033 — Analyse par couche 2x2 grid IDs per surface
+const RESULT_GRID_IDS = {card:'apc-card',body:'apc-grid-body',nextWrap:'apc-next-step-wrap',next:'apc-next-step'};
+const DETAIL_GRID_IDS = {card:'detail-apc-card',body:'detail-apc-grid-body',nextWrap:'detail-apc-next-step-wrap',next:'detail-apc-next-step'};
+
+// F-044: grid cell titles now go through i18n. Mapping key -> t() lookup key.
+const GRID_CELL_LABEL_KEYS = {
+  what_works: 'c_what_works',
+  what_doesnt_work: 'c_what_doesnt_work',
+  english_habits: 'c_english_habits',
+  structure_quality: 'c_structure_quality'
+};
+
+function renderFeedbackGridInto(feedback, ids) {
+  const body = document.getElementById(ids.body);
+  const stepEl = document.getElementById(ids.next);
+  const nextWrap = document.getElementById(ids.nextWrap);
+  if (!body || !stepEl || !nextWrap) return;
+  const grid = (feedback && feedback.analyse_par_couche) || {};
+  const cells = ['what_works','what_doesnt_work','english_habits','structure_quality'];
+  const hasData = cells.some(k => { const c = grid[k]; return c && typeof c === 'object' && c.content_fr; });
+  if (!hasData) {
+    body.innerHTML = `<div class="apc-legacy-note">${esc(t('legacy_grid_notice'))}</div>`;
+    body.style.gridTemplateColumns = '1fr';
+  } else {
+    body.style.gridTemplateColumns = '';
+    body.innerHTML = cells.map(k => {
+      const cell = grid[k] || {};
+      const title = (GRID_CELL_LABEL_KEYS[k] ? t(GRID_CELL_LABEL_KEYS[k]) : '') || (cell.title_fr || '');
+      return `<div class="apc-cell apc-cell-${k}"><div class="apc-cell-title" data-i18n="${GRID_CELL_LABEL_KEYS[k] || ''}">${esc(title)}</div><div class="apc-cell-content">${esc(cell.content_fr || '')}</div></div>`;
+    }).join('');
+  }
+  const rawStep = (feedback && feedback.next_step) || '';
+  const step = rawStep && rawStep.includes('|||') ? biW(rawStep) : rawStep;
+  if (step) { stepEl.textContent = step; nextWrap.classList.remove('hidden'); }
+  else { nextWrap.classList.add('hidden'); }
+}
+
+function showResults(feedback) {
+  document.getElementById('step-select').classList.add('hidden');
+  document.getElementById('step-write').classList.add('hidden');
+  document.getElementById('step-results').classList.remove('hidden');
+
+  renderExamProfileInto(feedback.exam_profile || null, RESULT_IDS);
+  renderFeedbackGridInto(feedback, RESULT_GRID_IDS);
+
+  // Score ring
+  const score = feedback.overall_score || 0;
+  const scoreEl = document.getElementById('score-value');
+  scoreEl.textContent = score.toFixed(1);
+
+  const ring = document.getElementById('score-ring-fg');
+  const circumference = 2 * Math.PI * 52;
+  const offset = circumference - (score / 20) * circumference;
+  ring.style.stroke = scoreColor(score);
+  setTimeout(() => { ring.style.strokeDashoffset = offset; }, 50);
+
+  // Errors by layer
+  const container = document.getElementById('errors-container');
+  const errors = feedback.errors || [];
+
+  // Group by layer
+  const grouped = {};
+  errors.forEach(e => {
+    const l = e.layer || 1;
+    if (!grouped[l]) grouped[l] = [];
+    grouped[l].push(e);
+  });
+
+  let html = '';
+  for (let layer = 1; layer <= 4; layer++) {
+    const items = grouped[layer] || [];
+    if (!items.length) continue;
+    html += `
+      <div class="layer-group layer-${layer} open">
+        <div class="layer-header" onclick="this.parentElement.classList.toggle('open')">
+          <span class="layer-title">${esc(t(LAYER_NAMES[layer]))} <span class="layer-count">${items.length} ${items.length>1?t('word_errors'):t('word_error')}</span></span>
+          <span class="arrow">&#9654;</span>
+        </div>
+        <div class="layer-body">
+          ${items.map(e => `
+            <div class="error-item">
+              <span class="error-severity sev-${e.severity || 'moderate'}">${e.severity || 'moderate'}</span>
+              <div class="error-original">${esc(e.original_text)}</div>
+              <div class="error-corrected">${esc(e.corrected_text)}</div>
+              <div class="error-explain">${esc(e.explanation || e.explanation_english || '')}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+
+  if (!errors.length) {
+    html = `<div class="card card-sm" style="text-align:center;color:var(--green)">${esc(t('no_errors'))}</div>`;
+  }
+  container.innerHTML = html;
+  // F-044: stash render lang for stale-notice detection on mid-view toggle.
+  renderedFeedbackLang = lang;
+  syncLocaleNotices();
+}
+
+function scoreColor(s) {
+  if (s >= 16) return 'var(--green)';
+  if (s >= 12) return 'var(--accent)';
+  if (s >= 8) return 'var(--orange)';
+  return 'var(--red)';
+}
+
+function esc(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// HISTORY
+// ═══════════════════════════════════════════════════════════════
+async function loadHistory() {
+  if (!currentUser) return;
+  const uid = currentUser.id || currentUser.user_id;
+  if (!uid) return;
+
+  try {
+    const r = await fetch(`/api/writing/history/${uid}`, { credentials: 'include', headers: authHeaders() });
+    if (!r.ok) return;
+    const data = await r.json();
+    renderHistory(data);
+  } catch(e) { console.error('Failed to load history', e); }
+}
+
+function renderHistory(items) {
+  const el = document.getElementById('history-list');
+  if (!items.length) {
+    el.innerHTML = `<div class="empty-state"><div class="empty-icon">&#9997;</div><p>${esc(t('no_submissions'))}</p></div>`;
+    return;
+  }
+  el.innerHTML = items.map(h => {
+    const date = h.submitted_at ? new Date(h.submitted_at).toLocaleDateString() : '';
+    const sc = (h.overall_score || 0).toFixed(1);
+    return `
+      <div class="history-item" onclick="viewSubmission(${h.id})">
+        <div class="history-score" style="color:${scoreColor(h.overall_score || 0)}">${sc}</div>
+        <div class="history-info">
+          <div class="history-prompt">${esc(h.text_preview || h.prompt_text || '')}</div>
+          <div class="history-meta">${h.level || ''} &middot; ${formatType(h.prompt_type || '')} &middot; ${h.word_count || 0} words &middot; ${date}</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SUBMISSION DETAIL
+// ═══════════════════════════════════════════════════════════════
+async function viewSubmission(id) {
+  document.getElementById('loading-overlay').classList.remove('hidden');
+  document.getElementById('loading-text').textContent = t('loading_submission');
+
+  try {
+    const r = await fetch(`/api/writing/submission/${id}`, { credentials: 'include', headers: authHeaders() });
+    document.getElementById('loading-overlay').classList.add('hidden');
+    if (!r.ok) { alert(t('could_not_load')); return; }
+    const data = await r.json();
+    showDetail(data);
+  } catch(e) {
+    document.getElementById('loading-overlay').classList.add('hidden');
+    alert(t('network_error'));
+  }
+}
+
+function showDetail(data) {
+  // Hide other tabs, show detail
+  document.getElementById('tab-practice').classList.add('hidden');
+  document.getElementById('tab-history').classList.add('hidden');
+  document.getElementById('tab-detail').classList.remove('hidden');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+  const fb = data.feedback || {};
+
+  renderExamProfileInto(fb.exam_profile || null, DETAIL_IDS);
+  renderFeedbackGridInto(fb, DETAIL_GRID_IDS);
+
+  // Score ring
+  const score = data.overall_score || 0;
+  document.getElementById('detail-score').textContent = score.toFixed(1);
+  const ring = document.getElementById('detail-ring-fg');
+  const circumference = 2 * Math.PI * 52;
+  const offset = circumference - (score / 20) * circumference;
+  ring.style.stroke = scoreColor(score);
+  ring.style.strokeDashoffset = circumference;
+  setTimeout(() => { ring.style.strokeDashoffset = offset; }, 50);
+
+  // Prompt & meta
+  document.getElementById('detail-prompt').textContent = data.prompt_text || '';
+  const date = data.submitted_at ? new Date(data.submitted_at).toLocaleDateString() : '';
+  document.getElementById('detail-meta').textContent = `${data.level || ''} \u00B7 ${formatType(data.prompt_type || '')} \u00B7 ${data.word_count || 0} words \u00B7 ${date}`;
+
+  // Student text
+  document.getElementById('detail-student-text').textContent = data.student_text || '';
+
+  // Errors by layer
+  const errors = fb.errors || [];
+  const grouped = {};
+  errors.forEach(e => { const l = e.layer || 1; if (!grouped[l]) grouped[l] = []; grouped[l].push(e); });
+
+  let html = '';
+  for (let layer = 1; layer <= 4; layer++) {
+    const items = grouped[layer] || [];
+    if (!items.length) continue;
+    html += `
+      <div class="layer-group layer-${layer} open">
+        <div class="layer-header" onclick="this.parentElement.classList.toggle('open')">
+          <span class="layer-title">${esc(t(LAYER_NAMES[layer]))} <span class="layer-count">${items.length} ${items.length>1?t('word_errors'):t('word_error')}</span></span>
+          <span class="arrow">&#9654;</span>
+        </div>
+        <div class="layer-body">
+          ${items.map(e => `
+            <div class="error-item">
+              <span class="error-severity sev-${e.severity || 'moderate'}">${e.severity || 'moderate'}</span>
+              <div class="error-original">${esc(e.original_text)}</div>
+              <div class="error-corrected">${esc(e.corrected_text)}</div>
+              <div class="error-explain">${esc(e.explanation || e.explanation_english || '')}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }
+  if (!errors.length) {
+    html = `<div class="card card-sm" style="text-align:center;color:var(--green)">${esc(t('no_errors'))}</div>`;
+  }
+  document.getElementById('detail-errors-container').innerHTML = html;
+  renderedFeedbackLang = lang;
+  syncLocaleNotices();
+}
+
+function backToHistory() {
+  document.getElementById('tab-detail').classList.add('hidden');
+  document.getElementById('tab-history').classList.remove('hidden');
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.textContent.toLowerCase() === 'history'));
+}
+
+// ═══════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════
+setLang(lang);  // F-044: apply i18n + locale notices before auth resolves.
+checkAuth();
+</script>
+</body>
+</html>

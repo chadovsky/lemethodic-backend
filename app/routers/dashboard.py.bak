@@ -1,0 +1,359 @@
+"""
+NEW FILE: app/routers/dashboard.py
+
+Progress tracking API endpoints.
+"""
+
+from datetime import datetime, timedelta
+from collections import defaultdict
+
+from fastapi import APIRouter, Depends, Query
+from sqlalchemy.orm import Session
+from sqlalchemy import func
+
+from app.database import get_db
+from app.services.auth import get_current_user
+from app.models.models import (
+    User, Recording, Feedback, TestTopic,
+    GrammarSnapshot, InterferenceLog, MouleSnapshot,
+    GRAMMAR_POINTS, CANONICAL_MOULES,
+)
+
+router = APIRouter(prefix="/api/dashboard", tags=["dashboard"])
+
+
+@router.get("/overview")
+def get_overview(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    sessions = (
+        db.query(Recording, Feedback)
+        .join(Feedback, Feedback.recording_id == Recording.id)
+        .filter(
+            Recording.user_id == current_user.id,
+            Recording.status == "done",
+        )
+        .order_by(Recording.created_at.asc())
+        .all()
+    )
+
+    if not sessions:
+        return {"total_sessions": 0, "message": "Aucune session terminée."}
+
+    first_rec, first_fb = sessions[0]
+    latest_rec, latest_fb = sessions[-1]
+
+    today = datetime.utcnow().date()
+    session_dates = sorted(set(r.created_at.date() for r, _ in sessions), reverse=True)
+    streak = 0
+    check_date = today
+    for d in range(60):
+        if check_date in session_dates:
+            streak += 1
+        elif d > 0:
+            break
+        check_date -= timedelta(days=1)
+
+    return {
+        "total_sessions": len(sessions),
+        "date_range": {
+            "first": first_rec.created_at.isoformat(),
+            "latest": latest_rec.created_at.isoformat(),
+        },
+        "current": {
+            "niveau": latest_fb.detected_niveau or "",
+            "score": latest_fb.overall_score,
+            "interference_count": latest_fb.interference_count,
+        },
+        "first": {
+            "niveau": first_fb.detected_niveau or "",
+            "score": first_fb.overall_score,
+            "interference_count": first_fb.interference_count,
+        },
+        "deltas": {
+            "score": round(latest_fb.overall_score - first_fb.overall_score, 1),
+            "interferences": latest_fb.interference_count - first_fb.interference_count,
+        },
+        "streak_days": streak,
+    }
+
+
+@router.get("/score-history")
+def get_score_history(
+    limit: int = Query(default=50, le=200),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    results = (
+        db.query(Recording, Feedback)
+        .join(Feedback, Feedback.recording_id == Recording.id)
+        .filter(Recording.user_id == current_user.id, Recording.status == "done")
+        .order_by(Recording.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    sessions = []
+    for rec, fb in reversed(results):
+        theme = rec.topic.theme if rec.topic else ""
+        sessions.append({
+            "id": rec.id,
+            "date": rec.created_at.isoformat(),
+            "date_short": rec.created_at.strftime("%d %b"),
+            "score": fb.overall_score,
+            "niveau": fb.detected_niveau or "",
+            "theme": theme,
+            "sub_scores": {
+                "pertinence_intro": fb.introduction_score,
+                "developpement": fb.development_score,
+                "argumentation": fb.argumentation_score,
+                "conclusion": fb.conclusion_score,
+                "connecteurs": fb.connectors_score,
+                "registre": fb.register_score,
+            },
+            "couches": {
+                "contenu": fb.couche1_contenu,
+                "discours": fb.couche2_discours,
+                "phrase": fb.couche3_phrase,
+                "interferences": fb.couche4_interferences,
+            },
+            "interference_count": fb.interference_count,
+            "moules_ratio": f"{fb.moules_detected_count}/{fb.moules_expected_count}" if fb.moules_expected_count else "0/0",
+            "duration": rec.duration_seconds,
+        })
+
+    return {"sessions": sessions}
+
+
+@router.get("/grammar-progression")
+def get_grammar_progression(
+    last_n: int = Query(default=12, le=30),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    feedback_ids = (
+        db.query(Feedback.id)
+        .join(Recording, Recording.id == Feedback.recording_id)
+        .filter(Recording.user_id == current_user.id, Recording.status == "done")
+        .order_by(Recording.created_at.desc())
+        .limit(last_n)
+        .all()
+    )
+    feedback_ids = [fid[0] for fid in reversed(feedback_ids)]
+
+    if not feedback_ids:
+        return {"grammar_points": [], "sessions_count": 0}
+
+    snapshots = (
+        db.query(GrammarSnapshot)
+        .filter(GrammarSnapshot.feedback_id.in_(feedback_ids))
+        .all()
+    )
+
+    grid = defaultdict(dict)
+    for snap in snapshots:
+        grid[snap.grammar_point][snap.feedback_id] = snap.status
+
+    grammar_data = []
+    for point in GRAMMAR_POINTS:
+        statuses = [grid.get(point, {}).get(fid, "na") for fid in feedback_ids]
+        current = "na"
+        for s in reversed(statuses):
+            if s != "na":
+                current = s
+                break
+        grammar_data.append({
+            "point": point,
+            "label": point.replace("_", " ").title(),
+            "statuses": statuses,
+            "current": current,
+        })
+
+    return {"grammar_points": grammar_data, "sessions_count": len(feedback_ids)}
+
+
+@router.get("/moules-progression")
+def get_moules_progression(
+    last_n: int = Query(default=5, le=20),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    feedback_ids = (
+        db.query(Feedback.id)
+        .join(Recording, Recording.id == Feedback.recording_id)
+        .filter(Recording.user_id == current_user.id, Recording.status == "done")
+        .order_by(Recording.created_at.desc())
+        .limit(last_n)
+        .all()
+    )
+    feedback_ids = [fid[0] for fid in feedback_ids]
+    session_count = len(feedback_ids)
+
+    if not feedback_ids:
+        return {"moules": [], "sessions_count": 0}
+
+    snapshots = (
+        db.query(MouleSnapshot)
+        .filter(MouleSnapshot.feedback_id.in_(feedback_ids))
+        .all()
+    )
+
+    detection_counts = defaultdict(int)
+    for snap in snapshots:
+        if snap.detected:
+            detection_counts[snap.moule_name] += 1
+
+    moules_data = []
+    weakest = None
+    weakest_freq = 1.0
+
+    for moule in CANONICAL_MOULES:
+        count = detection_counts.get(moule, 0)
+        freq = count / session_count if session_count > 0 else 0
+        moules_data.append({
+            "name": moule,
+            "label": moule.replace("_", " ").title(),
+            "detected_count": count,
+            "frequency": round(freq, 2),
+        })
+        if freq < weakest_freq:
+            weakest_freq = freq
+            weakest = moule.replace("_", " ").title()
+
+    return {"moules": moules_data, "sessions_count": session_count, "next_objective": weakest}
+
+
+@router.get("/activity-heatmap")
+def get_activity_heatmap(
+    weeks: int = Query(default=6, le=12),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    today = datetime.utcnow().date()
+    start_date = today - timedelta(days=weeks * 7)
+
+    sessions = (
+        db.query(Recording.created_at, Feedback.overall_score)
+        .join(Feedback, Feedback.recording_id == Recording.id)
+        .filter(
+            Recording.user_id == current_user.id,
+            Recording.status == "done",
+            Recording.created_at >= datetime(start_date.year, start_date.month, start_date.day),
+        )
+        .all()
+    )
+
+    by_date = defaultdict(list)
+    for created_at, score in sessions:
+        by_date[created_at.date()].append(score)
+
+    cursor = start_date - timedelta(days=start_date.weekday())
+    grid = []
+    for w in range(weeks):
+        week = []
+        for d in range(7):
+            day = cursor + timedelta(days=w * 7 + d)
+            day_sessions = by_date.get(day, [])
+            week.append({
+                "date": day.isoformat(),
+                "count": len(day_sessions),
+                "best_score": round(max(day_sessions), 1) if day_sessions else None,
+            })
+        grid.append(week)
+
+    return {"weeks": grid, "total_sessions": len(sessions)}
+
+
+@router.get("/niveau-trajectory")
+def get_niveau_trajectory(
+    target: str = Query(default="B2"),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    NIVEAU_SCORES = {
+        "A1": 4, "A2": 7, "A2+": 9, "B1": 11,
+        "B1+": 13, "B2": 15.5, "B2+": 17, "C1": 18.5, "C2": 20,
+    }
+
+    results = (
+        db.query(Recording.created_at, Feedback.detected_niveau, Feedback.overall_score)
+        .join(Feedback, Feedback.recording_id == Recording.id)
+        .filter(
+            Recording.user_id == current_user.id,
+            Recording.status == "done",
+            Feedback.detected_niveau != "",
+        )
+        .order_by(Recording.created_at.asc())
+        .all()
+    )
+
+    if not results:
+        return {"trajectory": [], "estimation": None}
+
+    trajectory = [
+        {"date": dt.isoformat(), "niveau": niv, "score": sc}
+        for dt, niv, sc in results
+    ]
+
+    target_score = NIVEAU_SCORES.get(target, 15.5)
+    current_score = results[-1][2]
+    first_score = results[0][2]
+    total_days = max(1, (results[-1][0] - results[0][0]).days)
+    score_per_day = (current_score - first_score) / total_days
+
+    if score_per_day > 0 and current_score < target_score:
+        weeks_remaining = max(1, int((target_score - current_score) / score_per_day / 7))
+    elif current_score >= target_score:
+        weeks_remaining = 0
+    else:
+        weeks_remaining = None
+
+    return {
+        "trajectory": trajectory,
+        "target": target,
+        "target_score": target_score,
+        "current_score": current_score,
+        "progress_pct": min(100, round((current_score / target_score) * 100)),
+        "estimated_weeks": weeks_remaining,
+    }
+
+
+@router.get("/interference-breakdown")
+def get_interference_breakdown(
+    last_n: int = Query(default=10, le=30),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    feedback_ids = (
+        db.query(Feedback.id)
+        .join(Recording, Recording.id == Feedback.recording_id)
+        .filter(Recording.user_id == current_user.id, Recording.status == "done")
+        .order_by(Recording.created_at.desc())
+        .limit(last_n)
+        .all()
+    )
+    feedback_ids = [fid[0] for fid in feedback_ids]
+
+    if not feedback_ids:
+        return {"types": [], "total": 0}
+
+    logs = (
+        db.query(InterferenceLog.interference_type, func.count(InterferenceLog.id))
+        .filter(InterferenceLog.feedback_id.in_(feedback_ids))
+        .group_by(InterferenceLog.interference_type)
+        .all()
+    )
+
+    total = sum(count for _, count in logs)
+    types = [
+        {
+            "type": itype,
+            "label": itype.replace("_", " ").title(),
+            "count": count,
+            "pct": round(count / total * 100) if total > 0 else 0,
+        }
+        for itype, count in sorted(logs, key=lambda x: -x[1])
+    ]
+
+    return {"types": types, "total": total, "over_sessions": len(feedback_ids)}

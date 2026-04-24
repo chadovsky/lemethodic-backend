@@ -1,0 +1,78 @@
+{
+  "id": "to_get_reflex",
+  "name_fr": "Le Réflexe \"to get\"",
+  "name_en": "The \"to get\" Reflex",
+  "category": "vocab_calque",
+  "severity": 4,
+  "active": true,
+  "L1_interference_description_fr": "En anglais, \"get\" est un verbe passe-partout. You get a beer, you get what someone's saying, you get home, you get angry, you get sick, you get a job. Un seul mot, des dizaines de sens. Quand vous parlez français, votre cerveau fait ce qu'il a toujours fait : il cherche le verbe passe-partout équivalent. Il choisit \"avoir.\" Et vous produisez \"J'ai eu une bière au bar,\" \"Je n'ai pas ce que vous voulez dire,\" \"J'ai été à la maison à six heures.\" Chacune de ces phrases sonne cassée à une oreille française — parce qu'en français, \"avoir\" n'est pas un verbe passe-partout. Ça veut dire posséder. Point. Le français a un verbe précis pour chaque contexte que l'anglais rassemble sous \"get\" : prendre une bière, comprendre ce qu'on dit, rentrer à la maison, devenir énervé, tomber malade, trouver un travail. Quand vous choisissez avoir, vous ne faites pas une faute de grammaire — vous révélez que vous pensez encore en anglais et que vous traduisez mot à mot. Cette faute revient dans pratiquement toutes les premières sessions qu'on analyse. Y compris chez des étudiants qui ont un niveau C1 en grammaire.",
+  "L1_interference_description_en": "In English, \"get\" is a universal verb. You get a beer, you get what someone's saying, you get home, you get angry, you get sick, you get a job. One word, dozens of meanings. When you speak French, your brain does what it always did: it reaches for the all-purpose verb. It picks \"avoir.\" And you produce \"J'ai eu une bière au bar,\" \"Je n'ai pas ce que vous voulez dire,\" \"J'ai été à la maison à six heures.\" Every one of those sentences sounds broken to a French ear — because \"avoir\" is not a universal verb in French. It means to have. Full stop. French has a specific verb for every context English collapses into \"get\": prendre a beer, comprendre what someone says, rentrer home, devenir angry, tomber sick, trouver a job. When you pick avoir, you're not making a grammar mistake — you're revealing that you're still thinking in English and translating word-for-word. This mistake shows up in nearly every first session we analyze — even from students with C1-level grammar.",
+  "detection_criteria": {
+    "keywords_wrong": [
+      "j'ai eu",
+      "j'ai (used with direct object in consumption/ordering contexts)",
+      "avoir (used where obtenir, recevoir, prendre, devenir, rentrer, tomber, trouver, or comprendre is needed)",
+      "je n'ai pas (as standalone response meaning 'I don't understand')",
+      "j'ai été (in motion contexts where 'I got home/arrived' is meant)",
+      "j'ai un travail (in narrative contexts where 'j'ai trouvé un travail' is meant)",
+      "j'ai une bière (when ordering, should be 'je prends')"
+    ],
+    "grammatical_signals": [
+      "use of avoir + direct object in contexts that require prendre (consumption, ordering at café/restaurant/bar)",
+      "use of avoir in contexts requiring expression of comprehension (should be comprendre)",
+      "use of avoir or 'avoir été' for arrival/return to a location (should be rentrer or arriver)",
+      "use of avoir for emotional or physical state changes (should be devenir for evolutions, tomber for sudden negative changes)",
+      "use of avoir for acquisition of job/position/qualification gained through effort (should be obtenir for formal achievements, trouver for results of search)",
+      "systematic calquing pattern: avoir chosen over the contextually-appropriate French verb"
+    ],
+    "contextual_triggers": [
+      "T1 or T2 contexts involving ordering food/drinks (bars, restaurants, cafés, agency role-play)",
+      "dialogue requiring candidate to express understanding or lack thereof",
+      "narration involving arrival home, return to a place, or reaching a destination",
+      "describing emotional or physical state changes (angry, tired, happy, sick)",
+      "describing career/professional acquisitions (job, position, promotion, degree, certificate)",
+      "any context where English speakers would naturally use 'get' in their native language"
+    ]
+  },
+  "examples": [
+    {
+      "context": "T2 role-play — ordering at a café or restaurant",
+      "wrong_utterance": "Bonjour, j'ai eu un café, s'il vous plaît.",
+      "corrected_utterance": "Bonjour, je prends un café, s'il vous plaît.",
+      "explanation_fr": "En anglais \"I'll get a coffee\" signifie qu'on commande un café. Les anglophones traduisent \"get\" → \"avoir\" automatiquement. Mais en français, on n'a pas un café dans un café — on le prend. Prendre est le bon verbe pour la consommation et la commande : je prends un café, je prends une bière, je prends le menu du jour. À retenir : dès que vous êtes sur le point de dire \"I'll have X\" ou \"I'll get X\" à table, le verbe français est prendre, pas avoir.",
+      "explanation_en": "In English \"I'll get a coffee\" means you're ordering one. English speakers translate \"get\" → \"avoir\" automatically. But in French, you don't \"have\" a coffee in a café — you \"take\" it. Prendre is the correct verb for consumption and ordering: je prends un café, je prends une bière, je prends le menu du jour. Remember: whenever you're about to say \"I'll have X\" or \"I'll get X\" at any table, the French verb is prendre, not avoir."
+    },
+    {
+      "context": "T1 or T2 dialogue — examiner says something complex, candidate signals understanding or lack thereof",
+      "wrong_utterance": "Excusez-moi, je n'ai pas ce que vous voulez dire.",
+      "corrected_utterance": "Excusez-moi, je ne comprends pas ce que vous voulez dire.",
+      "explanation_fr": "\"I don't get it\" se traduit directement par \"je n'ai pas\" dans la tête d'un anglophone. Mais avoir n'a pas de sens de compréhension en français. Le bon verbe est comprendre. Pour signaler poliment une incompréhension, \"je ne comprends pas\" ou \"je n'ai pas bien compris\" sont naturels. Utiliser avoir ici produit une phrase que les francophones ne peuvent littéralement pas interpréter — ils entendent \"I don't have what you mean,\" qui ne veut rien dire.",
+      "explanation_en": "\"I don't get it\" translates directly to \"je n'ai pas\" in the English-speaker's head. But avoir has no meaning of understanding in French. The correct verb is comprendre. If you want to signal confusion politely, \"je ne comprends pas\" or \"je n'ai pas bien compris\" are the natural French. Using avoir here produces a sentence that French listeners literally cannot parse — they hear \"I don't have what you mean,\" which is not a thing."
+    },
+    {
+      "context": "T1 interview — candidate describing daily routine or recent activity",
+      "wrong_utterance": "Hier soir, j'ai été à la maison à six heures.",
+      "corrected_utterance": "Hier soir, je suis rentré à la maison à six heures.",
+      "explanation_fr": "\"I got home at 6\" utilise \"get\" au sens d'arriver ou rentrer. Les anglophones choisissent \"avoir été\" en pensant dire \"I was at home.\" Mauvais modèle mental — le français utilise rentrer pour le retour à la maison, arriver pour atteindre une destination. Je suis rentré à 6h est la phrase naturelle pour \"I got home at 6.\" \"J'ai été\" fonctionne dans d'autres contextes mais sonne étrange ici.",
+      "explanation_en": "\"I got home at 6\" uses \"get\" to mean arrive or return. English speakers reach for \"avoir été\" (compound past of être) thinking they're saying \"I was at home.\" Wrong mental model — French uses rentrer for returning home, arriver for reaching a destination. Je suis rentré à 6h is the natural phrase for \"I got home at 6.\" \"J'ai été\" works in other contexts but sounds alien here."
+    },
+    {
+      "context": "T1 or T2 narrative — candidate describing emotional or physical state changes",
+      "wrong_utterance": "J'ai eu malade la semaine dernière.",
+      "corrected_utterance": "Je suis tombé malade la semaine dernière.",
+      "explanation_fr": "\"I got sick\" devient \"j'ai eu malade\" dans la tête d'un anglophone — doublement faux. D'abord, avoir n'exprime pas le changement d'état. Ensuite, le français utilise des métaphores de mouvement pour devenir malade : tomber malade. Même schéma pour d'autres changements d'état : devenir fou, devenir vieux. À mémoriser : changement d'état → devenir ou tomber, jamais avoir.",
+      "explanation_en": "\"I got sick\" translates to \"j'ai eu malade\" in English-speaker brain — wrong on two counts. First, avoir doesn't express state change. Second, French uses motion metaphors for becoming ill: tomber malade (to fall sick). Same pattern for other state changes: devenir fou (to get/become crazy), devenir vieux (to get old). Memorize the pairs: state change → devenir or tomber, never avoir."
+    },
+    {
+      "context": "T1 interview or T2 role-play — candidate describing employment, achievement, or result",
+      "wrong_utterance": "L'année dernière, j'ai eu un travail dans une entreprise de tech.",
+      "corrected_utterance": "L'année dernière, j'ai trouvé un travail dans une entreprise de tech.",
+      "explanation_fr": "\"I got a job\" utilise \"get\" pour une acquisition résultant d'un effort. L'anglophone voit \"get = avoir = j'ai obtenu.\" Faux. Le français distingue : trouver (après une recherche), obtenir (après un effort formel, souvent pour diplômes, permis, postes). \"J'ai un travail\" veut dire que vous en avez un actuellement (fait statique). \"J'ai trouvé un travail\" veut dire que vous avez mené la recherche et réussi (l'action que vous vouliez décrire).",
+      "explanation_en": "\"I got a job\" uses \"get\" for acquisition achieved through effort. The English speaker sees \"get = avoir = have acquired.\" Wrong. French distinguishes: trouver (to find — implies search and success), obtenir (to obtain — implies formal effort, often used for diplomas, permits, positions). \"J'ai un travail\" means you currently have one (static fact). \"J'ai trouvé un travail\" means you went out and got one (the action you meant to describe)."
+    }
+  ],
+  "content_refs": [],
+  "drill_ids": [],
+  "prerequisite_module_ids": [],
+  "raccourci_lesson_id": null
+}
