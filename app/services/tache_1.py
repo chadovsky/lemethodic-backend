@@ -27,6 +27,7 @@ import httpx
 
 from app.config import settings
 from app.services.analysis import analyze_transcript, _call_claude
+from app.services.module_detector import detect_modules
 from app.services.personas.tache_1_examiner import (
     FALLBACK_CLOSE,
     MAX_CANDIDATE_TURNS,
@@ -398,5 +399,21 @@ async def analyze_tache_1(
         "max_candidate_turns": MAX_CANDIDATE_TURNS,
         "under_min_turns": candidate_turn_count < MIN_CANDIDATE_TURNS,
     }
+
+    # F-080b: module detection layer. Runs against the same combined
+    # candidate transcript used by the 4-couche analyzer above.
+    # Persistence happens in the conversations.py /end handler via
+    # module_library.persist_detected_modules — this just attaches the
+    # detection result to the analyzer's output dict.
+    db = kwargs.get("db")
+    if db is not None:
+        detection = await detect_modules(combined_transcript, "tache_1", db)
+        result["detected_modules"] = detection["detected_modules"]
+        result["primary_module"] = detection["primary_module"]
+    else:
+        # Crossover/test path with no DB session — leave defaults so the
+        # persistence layer is a no-op.
+        result["detected_modules"] = []
+        result["primary_module"] = None
 
     return result

@@ -27,6 +27,7 @@ import logging
 
 from app.config import settings
 from app.services.analysis import analyze_transcript, _call_claude
+from app.services.module_detector import detect_modules
 
 logger = logging.getLogger(__name__)
 
@@ -191,4 +192,17 @@ async def analyze_tache_3(
         "tache_3_argumentation_total": arg_total,
         "tache_3_argumentation_max": 25,
     }
+
+    # F-080b: module detection. T3 only ever runs through the
+    # recordings.py upload path (no /end), so the router passes db
+    # explicitly via _kwargs.
+    db = _kwargs.get("db")
+    if db is not None:
+        detection = await detect_modules(transcript or "", "tache_3", db)
+        result["detected_modules"] = detection["detected_modules"]
+        result["primary_module"] = detection["primary_module"]
+    else:
+        result["detected_modules"] = []
+        result["primary_module"] = None
+
     return result

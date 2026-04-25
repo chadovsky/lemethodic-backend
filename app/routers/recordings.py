@@ -17,6 +17,7 @@ from app.services.scoring_profiles import (
     compute_weighted_note_globale,
 )
 from app.services.pattern_catalog import log_unknown_pattern_keys
+from app.services.module_library import persist_detected_modules
 from app.services.scoring_maps import cefr_from_score, clb_from_cefr
 from app.services.transcript_suggestions import suggest_corrections
 from app.config import settings
@@ -99,6 +100,11 @@ async def _run_analysis_and_persist(
             # so the argumentation sub-call can quote the prompt back.
             # Ignored by other modes — they don't read this kwarg.
             tache_3_prompt=tache_3_prompt,
+            # F-080b: thread DB session into the per-mode analyzer so
+            # module_detector can query the active library. T3 lives
+            # entirely on this path (no /end), so this is the ONLY place
+            # T3 sessions get module detection wired.
+            db=db,
         )
 
         log_unknown_pattern_keys(analysis)
@@ -189,6 +195,27 @@ async def _run_analysis_and_persist(
         rec.status = "done"
         db.commit()
         db.refresh(feedback)
+
+        # F-080b: persist module detections AFTER the Recording + Feedback
+        # rows are committed (FK target on session_detected_modules.recording_id
+        # is rec.id, which exists by now). The helper logs and skips
+        # hallucinated module_ids; it never raises. Wrap defensively
+        # anyway — analysis success must not depend on detection success.
+        try:
+            persist_detected_modules(
+                recording_id=rec.id,
+                detected_modules=analysis.get("detected_modules") or [],
+                primary_module_id=analysis.get("primary_module"),
+                db=db,
+            )
+        except Exception as exc:
+            logger.exception(
+                "F-080b: persist_detected_modules raised on recording_id=%s "
+                "(%s); upload completes regardless.",
+                rec.id,
+                exc,
+            )
+
         return feedback
     except Exception as e:
         rec.status = "error"

@@ -32,6 +32,7 @@ import httpx
 
 from app.config import settings
 from app.services.analysis import analyze_transcript, _call_claude
+from app.services.module_detector import detect_modules
 from app.services.personas.tache_2_examiner import (
     BEHAVIOR_RULES,
     MAX_CANDIDATE_TURNS_HARD,
@@ -371,4 +372,18 @@ async def analyze_tache_2(
         "max_candidate_turns_hard": MAX_CANDIDATE_TURNS_HARD,
         "max_candidate_turns_hint": MAX_CANDIDATE_TURNS_HINT,
     }
+
+    # F-080b: module detection. Same pattern as tache_1 — runs over the
+    # candidate-only transcript (Yarden-relevant questioning strategy is
+    # scored above; module detection is about L1-interference patterns
+    # in the candidate's own utterances).
+    db = kwargs.get("db")
+    if db is not None:
+        detection = await detect_modules(candidate_transcript, "tache_2", db)
+        result["detected_modules"] = detection["detected_modules"]
+        result["primary_module"] = detection["primary_module"]
+    else:
+        result["detected_modules"] = []
+        result["primary_module"] = None
+
     return result

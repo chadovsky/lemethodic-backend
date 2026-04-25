@@ -55,6 +55,7 @@ from app.services.tache_2 import (
     analyze_tache_2,
     generate_examiner_turn as generate_examiner_turn_t2,
 )
+from app.services.module_library import persist_detected_modules
 from app.services.tts import synthesize as tts_synthesize
 from app.services.personas.tache_1_examiner import (
     MAX_CANDIDATE_TURNS as T1_MAX_CANDIDATE_TURNS,
@@ -354,6 +355,10 @@ async def _run_conversation_analysis_and_persist(
         low_confidence_words=low_conf,
         exam_profile=conv.exam_profile or "tcf_canada",
         fluency_score=fluency_score,
+        # F-080b: thread the DB session into the analyzer so the
+        # module_detector can query the active library. analyzer returns
+        # detected_modules + primary_module on the result dict.
+        db=db,
     )
     log_unknown_pattern_keys(analysis)
 
@@ -467,6 +472,31 @@ async def _run_conversation_analysis_and_persist(
     conv.completed_at = datetime.datetime.utcnow()
     db.commit()
     db.refresh(rec)
+
+    # F-080b: persist module detections AFTER the Recording row is
+    # committed (so the FK target exists). Hallucinated module_ids and
+    # malformed entries are dropped with WARNING logs by the helper —
+    # the helper never raises, so this is safe to call without a
+    # try/except. Empty detected_modules list is logged as INFO and
+    # produces zero rows.
+    try:
+        persist_detected_modules(
+            recording_id=rec.id,
+            detected_modules=analysis.get("detected_modules") or [],
+            primary_module_id=analysis.get("primary_module"),
+            db=db,
+        )
+    except Exception as exc:
+        # Defensive belt-and-braces: detection persistence must not
+        # crash session finalization. Log loudly and let /end return
+        # the recording_id so the user still lands on /diagnostic.
+        logger.exception(
+            "F-080b: persist_detected_modules raised on recording_id=%s "
+            "(%s); session finalize continues.",
+            rec.id,
+            exc,
+        )
+
     return rec
 
 
