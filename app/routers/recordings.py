@@ -5,7 +5,14 @@ from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
 from app.database import get_db
-from app.models.models import User, Recording, Feedback, TestTopic
+from app.models.models import (
+    User,
+    Recording,
+    Feedback,
+    TestTopic,
+    RemediationModule,
+    SessionDetectedModule,
+)
 from app.services.auth import get_current_user
 from app.services.stt import transcribe_audio
 from app.services.analysis import analyze_transcript, analyze_recording
@@ -600,6 +607,149 @@ def get_history(
             entry["exam_profile_score"] = profile_eval["overall_score"]
         results.append(entry)
     return results
+
+
+def _hydrate_module_for_response(row: RemediationModule) -> dict:
+    """Parse the JSON-blob columns into the structured shape the
+    frontend expects. Mirror of app.routers.modules._hydrate but
+    returns a plain dict (not pydantic) since this endpoint composes
+    several rows into a single response."""
+    try:
+        detection_criteria = json.loads(row.detection_criteria or "{}")
+        examples = json.loads(row.examples or "[]")
+        content_refs = json.loads(row.content_refs or "[]")
+        drill_ids = json.loads(row.drill_ids or "[]")
+        prerequisite_module_ids = json.loads(row.prerequisite_module_ids or "[]")
+    except json.JSONDecodeError as exc:
+        logger.error(
+            "Module %s has malformed JSON in a blob column: %s — returning skeleton.",
+            row.id,
+            exc,
+        )
+        detection_criteria = {}
+        examples = []
+        content_refs = []
+        drill_ids = []
+        prerequisite_module_ids = []
+    return {
+        "id": row.id,
+        "name_fr": row.name_fr,
+        "name_en": row.name_en,
+        "category": row.category,
+        "severity": row.severity,
+        "active": bool(row.active),
+        "L1_interference_description_fr": row.L1_interference_description_fr,
+        "L1_interference_description_en": row.L1_interference_description_en,
+        "detection_criteria": detection_criteria,
+        "examples": examples,
+        "content_refs": content_refs,
+        "drill_ids": drill_ids,
+        "prerequisite_module_ids": prerequisite_module_ids,
+        "raccourci_lesson_id": row.raccourci_lesson_id,
+    }
+
+
+@router.get("/{recording_id}/detected-modules")
+def get_detected_modules(
+    recording_id: int,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """F-080c — return the modules detected on this recording, hydrated
+    with full module content for the diagnostic page.
+
+    Response shape:
+        {
+          "primary_module": RemediationModule | null,
+          "secondary_modules": [RemediationModule, ...],
+          "detections": [
+            {module_id, confidence_score, supporting_quote, is_primary}
+          ]
+        }
+
+    Detections persisted by F-080b's persist_detected_modules helper
+    skip hallucinated module_ids before insert, so any row in
+    session_detected_modules is guaranteed to FK-resolve to an active
+    module here. The endpoint returns module data only; couche scores
+    flow through GET /api/recordings/{id} (existing).
+    """
+    rec = (
+        db.query(Recording)
+        .filter(Recording.id == recording_id, Recording.user_id == user.id)
+        .first()
+    )
+    if not rec:
+        raise HTTPException(404, "Recording not found")
+
+    detection_rows = (
+        db.query(SessionDetectedModule)
+        .filter(SessionDetectedModule.recording_id == rec.id)
+        .order_by(
+            SessionDetectedModule.is_primary.desc(),
+            SessionDetectedModule.id,
+        )
+        .all()
+    )
+
+    if not detection_rows:
+        return {
+            "primary_module": None,
+            "secondary_modules": [],
+            "detections": [],
+        }
+
+    # Hydrate referenced modules in one query (set keeps unique ids;
+    # detection_rows can repeat the same module_id for multiple
+    # supporting_quotes — F-080b's T1 avoir-misuse path emits 3 rows
+    # with module_id="to_get_reflex").
+    module_ids = {r.module_id for r in detection_rows}
+    module_rows = (
+        db.query(RemediationModule)
+        .filter(RemediationModule.id.in_(module_ids))
+        .all()
+    )
+    by_id = {m.id: m for m in module_rows}
+
+    primary_module = None
+    seen_secondary: set[str] = set()
+    secondary_modules: list[dict] = []
+
+    for det in detection_rows:
+        mod = by_id.get(det.module_id)
+        if mod is None:
+            # FK existed at insert time but the module was deleted since.
+            # Skip rather than 500 — log so the cleanup path surfaces.
+            logger.warning(
+                "F-080c: detection on recording_id=%s references missing "
+                "module_id=%r; skipping in response.",
+                rec.id,
+                det.module_id,
+            )
+            continue
+        if det.is_primary and primary_module is None:
+            primary_module = _hydrate_module_for_response(mod)
+            continue
+        if mod.id in seen_secondary or (primary_module and primary_module["id"] == mod.id):
+            continue
+        secondary_modules.append(_hydrate_module_for_response(mod))
+        seen_secondary.add(mod.id)
+
+    detections = [
+        {
+            "module_id": det.module_id,
+            "confidence_score": det.confidence_score,
+            "supporting_quote": det.supporting_quote,
+            "is_primary": bool(det.is_primary),
+        }
+        for det in detection_rows
+        if det.module_id in by_id
+    ]
+
+    return {
+        "primary_module": primary_module,
+        "secondary_modules": secondary_modules,
+        "detections": detections,
+    }
 
 
 @router.get("/{recording_id}")
