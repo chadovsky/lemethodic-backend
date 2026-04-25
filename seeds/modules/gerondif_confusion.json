@@ -1,0 +1,57 @@
+{
+  "id": "gerondif_confusion",
+  "name_fr": "La Confusion Gérondif",
+  "name_en": "The Gérondif Confusion",
+  "category": "verb_aspect",
+  "severity": 3,
+  "active": true,
+  "L1_interference_description_fr": "Quand vous avez commencé le français, on vous a appris que \"en + verbe-ant\" se traduisait par \"by/while + -ing\" en anglais. Donc \"en travaillant\" est devenu \"by working\" ou \"while working\" indifféremment dans votre tête. Sauf que ce sont deux usages complètement différents, et un francophone les entend comme deux phrases différentes. \"J'apprends le français en regardant des films\" veut dire I learn French BY watching films — les films sont le moyen. \"Je téléphone en marchant\" veut dire I'm phoning WHILE walking — deux actions simultanées. Même forme, deux sens sans rapport, et le fait que l'anglais les fusionne sous \"by/while + ing\" ne vous aide pas. La plupart des étudiants comprennent la forme (en + verbe-ant) sans jamais comprendre lequel des deux sens ils expriment. Résultat : la moitié de leurs phrases au gérondif sont ambiguës pour un francophone, qui doit deviner le sens voulu.",
+  "L1_interference_description_en": "When you started learning French, you learned that \"en + verbe-ant\" maps to English \"by/while + -ing.\" So \"en travaillant\" became \"by working\" or \"while working\" interchangeably in your head. But these are two completely different uses, and French listeners hear them as two different sentences. \"J'apprends le français en regardant des films\" means I learn French BY watching films — films are the means. \"Je téléphone en marchant\" means I'm phoning WHILE walking — two simultaneous actions. Same form, two unrelated meanings, and English merging them into \"by/while + ing\" doesn't help you. Most students figure out the form (en + verbe-ant) and never figure out which of the two meanings they're actually expressing. The result: half their gérondif sentences are ambiguous to a French listener, who has to guess which meaning was intended.",
+  "detection_criteria": {
+    "keywords_wrong": [
+      "en + verbe-ant constructions",
+      "en travaillant",
+      "en marchant",
+      "en regardant",
+      "en mangeant",
+      "en parlant",
+      "en utilisant",
+      "en étudiant",
+      "en + ant (any present participle form, used as inspection trigger only — wrongness depends on semantic context, see grammatical_signals)"
+    ],
+    "grammatical_signals": [
+      "use of en + present participle in a context where the means/manner reading and the simultaneity reading produce different meanings (genuine ambiguity)",
+      "use of gérondif where 'pendant que + indicative' would more clearly mean simultaneity",
+      "use of gérondif where 'parce que + indicative' or 'à cause de + nom' or 'grâce à + nom' would more clearly mean cause/means",
+      "candidate's surrounding context (what they're saying about) suggests one meaning but their gérondif phrasing leaves the other reading available",
+      "calque from English 'by + ing' (means) translated as 'en + ant' when the French would more naturally use a cleft structure ('c'est en X que Y') or a different construction"
+    ],
+    "contextual_triggers": [
+      "T1 interview where candidate describes how they learn or improve at something (means/manner contexts: 'I learn X by doing Y')",
+      "T1/T2 narratives describing daily routines with multiple simultaneous activities",
+      "T2 role-play recommendations involving means or method ('the best way to do X is by doing Y')",
+      "T3 monologue arguments using cause-effect chains where French would prefer 'grâce à' or 'parce que'",
+      "any candidate utterance where they pause before producing 'en + verbe-ant' (signals they're constructing it deliberately, not using it idiomatically)"
+    ]
+  },
+  "examples": [
+    {
+      "context": "T3 argumentative monologue — candidate explains how a phenomenon happens",
+      "wrong_utterance": "Les jeunes développent leur dépendance au téléphone en utilisant les réseaux sociaux.",
+      "corrected_utterance": "Les jeunes développent leur dépendance au téléphone à cause des réseaux sociaux.",
+      "explanation_fr": "La version fautive utilise le gérondif pour exprimer une cause-effet, mais c'est ambigu — est-ce que ça veut dire \"en utilisant les réseaux sociaux (c'est COMMENT ils deviennent dépendants)\" ou \"pendant qu'ils utilisent (la dépendance se produit pendant l'usage)\" ? Les deux lectures sont à côté. L'étudiant fait une affirmation CAUSALE et devrait dire \"à cause des réseaux sociaux\" ou reformuler pour rendre la causalité explicite.",
+      "explanation_en": "The wrong version uses gérondif for cause/effect, but it's ambiguous — does it mean \"by using social media (this is HOW they become dependent)\" or \"while using social media (the dependency happens during use)\"? Both readings are off. The student is making a CAUSAL claim and should say \"because of social media\" or rephrase to make the causality explicit."
+    }
+  ],
+  "content_refs": [
+    {
+      "type": "inline_markdown",
+      "display_order": 1,
+      "content_fr": "## Deux sens, une seule forme\n\nLe gérondif (*en* + verbe-ant) a deux sens en français. Ils sont sans rapport entre eux. Apprenez à les distinguer.\n\n### Sens n°1 : le MOYEN\n\n> **J'ai amélioré mon français en regardant des films.**\n\nLes films sont *comment* j'ai amélioré mon français. Ils sont la méthode, le moyen, l'outil. En anglais : \"I improved my French BY watching films.\"\n\nTest mental : *Si je remplace \"en + verbe-ant\" par \"by + ing\" en anglais, est-ce que ça fonctionne ?* Si oui → c'est le sens du moyen.\n\n### Sens n°2 : la SIMULTANÉITÉ\n\n> **Je téléphone à ma mère en marchant au parc.**\n\nL'appel et la marche se déroulent en même temps. Aucun n'a causé l'autre. En anglais : \"I'm calling my mother WHILE walking in the park.\"\n\nTest mental : *Si je remplace \"en + verbe-ant\" par \"while + ing\" en anglais, est-ce que ça fonctionne ?* Si oui → c'est le sens de la simultanéité.\n\n## Le test à se faire avant de produire un gérondif\n\nAvant chaque \"en + verbe-ant\" que vous voulez dire, posez-vous une seule question : **moyen ou simultanéité ?**\n\n- Si vous ne pouvez pas répondre clairement, **n'utilisez pas le gérondif.** Reformulez avec une construction plus claire.\n\n## Alternatives quand le gérondif ne marche pas\n\n| Vous voulez dire... | N'utilisez pas | Utilisez plutôt |\n|---|---|---|\n| Cause/effet (à cause de) | en + verbe-ant | *à cause de* + nom, *parce que* + verbe |\n| Action séquentielle (puis) | en + verbe-ant | *puis*, *ensuite*, *quand* + verbe |\n| But (pour) | en + verbe-ant | *pour* + infinitif |\n| Pendant une période plus longue | en + verbe-ant | *pendant que* + verbe |\n\n## Votre prochaine phrase\n\nAvant de produire un gérondif, faites le test : **moyen ou simultanéité ?** Si la réponse n'est pas évidente, le gérondif n'est probablement pas le bon choix. Reformulez.",
+      "content_en": "## Two meanings, one form\n\nThe gérondif (*en* + verbe-ant) has two meanings in French. They're unrelated to each other. Learn to distinguish them.\n\n### Meaning #1: MEANS / METHOD\n\n> **J'ai amélioré mon français en regardant des films.**\n\nThe films are *how* I improved my French. They're the method, the means, the tool. In English: \"I improved my French BY watching films.\"\n\nMental test: *If I replace \"en + verbe-ant\" with \"by + ing\" in English, does it work?* If yes → this is the means/method meaning.\n\n### Meaning #2: SIMULTANEITY\n\n> **Je téléphone à ma mère en marchant au parc.**\n\nThe call and the walk are happening at the same time. Neither caused the other. In English: \"I'm calling my mother WHILE walking in the park.\"\n\nMental test: *If I replace \"en + verbe-ant\" with \"while + ing\" in English, does it work?* If yes → this is the simultaneity meaning.\n\n## The test to run before producing a gérondif\n\nBefore any \"en + verbe-ant\" you want to say, ask yourself one question: **means or simultaneity?**\n\n- If you can't answer clearly, **don't use the gérondif.** Rephrase with a clearer construction.\n\n## Alternatives when gérondif doesn't fit\n\n| You want to say... | Don't use | Use instead |\n|---|---|---|\n| Cause/effect (because of) | en + verbe-ant | *à cause de* + noun, *parce que* + verb |\n| Sequential action (then) | en + verbe-ant | *puis*, *ensuite*, *quand* + verb |\n| Purpose (in order to) | en + verbe-ant | *pour* + infinitive |\n| Over a longer period | en + verbe-ant | *pendant que* + verb |\n\n## Your next sentence\n\nBefore producing a gérondif, run the test: **means or simultaneity?** If the answer isn't obvious, gérondif probably isn't the right choice. Rephrase."
+    }
+  ],
+  "drill_ids": [],
+  "prerequisite_module_ids": [],
+  "raccourci_lesson_id": 16
+}

@@ -63,13 +63,21 @@ def fetch_active_modules_for_prompt(db: Session) -> str:
     Empty string when the library is empty — callers should treat this
     as "skip module detection" rather than "force-detect with no
     options". The detector.py wrapper enforces that.
+
+    F-080b post-ship fix (Path A): ordering is alphabetical-by-id rather
+    than severity-DESC. Severity-ordered injection biased the model to
+    anchor on the first vivid surface-visible match (e.g. nuance_reflex
+    severity 5) and underweight subtler conditional ones (e.g.
+    gerondif_confusion severity 3). Alphabetical is deterministic
+    (avoids the run-to-run variance that random ordering introduced)
+    and category/severity-neutral.
     """
     import json
 
     rows = (
         db.query(RemediationModule)
         .filter(RemediationModule.active == True)  # noqa: E712
-        .order_by(RemediationModule.severity.desc(), RemediationModule.id)
+        .order_by(RemediationModule.id)
         .all()
     )
     if not rows:

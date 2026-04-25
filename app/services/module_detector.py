@@ -85,39 +85,125 @@ TÂCHE-SPECIFIC PRIORITY
 DETECTION RULES
 ═══════════════════════════════════════════════════════════
 
-1. For each module above, decide whether the candidate's transcript shows the patterns described in keywords_wrong, grammatical_signals, AND/OR contextual_triggers. A match on any one of those signal types is sufficient — you don't need all three.
+Modules fall into TWO classes. The class determines how you score and how aggressive you should be about emitting.
 
-2. For every match, emit a detection entry with:
+──────────────────────────────────────────────────────────
+CLASS 1 — Surface-visible modules (the default)
+──────────────────────────────────────────────────────────
+
+These modules describe patterns that are wrong on sight. The keywords_wrong list contains forms that ARE the mistake (e.g. "j'ai eu une bière" when ordering is wrong; "je suis d'accord" landed without concession is wrong in opinion contexts). For these:
+
+1. Decide whether the candidate's transcript shows the patterns described in keywords_wrong, grammatical_signals, AND/OR contextual_triggers. A match on any ONE of those signal types is sufficient — you don't need all three.
+
+2. Confidence:
+   - Use 0.85+ when keywords_wrong appear verbatim or grammatical_signals are unmistakable.
+   - Use 0.55–0.75 when the pattern is suggested but the supporting quote is short or ambiguous.
+   - Below 0.4: don't emit — false detections degrade student trust more than missed detections.
+
+──────────────────────────────────────────────────────────
+CLASS 2 — Conditional modules (semantic-context dependent)
+──────────────────────────────────────────────────────────
+
+Some modules use keywords_wrong as INSPECTION TRIGGERS — surface forms that warrant closer reading but are NOT in themselves wrong. You identify a module as conditional when its keywords_wrong field contains markers like:
+   - "context-dependent"
+   - "wrongness depends on" (e.g. "wrongness depends on semantic context")
+   - "inspection trigger only"
+   - "conditional"
+   - "see grammatical_signals" (back-pointer telling you keywords are insufficient)
+
+For conditional modules, keyword presence ALONE is INSUFFICIENT for detection. Apply this 4-step process:
+
+   a. Identify the surface form match (e.g. "en utilisant les réseaux sociaux" matches the inspection trigger "en + ant").
+   b. Evaluate the surrounding semantic intent against the module's grammatical_signals — what is the candidate ACTUALLY trying to say (cause? means? simultaneity? method?)
+   c. Only flag the module if the semantic mismatch is verified (e.g. the candidate means causation, where "à cause de / parce que" would land cleanly, but they used the gérondif which leaves the manner reading available).
+   d. Emit at MODERATE confidence (0.55–0.75), reflecting that semantic inference is harder than surface matching.
+
+CRITICAL: For conditional modules, the 0.4 floor does NOT apply. "Unmistakable" is unattainable for conditional modules by definition — that's what makes them conditional. Do NOT suppress a verified semantic mismatch just because confidence isn't high. If steps (a) → (c) all check out, emit even at 0.55.
+
+──────────────────────────────────────────────────────────
+SHARED RULES (both classes)
+──────────────────────────────────────────────────────────
+
+3. For every detection (either class), emit an entry with:
    - module_id: the EXACT id from the library above (case-sensitive). NEVER invent an id. NEVER use a synonym or paraphrase of an id. If the candidate shows a pattern that doesn't fit any module above, omit it from output.
-   - confidence: a float in [0, 1]. Use 0.85+ when keywords_wrong appear verbatim or grammatical_signals are unmistakable. Use 0.55–0.75 when the pattern is suggested but the supporting quote is short or ambiguous. Below 0.4: don't emit — false detections degrade student trust more than missed detections.
+   - confidence: a float in [0, 1] per the class rules above.
    - supporting_quote: an EXACT verbatim phrase from the candidate's transcript that triggered the detection. Do NOT paraphrase. Do NOT synthesize. If you cannot point to an exact phrase, do not emit the detection.
 
-3. primary_module: among the detections you emit, pick the one with highest combined (priority-category-weight × severity × confidence) as primary_module. If you emit zero detections, primary_module MUST be null.
+4. Multiple modules CAN match the same transcript. Emit them all — don't suppress a conditional-module detection just because a surface-visible one is also present. Conditional modules are subtler and easier to miss; the candidate benefits from seeing both.
 
-4. Empty result is valid and EXPECTED for clean speech. If no module from the library above matches the candidate's transcript, return:
-   {{"detected_modules": [], "primary_module": null}}
+5. primary_module: among the detections you emit, pick the one with highest combined (priority-category-weight × severity × confidence) as primary_module. If you emit zero detections, primary_module MUST be null.
+
+6. Empty result is valid and EXPECTED for clean speech. If no module from the library above matches the candidate's transcript, return:
+   {"detected_modules": [], "primary_module": null}
    Do NOT force-match a module that doesn't fit. Do NOT invent module_ids.
 
 ═══════════════════════════════════════════════════════════
 OUTPUT FORMAT
 ═══════════════════════════════════════════════════════════
 
-Return ONLY a JSON object, no preamble, no code fences:
+Return ONLY a JSON object, no preamble, no code fences. Use single braces (this is literal JSON, not a format-string template):
 
-{{
+{
   "detected_modules": [
-    {{
+    {
       "module_id": "<exact id from library>",
       "confidence": <float 0..1>,
       "supporting_quote": "<exact phrase from candidate transcript>"
-    }}
+    }
   ],
   "primary_module": "<module_id of the highest-priority detection, or null>"
-}}
+}
 """
 
 
 _EMPTY_RESULT: dict = {"detected_modules": [], "primary_module": None}
+
+
+def _extract_first_json_object(s: str) -> dict | None:
+    """Extract the first balanced ``{...}`` JSON object from a string,
+    tolerant of leading/trailing prose. Returns the parsed dict or None.
+
+    Background: the detection prompt explicitly asks Claude to "Return
+    ONLY a JSON object, no preamble, no code fences," but at default
+    temperature (1.0, inherited from analysis._call_claude) the model
+    occasionally emits prose preamble like "Looking at the transcript:"
+    before the JSON. This helper is the parser-side belt to that
+    prompt-side suspenders — surgical fallback so a single stochastic
+    prose lapse doesn't degrade detection to empty.
+    """
+    if not isinstance(s, str):
+        return None
+    start = s.find("{")
+    if start == -1:
+        return None
+    depth = 0
+    in_str = False
+    escape = False
+    for i in range(start, len(s)):
+        c = s[i]
+        if escape:
+            escape = False
+            continue
+        if in_str:
+            if c == "\\":
+                escape = True
+            elif c == '"':
+                in_str = False
+            continue
+        if c == '"':
+            in_str = True
+        elif c == "{":
+            depth += 1
+        elif c == "}":
+            depth -= 1
+            if depth == 0:
+                candidate = s[start : i + 1]
+                try:
+                    parsed = json.loads(candidate)
+                except json.JSONDecodeError:
+                    return None
+                return parsed if isinstance(parsed, dict) else None
+    return None
 
 
 async def detect_modules(
@@ -200,17 +286,27 @@ def _coerce_detection_payload(raw, tache_mode: str) -> dict:
     persistence layer's job. We just shape the payload."""
     if isinstance(raw, str):
         # _call_claude returns str when JSON parsing failed. Try one
-        # more loose extraction (sometimes the model wraps in prose).
+        # more loose extraction first (handles ```json fences), then
+        # fall back to balanced {...} extraction (handles prose
+        # preamble that occasionally slips past the system prompt).
         try:
             raw = json.loads(raw.strip().removeprefix("```json").removeprefix("```").removesuffix("```").strip())
         except json.JSONDecodeError:
-            logger.warning(
-                "F-080b detect_modules: Claude returned non-JSON for "
-                "tache_mode=%s (preview: %r); returning empty.",
+            extracted = _extract_first_json_object(raw)
+            if extracted is None:
+                logger.warning(
+                    "F-080b detect_modules: Claude returned non-JSON for "
+                    "tache_mode=%s (preview: %r); returning empty.",
+                    tache_mode,
+                    str(raw)[:120],
+                )
+                return dict(_EMPTY_RESULT)
+            logger.info(
+                "F-080b detect_modules: extracted JSON from prose preamble "
+                "for tache_mode=%s.",
                 tache_mode,
-                str(raw)[:120],
             )
-            return dict(_EMPTY_RESULT)
+            raw = extracted
 
     if not isinstance(raw, dict):
         logger.warning(
