@@ -1,4 +1,4 @@
-"""F-053 — seed 5 PLACEHOLDER quiz questions per Le Raccourci lesson.
+"""F-053 — seed 5 PLACEHOLDER quiz questions per L'École lesson.
 
 Every question below is generic and matches the lesson's broad topic,
 but is NOT pedagogically validated. Chadi replaces each one before
@@ -18,7 +18,7 @@ Idempotent: keyed by (lesson_id, question_number). Re-runs update the
 row in place, never duplicate.
 
 Usage from project root:
-    python -m scripts.seed_raccourci_quiz_placeholders
+    python -m scripts.seed_ecole_quiz_placeholders
 """
 from __future__ import annotations
 
@@ -26,7 +26,7 @@ import json
 import sys
 
 from app.database import SessionLocal
-from app.models.models import RaccourciLesson, RaccourciQuizQuestion
+from app.models.models import EcoleLesson, EcoleQuizQuestion
 
 
 # A question template helper — keeps the 80 payloads readable.
@@ -179,15 +179,15 @@ def _fallback_questions(lesson_title_fr: str) -> list[dict]:
     ]
 
 
-def _apply_questions(session, lesson: RaccourciLesson, question_payloads: list[dict]) -> tuple[int, int]:
+def _apply_questions(session, lesson: EcoleLesson, question_payloads: list[dict]) -> tuple[int, int]:
     inserted = 0
     updated = 0
     for q in question_payloads:
         existing = (
-            session.query(RaccourciQuizQuestion)
+            session.query(EcoleQuizQuestion)
             .filter(
-                RaccourciQuizQuestion.lesson_id == lesson.id,
-                RaccourciQuizQuestion.question_number == q["question_number"],
+                EcoleQuizQuestion.lesson_id == lesson.id,
+                EcoleQuizQuestion.question_number == q["question_number"],
             )
             .first()
         )
@@ -208,7 +208,7 @@ def _apply_questions(session, lesson: RaccourciLesson, question_payloads: list[d
                 setattr(existing, k, v)
             updated += 1
         else:
-            session.add(RaccourciQuizQuestion(
+            session.add(EcoleQuizQuestion(
                 lesson_id=lesson.id,
                 question_number=q["question_number"],
                 **common,
@@ -221,13 +221,13 @@ def main() -> int:
     session = SessionLocal()
     try:
         lessons = (
-            session.query(RaccourciLesson)
-            .order_by(RaccourciLesson.lesson_number)
+            session.query(EcoleLesson)
+            .order_by(EcoleLesson.lesson_number)
             .all()
         )
         if len(lessons) != 16:
-            print(f"Expected 16 raccourci_lessons, found {len(lessons)}. "
-                  f"Run seed_raccourci_lessons first.")
+            print(f"Expected 16 ecole_lessons, found {len(lessons)}. "
+                  f"Run seed_ecole_lessons first.")
             return 1
 
         total_ins = 0

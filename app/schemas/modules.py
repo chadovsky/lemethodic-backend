@@ -113,7 +113,7 @@ class RemediationModule(BaseModel):
     content_refs: List[ContentRef] = Field(default_factory=list)
     drill_ids: List[int] = Field(default_factory=list)
     prerequisite_module_ids: List[str] = Field(default_factory=list)
-    raccourci_lesson_id: Optional[int] = None
+    ecole_lesson_id: Optional[int] = None
 
     @field_validator("id")
     @classmethod

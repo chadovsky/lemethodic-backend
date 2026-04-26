@@ -93,7 +93,7 @@ def recurring_modules(
               "name_fr": str,
               "category": str,
               "severity": int,
-              "raccourci_lesson_id": int | null,
+              "ecole_lesson_id": int | null,
               "recurrence_count": int,           # >= 3
               "first_detected_at": ISO-8601,
               "last_detected_at":  ISO-8601,
@@ -167,7 +167,7 @@ def recurring_modules(
                 "name_fr": m.name_fr,
                 "category": m.category,
                 "severity": m.severity,
-                "raccourci_lesson_id": m.raccourci_lesson_id,
+                "ecole_lesson_id": m.ecole_lesson_id,
                 "recurrence_count": int(row.recurrence_count),
                 "first_detected_at": _coerce_iso(row.first_detected_at),
                 "last_detected_at": _coerce_iso(row.last_detected_at),

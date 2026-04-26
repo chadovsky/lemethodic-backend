@@ -512,9 +512,9 @@ async def confirm_transcript(
 # ══════════════════════════════════════════════════════════════════
 
 def _tache3_is_above_a2(user: User, db: Session) -> bool:
-    """F-053: delegate to the raccourci gating service — replaces the
+    """F-053: delegate to the ecole gating service — replaces the
     F-051 stub that always returned False."""
-    from app.services.raccourci_gating import is_above_a2
+    from app.services.ecole_gating import is_above_a2
     return is_above_a2(user, db)
 
 
@@ -524,7 +524,7 @@ def list_tache3_topics(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
-    """Return the Tâche 3 topic catalog filtered by the Le Raccourci
+    """Return the Tâche 3 topic catalog filtered by the L'École
     gate. Only rows with a non-empty ``tache_3_prompt_fr`` are surfaced;
     seeded-but-un-prompted rows would confuse the picker."""
     allowed = {"A2_B1"}
@@ -645,7 +645,7 @@ def _hydrate_module_for_response(row: RemediationModule) -> dict:
         "content_refs": content_refs,
         "drill_ids": drill_ids,
         "prerequisite_module_ids": prerequisite_module_ids,
-        "raccourci_lesson_id": row.raccourci_lesson_id,
+        "ecole_lesson_id": row.ecole_lesson_id,
     }
 
 

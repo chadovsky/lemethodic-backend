@@ -3,7 +3,7 @@
 Public-read endpoints for the authored module library. No auth gate in
 V1 (modules are product-educational content, not per-user data). Users
 don't typically call these directly — the diagnostic page (F-080c) and
-Raccourci tab (F-080d) consume them.
+École tab (F-080d) consume them.
 
 Endpoints:
 - GET /api/modules              → all active modules (optionally filtered by category)
@@ -77,7 +77,7 @@ def _hydrate(row: RemediationModuleORM) -> RemediationModuleSchema:
         content_refs=content_refs,
         drill_ids=drill_ids,
         prerequisite_module_ids=prerequisite_module_ids,
-        raccourci_lesson_id=row.raccourci_lesson_id,
+        ecole_lesson_id=row.ecole_lesson_id,
     )
 
 

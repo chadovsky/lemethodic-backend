@@ -49,10 +49,10 @@ CREATE TABLE IF NOT EXISTS remediation_modules (
     content_refs TEXT NOT NULL DEFAULT '[]',
     drill_ids TEXT NOT NULL DEFAULT '[]',
     prerequisite_module_ids TEXT NOT NULL DEFAULT '[]',
-    raccourci_lesson_id INTEGER,
+    ecole_lesson_id INTEGER,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (raccourci_lesson_id) REFERENCES raccourci_lessons(id)
+    FOREIGN KEY (ecole_lesson_id) REFERENCES ecole_lessons(id)
 )
 """
 

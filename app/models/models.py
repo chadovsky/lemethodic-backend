@@ -153,7 +153,7 @@ class TestTopic(Base):
     tache_3_prompt_fr = Column(Text, default="")
     tache_3_prompt_en = Column(Text, default="")
     tache_3_prompt_es = Column(Text, default="")
-    # A2_B1 | B1_B2 | B2_C1 — gates by Le Raccourci progression (F-053).
+    # A2_B1 | B1_B2 | B2_C1 — gates by L'École progression (F-053).
     tache_3_difficulty = Column(String(10), default="B1_B2")
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
@@ -302,18 +302,18 @@ class RemediationModule(Base):
     drill_ids = Column(Text, nullable=False, default="[]")     # JSON array of int
     prerequisite_module_ids = Column(Text, nullable=False, default="[]")  # JSON array of str
 
-    # Optional canonical Raccourci lesson this module maps to. Most
-    # modules leave this null — modules and Raccourci lessons are
-    # independent bodies of content. When set, the F-080d Raccourci tab
+    # Optional canonical École lesson this module maps to. Most
+    # modules leave this null — modules and École lessons are
+    # independent bodies of content. When set, the F-080d École tab
     # shows a "Your gap" badge on that lesson.
-    raccourci_lesson_id = Column(
-        Integer, ForeignKey("raccourci_lessons.id"), nullable=True
+    ecole_lesson_id = Column(
+        Integer, ForeignKey("ecole_lessons.id"), nullable=True
     )
 
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow)
 
-    raccourci_lesson = relationship("RaccourciLesson")
+    ecole_lesson = relationship("EcoleLesson")
 
 
 class SessionDetectedModule(Base):
@@ -374,7 +374,7 @@ class Tache2Scenario(Base):
     # formel | semi_formel | informel — drives tu/vous + tone in the
     # examiner prompt.
     register = Column(String(20), default="formel")
-    # A2_B1 | B1_B2 | B2_C1 — gates per Le Raccourci progression
+    # A2_B1 | B1_B2 | B2_C1 — gates per L'École progression
     # (F-053 wires the actual gate; this field is the source of truth).
     difficulty = Column(String(10), default="A2_B1")
     # Provenance so Chadi can track which Yarden doc a scenario came from.
@@ -384,15 +384,15 @@ class Tache2Scenario(Base):
 
 
 # ───────────────────────────────────────────────────────────────
-# F-053 — Le Raccourci (named curriculum for anglophone learners).
+# F-053 — L'École (named curriculum for anglophone learners).
 # 16 locked lessons. Completion of all 16 unlocks "above A2" gating
 # that the rest of the app uses to filter advanced content (Tâche 2
 # scenarios, Tâche 3 prompts). Vocabulary path is a separate future
-# module and lives outside Le Raccourci.
+# module and lives outside L'École.
 # ───────────────────────────────────────────────────────────────
 
-class RaccourciLesson(Base):
-    __tablename__ = "raccourci_lessons"
+class EcoleLesson(Base):
+    __tablename__ = "ecole_lessons"
 
     id = Column(Integer, primary_key=True, index=True)
     # 1-16 in the locked sequence. Unique so the seeder's ordering is a
@@ -422,19 +422,19 @@ class RaccourciLesson(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     questions = relationship(
-        "RaccourciQuizQuestion",
+        "EcoleQuizQuestion",
         back_populates="lesson",
         cascade="all, delete-orphan",
-        order_by="RaccourciQuizQuestion.question_number",
+        order_by="EcoleQuizQuestion.question_number",
     )
 
 
-class RaccourciQuizQuestion(Base):
-    __tablename__ = "raccourci_quiz_questions"
+class EcoleQuizQuestion(Base):
+    __tablename__ = "ecole_quiz_questions"
 
     id = Column(Integer, primary_key=True, index=True)
     lesson_id = Column(
-        Integer, ForeignKey("raccourci_lessons.id"), nullable=False, index=True
+        Integer, ForeignKey("ecole_lessons.id"), nullable=False, index=True
     )
     # 1-10 within a lesson. Enforcing uniqueness per lesson is a
     # nice-to-have; the seeder + router sort by this value.
@@ -455,11 +455,11 @@ class RaccourciQuizQuestion(Base):
     # JSON list, only populated for multiple_choice; otherwise "[]".
     options = Column(Text, default="[]")
 
-    lesson = relationship("RaccourciLesson", back_populates="questions")
+    lesson = relationship("EcoleLesson", back_populates="questions")
 
 
-class UserRaccourciProgress(Base):
-    __tablename__ = "user_raccourci_progress"
+class UserEcoleProgress(Base):
+    __tablename__ = "user_ecole_progress"
     __table_args__ = (
         UniqueConstraint("user_id", "lesson_id", name="uq_user_lesson"),
     )
@@ -467,7 +467,7 @@ class UserRaccourciProgress(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     lesson_id = Column(
-        Integer, ForeignKey("raccourci_lessons.id"), nullable=False, index=True
+        Integer, ForeignKey("ecole_lessons.id"), nullable=False, index=True
     )
     # locked | unlocked | in_progress | completed
     status = Column(String(20), default="locked")
@@ -480,4 +480,4 @@ class UserRaccourciProgress(Base):
     updated_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     user = relationship("User")
-    lesson = relationship("RaccourciLesson")
+    lesson = relationship("EcoleLesson")

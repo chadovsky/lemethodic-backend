@@ -13,7 +13,7 @@ Endpoints:
 - POST /api/conversations/{id}/end  — manual end, trigger analysis
 - GET  /api/conversations/{id}      — hydrate UI from DB (refresh resume)
 - GET  /api/conversations/scenarios — F-049: Tâche 2 scenario catalog
-                                      filtered by the user's raccourci gate
+                                      filtered by the user's ecole gate
 """
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ from app.models.models import (
 from app.services.auth import get_current_user
 from app.services.fluency import compute_fluency
 from app.services.pattern_catalog import log_unknown_pattern_keys
-from app.services.raccourci_gating import is_above_a2 as _raccourci_is_above_a2
+from app.services.ecole_gating import is_above_a2 as _ecole_is_above_a2
 from app.services.scoring_profiles import (
     compute_weighted_note_globale,
     is_valid_mode,
@@ -79,14 +79,14 @@ _CONVERSATION_MODES: tuple[str, ...] = ("tache_1", "tache_2")
 
 
 def _is_above_a2(user: User, db: Session) -> bool:
-    """F-053: delegate to the Le Raccourci gating service. Replaces the
+    """F-053: delegate to the L'École gating service. Replaces the
     F-049 stub that returned False unconditionally."""
-    return _raccourci_is_above_a2(user, db)
+    return _ecole_is_above_a2(user, db)
 
 
 def _scenarios_for_user(db: Session, user: User) -> list[Tache2Scenario]:
     """Return the active scenarios visible to this user, filtered by
-    the raccourci gate. Ordered so pickers show A2_B1 content first
+    the ecole gate. Ordered so pickers show A2_B1 content first
     (the familiar ramp)."""
     q = db.query(Tache2Scenario).filter(Tache2Scenario.is_active == True)  # noqa: E712
     allowed = {"A2_B1"}
@@ -580,7 +580,7 @@ async def start_conversation(
         )
         if not scenario:
             raise HTTPException(404, f"Unknown or inactive scenario_code '{code}'")
-        # Raccourci gate — keep the check even for direct API callers so
+        # École gate — keep the check even for direct API callers so
         # the stub can't be bypassed by crafting requests by hand.
         if (scenario.difficulty or "A2_B1") != "A2_B1" and not _is_above_a2(user, db):
             raise HTTPException(

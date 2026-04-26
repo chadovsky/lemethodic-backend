@@ -1,4 +1,4 @@
-"""F-053 — seed the 16 Le Raccourci lessons with PLACEHOLDER content.
+"""F-053 — seed the 16 L'École lessons with PLACEHOLDER content.
 
 Every short description + detailed content field below is generic copy
 that keeps the shape of the product working end-to-end. Chadi replaces
@@ -17,14 +17,14 @@ that Chadi has already hand-edited (best_short + detailed paths) —
 nothing stomps on manual work.
 
 Usage from project root:
-    python -m scripts.seed_raccourci_lessons
+    python -m scripts.seed_ecole_lessons
 """
 from __future__ import annotations
 
 import sys
 
 from app.database import SessionLocal
-from app.models.models import RaccourciLesson
+from app.models.models import EcoleLesson
 
 
 # ─── lesson payloads ─────────────────────────────────────────────
@@ -169,8 +169,8 @@ LESSONS = [
 def _apply_row(session, payload: dict) -> str:
     code = payload["code"]
     existing = (
-        session.query(RaccourciLesson)
-        .filter(RaccourciLesson.code == code)
+        session.query(EcoleLesson)
+        .filter(EcoleLesson.code == code)
         .first()
     )
 
@@ -204,7 +204,7 @@ def _apply_row(session, payload: dict) -> str:
             existing.detailed_content_es = _ES_DETAIL  # stays None; explicit for clarity
         return "updated"
 
-    session.add(RaccourciLesson(
+    session.add(EcoleLesson(
         code=code,
         short_description_fr=_fr_desc(payload["title_fr"]),
         short_description_en=_en_desc(payload["title_en"]),
@@ -225,7 +225,7 @@ def main() -> int:
             counts[_apply_row(session, payload)] += 1
         session.commit()
         print(
-            f"Le Raccourci lessons seeded: "
+            f"L'École lessons seeded: "
             f"{counts['inserted']} inserted, {counts['updated']} updated. "
             f"(16 total. ES detailed_content intentionally null. "
             f"CHADI: replace placeholder content before launch.)"

@@ -64,7 +64,7 @@ def _serialize_for_db(parsed: ModuleSchema) -> dict:
         "prerequisite_module_ids": json.dumps(
             parsed.prerequisite_module_ids, ensure_ascii=False
         ),
-        "raccourci_lesson_id": parsed.raccourci_lesson_id,
+        "ecole_lesson_id": parsed.ecole_lesson_id,
     }
 
 

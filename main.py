@@ -10,7 +10,7 @@ from app.routers import oral
 from app.routers import patterns
 from app.routers import conversations
 from app.routers import audio
-from app.routers import raccourci
+from app.routers import ecole
 from app.routers import users
 from app.routers import modules
 from app.models import writing as writing_models  # ensure tables are created
@@ -43,7 +43,7 @@ app.include_router(oral.router)
 app.include_router(patterns.router)
 app.include_router(conversations.router)
 app.include_router(audio.router)
-app.include_router(raccourci.router)
+app.include_router(ecole.router)
 app.include_router(users.router)
 app.include_router(modules.router)
 

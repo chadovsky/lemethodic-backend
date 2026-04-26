@@ -1,4 +1,4 @@
-"""F-053 — create the Le Raccourci tables: lessons, quiz questions,
+"""F-053 — create the L'École tables: lessons, quiz questions,
 per-user progress.
 
 Forward creates all three tables + indexes; idempotent re-run.
@@ -6,9 +6,9 @@ Reverse drops them (with a safety refusal when any user progress rows
 are present, matching the pattern from add_conversation_tables).
 
 Usage from project root:
-    python -m scripts.add_raccourci_tables              # forward
-    python -m scripts.add_raccourci_tables --rollback   # reverse (safe if empty)
-    python -m scripts.add_raccourci_tables --rollback --force
+    python -m scripts.add_ecole_tables              # forward
+    python -m scripts.add_ecole_tables --rollback   # reverse (safe if empty)
+    python -m scripts.add_ecole_tables --rollback --force
 """
 import sqlite3
 import sys
@@ -17,7 +17,7 @@ from pathlib import Path
 DB_PATH = Path(__file__).resolve().parent.parent / "tcf_oral.db"
 
 DDL_LESSONS = """
-CREATE TABLE IF NOT EXISTS raccourci_lessons (
+CREATE TABLE IF NOT EXISTS ecole_lessons (
     id                           INTEGER PRIMARY KEY AUTOINCREMENT,
     lesson_number                INTEGER UNIQUE NOT NULL,
     code                         VARCHAR(64) UNIQUE NOT NULL,
@@ -36,13 +36,13 @@ CREATE TABLE IF NOT EXISTS raccourci_lessons (
     created_at                   DATETIME
 )
 """
-DDL_LESSONS_IDX_NUM = "CREATE UNIQUE INDEX IF NOT EXISTS ix_raccourci_lessons_number ON raccourci_lessons(lesson_number)"
-DDL_LESSONS_IDX_CODE = "CREATE UNIQUE INDEX IF NOT EXISTS ix_raccourci_lessons_code ON raccourci_lessons(code)"
+DDL_LESSONS_IDX_NUM = "CREATE UNIQUE INDEX IF NOT EXISTS ix_ecole_lessons_number ON ecole_lessons(lesson_number)"
+DDL_LESSONS_IDX_CODE = "CREATE UNIQUE INDEX IF NOT EXISTS ix_ecole_lessons_code ON ecole_lessons(code)"
 
 DDL_QUESTIONS = """
-CREATE TABLE IF NOT EXISTS raccourci_quiz_questions (
+CREATE TABLE IF NOT EXISTS ecole_quiz_questions (
     id                      INTEGER PRIMARY KEY AUTOINCREMENT,
-    lesson_id               INTEGER NOT NULL REFERENCES raccourci_lessons(id),
+    lesson_id               INTEGER NOT NULL REFERENCES ecole_lessons(id),
     question_number         INTEGER NOT NULL,
     question_type           VARCHAR(32) NOT NULL,
     question_fr             TEXT DEFAULT '',
@@ -56,13 +56,13 @@ CREATE TABLE IF NOT EXISTS raccourci_quiz_questions (
     options                 TEXT DEFAULT '[]'
 )
 """
-DDL_QUESTIONS_IDX = "CREATE INDEX IF NOT EXISTS ix_raccourci_questions_lesson ON raccourci_quiz_questions(lesson_id)"
+DDL_QUESTIONS_IDX = "CREATE INDEX IF NOT EXISTS ix_ecole_questions_lesson ON ecole_quiz_questions(lesson_id)"
 
 DDL_PROGRESS = """
-CREATE TABLE IF NOT EXISTS user_raccourci_progress (
+CREATE TABLE IF NOT EXISTS user_ecole_progress (
     id                INTEGER PRIMARY KEY AUTOINCREMENT,
     user_id           INTEGER NOT NULL REFERENCES users(id),
-    lesson_id         INTEGER NOT NULL REFERENCES raccourci_lessons(id),
+    lesson_id         INTEGER NOT NULL REFERENCES ecole_lessons(id),
     status            VARCHAR(20) DEFAULT 'locked',
     quiz_attempts     INTEGER DEFAULT 0,
     quiz_best_score   INTEGER DEFAULT 0,
@@ -72,8 +72,8 @@ CREATE TABLE IF NOT EXISTS user_raccourci_progress (
     UNIQUE(user_id, lesson_id)
 )
 """
-DDL_PROGRESS_IDX_USER = "CREATE INDEX IF NOT EXISTS ix_user_raccourci_progress_user ON user_raccourci_progress(user_id)"
-DDL_PROGRESS_IDX_LESSON = "CREATE INDEX IF NOT EXISTS ix_user_raccourci_progress_lesson ON user_raccourci_progress(lesson_id)"
+DDL_PROGRESS_IDX_USER = "CREATE INDEX IF NOT EXISTS ix_user_ecole_progress_user ON user_ecole_progress(user_id)"
+DDL_PROGRESS_IDX_LESSON = "CREATE INDEX IF NOT EXISTS ix_user_ecole_progress_lesson ON user_ecole_progress(lesson_id)"
 
 
 def forward(conn: sqlite3.Connection) -> int:
@@ -86,11 +86,11 @@ def forward(conn: sqlite3.Connection) -> int:
         cur.execute(stmt)
     conn.commit()
 
-    cur.execute("SELECT COUNT(*) FROM raccourci_lessons")
+    cur.execute("SELECT COUNT(*) FROM ecole_lessons")
     lessons = cur.fetchone()[0]
-    cur.execute("SELECT COUNT(*) FROM raccourci_quiz_questions")
+    cur.execute("SELECT COUNT(*) FROM ecole_quiz_questions")
     qs = cur.fetchone()[0]
-    cur.execute("SELECT COUNT(*) FROM user_raccourci_progress")
+    cur.execute("SELECT COUNT(*) FROM user_ecole_progress")
     progress = cur.fetchone()[0]
     print(
         f"Tables present — lessons={lessons} questions={qs} progress={progress}."
@@ -102,24 +102,24 @@ def rollback(conn: sqlite3.Connection, force: bool = False) -> int:
     cur = conn.cursor()
     # Refuse when user progress is present unless --force.
     cur.execute(
-        "SELECT name FROM sqlite_master WHERE type='table' AND name='user_raccourci_progress'"
+        "SELECT name FROM sqlite_master WHERE type='table' AND name='user_ecole_progress'"
     )
     if cur.fetchone():
-        cur.execute("SELECT COUNT(*) FROM user_raccourci_progress")
+        cur.execute("SELECT COUNT(*) FROM user_ecole_progress")
         rows = cur.fetchone()[0]
         if rows and not force:
             print(
-                f"Refusing to drop raccourci tables — {rows} progress row(s) present. "
+                f"Refusing to drop ecole tables — {rows} progress row(s) present. "
                 "Re-run with --force to discard."
             )
             return 2
 
     # Drop in FK order: progress -> questions -> lessons.
-    cur.execute("DROP TABLE IF EXISTS user_raccourci_progress")
-    cur.execute("DROP TABLE IF EXISTS raccourci_quiz_questions")
-    cur.execute("DROP TABLE IF EXISTS raccourci_lessons")
+    cur.execute("DROP TABLE IF EXISTS user_ecole_progress")
+    cur.execute("DROP TABLE IF EXISTS ecole_quiz_questions")
+    cur.execute("DROP TABLE IF EXISTS ecole_lessons")
     conn.commit()
-    print("Dropped raccourci tables (progress, questions, lessons).")
+    print("Dropped ecole tables (progress, questions, lessons).")
     return 0
 
 

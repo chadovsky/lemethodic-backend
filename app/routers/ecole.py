@@ -1,12 +1,12 @@
-"""F-053 — Le Raccourci curriculum endpoints.
+"""F-053 — L'École curriculum endpoints.
 
 Flow the UI expects:
-  GET  /api/raccourci/lessons                   → all 16 with per-user status
-  GET  /api/raccourci/lessons/{id}              → unlocked-only content
-  POST /api/raccourci/lessons/{id}/start        → flip to in_progress
-  GET  /api/raccourci/lessons/{id}/quiz         → 5 questions (no answers)
-  POST /api/raccourci/lessons/{id}/quiz/submit  → score + unlock next
-  GET  /api/raccourci/progress                  → home-card aggregate
+  GET  /api/ecole/lessons                   → all 16 with per-user status
+  GET  /api/ecole/lessons/{id}              → unlocked-only content
+  POST /api/ecole/lessons/{id}/start        → flip to in_progress
+  GET  /api/ecole/lessons/{id}/quiz         → 5 questions (no answers)
+  POST /api/ecole/lessons/{id}/quiz/submit  → score + unlock next
+  GET  /api/ecole/progress                  → home-card aggregate
 
 Progress rows are created lazily on first read so the 19 pre-existing
 users don't need a backfill migration.
@@ -25,13 +25,13 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models.models import (
-    RaccourciLesson,
-    RaccourciQuizQuestion,
+    EcoleLesson,
+    EcoleQuizQuestion,
     User,
-    UserRaccourciProgress,
+    UserEcoleProgress,
 )
 from app.services.auth import get_current_user
-from app.services.raccourci_gating import (
+from app.services.ecole_gating import (
     QUIZ_PASS_THRESHOLD,
     ensure_progress_rows,
     is_above_a2,
@@ -43,7 +43,7 @@ from app.services.raccourci_gating import (
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/api/raccourci", tags=["raccourci"])
+router = APIRouter(prefix="/api/ecole", tags=["ecole"])
 
 
 # ═══════════════════════════════════════════════════════════════
@@ -51,8 +51,8 @@ router = APIRouter(prefix="/api/raccourci", tags=["raccourci"])
 # ═══════════════════════════════════════════════════════════════
 
 def _lesson_row_to_summary(
-    lesson: RaccourciLesson,
-    progress: UserRaccourciProgress | None,
+    lesson: EcoleLesson,
+    progress: UserEcoleProgress | None,
     ui_language: str,
 ) -> dict:
     """Light-weight lesson card (no detailed content body)."""
@@ -83,7 +83,7 @@ def _lesson_row_to_summary(
     }
 
 
-def _lesson_full_detail(lesson: RaccourciLesson, ui_language: str) -> dict:
+def _lesson_full_detail(lesson: EcoleLesson, ui_language: str) -> dict:
     summary_keys = {
         "fr": (lesson.title_fr, lesson.short_description_fr, lesson.detailed_content_fr),
         "en": (lesson.title_en, lesson.short_description_en, lesson.detailed_content_en),
@@ -104,7 +104,7 @@ def _lesson_full_detail(lesson: RaccourciLesson, ui_language: str) -> dict:
     }
 
 
-def _question_public(question: RaccourciQuizQuestion, ui_language: str) -> dict:
+def _question_public(question: EcoleQuizQuestion, ui_language: str) -> dict:
     """Student-facing shape: omits ``correct_answer`` and
     ``accepted_alternatives`` — only the scorer sees those."""
     q_text = {
@@ -128,7 +128,7 @@ def _question_public(question: RaccourciQuizQuestion, ui_language: str) -> dict:
 
 
 def _question_with_feedback(
-    question: RaccourciQuizQuestion,
+    question: EcoleQuizQuestion,
     user_answer: str | None,
     correct: bool,
     ui_language: str,
@@ -165,7 +165,7 @@ def _normalise(s: str) -> str:
     return _NORM_RE.sub(" ", s.strip().lower()).strip()
 
 
-def _score_single_answer(question: RaccourciQuizQuestion, user_answer: str) -> bool:
+def _score_single_answer(question: EcoleQuizQuestion, user_answer: str) -> bool:
     user_norm = _normalise(user_answer)
     if not user_norm:
         return False
@@ -198,15 +198,15 @@ def list_lessons(
     """Return all 16 lessons with the current user's progress stamp."""
     ensure_progress_rows(user, db)
     rows = (
-        db.query(RaccourciLesson)
-        .filter(RaccourciLesson.is_active == True)  # noqa: E712
-        .order_by(RaccourciLesson.lesson_number)
+        db.query(EcoleLesson)
+        .filter(EcoleLesson.is_active == True)  # noqa: E712
+        .order_by(EcoleLesson.lesson_number)
         .all()
     )
     progress_map = {
         p.lesson_id: p
-        for p in db.query(UserRaccourciProgress)
-        .filter(UserRaccourciProgress.user_id == user.id)
+        for p in db.query(UserEcoleProgress)
+        .filter(UserEcoleProgress.user_id == user.id)
         .all()
     }
     return {
@@ -251,9 +251,9 @@ def get_progress(
 
 def _require_lesson_and_access(
     lesson_id: int, user: User, db: Session
-) -> RaccourciLesson:
+) -> EcoleLesson:
     ensure_progress_rows(user, db)
-    lesson = db.query(RaccourciLesson).filter(RaccourciLesson.id == lesson_id).first()
+    lesson = db.query(EcoleLesson).filter(EcoleLesson.id == lesson_id).first()
     if not lesson or not lesson.is_active:
         raise HTTPException(404, "Lesson not found")
     if not lesson_unlocked(user, lesson_id, db):
@@ -284,10 +284,10 @@ def start_lesson(
     same lesson-detail shape as ``GET /lessons/{id}``."""
     lesson = _require_lesson_and_access(lesson_id, user, db)
     progress = (
-        db.query(UserRaccourciProgress)
+        db.query(UserEcoleProgress)
         .filter(
-            UserRaccourciProgress.user_id == user.id,
-            UserRaccourciProgress.lesson_id == lesson_id,
+            UserEcoleProgress.user_id == user.id,
+            UserEcoleProgress.lesson_id == lesson_id,
         )
         .first()
     )
@@ -307,9 +307,9 @@ def get_quiz(
 ):
     lesson = _require_lesson_and_access(lesson_id, user, db)
     questions = (
-        db.query(RaccourciQuizQuestion)
-        .filter(RaccourciQuizQuestion.lesson_id == lesson.id)
-        .order_by(RaccourciQuizQuestion.question_number)
+        db.query(EcoleQuizQuestion)
+        .filter(EcoleQuizQuestion.lesson_id == lesson.id)
+        .order_by(EcoleQuizQuestion.question_number)
         .all()
     )
     return {
@@ -342,9 +342,9 @@ def submit_quiz(
     don't crash the submission."""
     lesson = _require_lesson_and_access(lesson_id, user, db)
     questions = (
-        db.query(RaccourciQuizQuestion)
-        .filter(RaccourciQuizQuestion.lesson_id == lesson.id)
-        .order_by(RaccourciQuizQuestion.question_number)
+        db.query(EcoleQuizQuestion)
+        .filter(EcoleQuizQuestion.lesson_id == lesson.id)
+        .order_by(EcoleQuizQuestion.question_number)
         .all()
     )
     if not questions:
@@ -381,7 +381,7 @@ def submit_quiz(
 
 def _next_unlocked_summary(
     user: User,
-    passed_lesson: RaccourciLesson,
+    passed_lesson: EcoleLesson,
     db: Session,
     ui_language: str,
 ) -> dict | None:
@@ -389,17 +389,17 @@ def _next_unlocked_summary(
     summary of that lesson for the UI to render as a celebratory link.
     Otherwise return None."""
     nxt = (
-        db.query(RaccourciLesson)
-        .filter(RaccourciLesson.lesson_number == (passed_lesson.lesson_number or 0) + 1)
+        db.query(EcoleLesson)
+        .filter(EcoleLesson.lesson_number == (passed_lesson.lesson_number or 0) + 1)
         .first()
     )
     if not nxt:
         return None
     progress = (
-        db.query(UserRaccourciProgress)
+        db.query(UserEcoleProgress)
         .filter(
-            UserRaccourciProgress.user_id == user.id,
-            UserRaccourciProgress.lesson_id == nxt.id,
+            UserEcoleProgress.user_id == user.id,
+            UserEcoleProgress.lesson_id == nxt.id,
         )
         .first()
     )
