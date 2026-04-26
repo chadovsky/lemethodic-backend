@@ -15,16 +15,24 @@ authoring UI ships.
 """
 from __future__ import annotations
 
+import datetime as _dt
 import json
 import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import distinct, func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models.models import RemediationModule as RemediationModuleORM
+from app.models.models import (
+    Recording,
+    RemediationModule as RemediationModuleORM,
+    SessionDetectedModule,
+    User,
+)
 from app.schemas.modules import ModuleCategory, RemediationModule as RemediationModuleSchema
+from app.services.auth import get_current_user_optional
 
 logger = logging.getLogger(__name__)
 
@@ -96,11 +104,76 @@ async def list_modules(
     return {"modules": [_hydrate(r).model_dump() for r in rows]}
 
 
+def _coerce_iso(value) -> str | None:
+    """Same helper used by users.py for detected_at normalization."""
+    if value is None:
+        return None
+    if isinstance(value, _dt.datetime):
+        return value.isoformat()
+    return str(value)
+
+
+def _user_context_for(
+    module_id: str, user: User | None, db: Session
+) -> dict | None:
+    """F-080d B2 — when an authenticated user has detections of this
+    module, return the per-user history block; otherwise None.
+
+    The ``user_context`` field is always present in the response (per
+    spec); ``None`` distinguishes "no token" / "user has no detections"
+    from "field omitted." Frontend treats null as cold state.
+    """
+    if user is None:
+        return None
+    agg = (
+        db.query(
+            func.count(distinct(SessionDetectedModule.recording_id)).label("recurrence_count"),
+            func.min(SessionDetectedModule.detected_at).label("first_detected_at"),
+            func.max(SessionDetectedModule.detected_at).label("last_detected_at"),
+            func.group_concat(distinct(SessionDetectedModule.recording_id)).label("recording_ids_csv"),
+        )
+        .join(Recording, Recording.id == SessionDetectedModule.recording_id)
+        .filter(
+            SessionDetectedModule.module_id == module_id,
+            Recording.user_id == user.id,
+        )
+        .first()
+    )
+    rcount = int(agg.recurrence_count or 0) if agg else 0
+    if not rcount:
+        return None
+    recording_ids = sorted(
+        int(x) for x in (agg.recording_ids_csv or "").split(",") if x
+    )
+    return {
+        "recurrence_count": rcount,
+        "first_detected_at": _coerce_iso(agg.first_detected_at),
+        "last_detected_at": _coerce_iso(agg.last_detected_at),
+        "detected_in_recordings": recording_ids,
+    }
+
+
 @router.get("/{module_id}")
 async def get_module(
     module_id: str,
     db: Session = Depends(get_db),
+    user: User | None = Depends(get_current_user_optional),
 ):
+    """F-080a public read + F-080d B2 augmentation.
+
+    Always returns the full module shape. When the request carries a
+    valid auth token (cookie or Authorization header), an additional
+    ``user_context`` field is populated with per-user detection history;
+    when the token is missing or the user has no detections of this
+    module, ``user_context`` is null.
+
+    F-080d locked Q4 to Option A: pre-launch all visitors authenticate
+    before reaching /learn/[id], so user_context will be present in
+    practice. The optional-auth backend is ready for the post-launch
+    public-glossary path (F-080d.y) without forcing a frontend rewrite.
+
+    404 unchanged when module_id doesn't exist.
+    """
     row = (
         db.query(RemediationModuleORM)
         .filter(RemediationModuleORM.id == module_id)
@@ -108,4 +181,6 @@ async def get_module(
     )
     if row is None:
         raise HTTPException(404, f"No module with id {module_id!r}")
-    return _hydrate(row).model_dump()
+    payload = _hydrate(row).model_dump()
+    payload["user_context"] = _user_context_for(module_id, user, db)
+    return payload
