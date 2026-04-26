@@ -395,9 +395,10 @@ class EcoleLesson(Base):
     __tablename__ = "ecole_lessons"
 
     id = Column(Integer, primary_key=True, index=True)
-    # 1-16 in the locked sequence. Unique so the seeder's ordering is a
-    # proper key, and so `prerequisite_lesson_number` FK-by-convention
-    # can point at it.
+    # 1-27 in the locked sequence (16 in Phase 1 Fondations + 11 in
+    # Phase 2 Approfondissement, per F-087). Unique so the seeder's
+    # ordering is a proper key, and so `prerequisite_lesson_number`
+    # FK-by-convention can point at it.
     lesson_number = Column(Integer, unique=True, nullable=False, index=True)
     # Stable slug. Preferred over the integer in URLs and analytics.
     code = Column(String(64), unique=True, nullable=False, index=True)
@@ -419,6 +420,16 @@ class EcoleLesson(Base):
     prerequisite_lesson_number = Column(Integer, nullable=True)
     estimated_duration_minutes = Column(Integer, default=15)
     is_active = Column(Boolean, default=True)
+    # F-087: Phase 1 Fondations (1-16) vs Phase 2 Approfondissement (17-27).
+    # Drives the visual separator on the home tab + /ecole list page.
+    # Default 1 so legacy rows (pre-F-087) and any manually-inserted row
+    # without the column lands as Fondations.
+    phase = Column(Integer, default=1)
+    # F-087 (rendered by F-089): deadpan English subline shown beneath
+    # the lesson title on cards. Authored, not derived. Always populated
+    # by the seeder; nullable here only because pre-F-087 rows wouldn't
+    # have had it.
+    subline_en = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
     questions = relationship(

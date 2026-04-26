@@ -76,6 +76,12 @@ def _lesson_row_to_summary(
         "short_description": short,
         "estimated_duration_minutes": lesson.estimated_duration_minutes,
         "prerequisite_lesson_number": lesson.prerequisite_lesson_number,
+        # F-087: phase drives the home-tab visual separator between
+        # lessons 16 and 17. F-089 will surface subline_en under the
+        # title; exposed here today so the field is available on the
+        # same response shape that's already cached client-side.
+        "phase": lesson.phase or 1,
+        "subline_en": lesson.subline_en,
         "status": progress.status if progress else "locked",
         "quiz_attempts": progress.quiz_attempts if progress else 0,
         "quiz_best_score": progress.quiz_best_score if progress else 0,
@@ -101,6 +107,9 @@ def _lesson_full_detail(lesson: EcoleLesson, ui_language: str) -> dict:
         "detailed_content": detail or lesson.detailed_content_fr or "",
         "estimated_duration_minutes": lesson.estimated_duration_minutes,
         "prerequisite_lesson_number": lesson.prerequisite_lesson_number,
+        # F-087 — see _lesson_row_to_summary for the same fields.
+        "phase": lesson.phase or 1,
+        "subline_en": lesson.subline_en,
     }
 
 
