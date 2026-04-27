@@ -22,3 +22,16 @@ The codebase stores JSON-shaped data in `Column(Text)` with `json.dumps()` / `js
 **Out of scope:** schema redesign of the JSON shapes themselves (those stay).
 
 ---
+
+## F-079 — Frontend production deploy (Vercel + environment wiring)
+
+**Filed:** 2026-04-28.
+**Status:** pre-launch. Placeholder — will be properly specced before implementation.
+
+Pre-launch. Deploy `fluentpath-frontend` to Vercel production. Configure `NEXT_PUBLIC_API_URL` pointing at backend production URL (set after F-078 ships). Update backend CORS allowlist (`main.py`) to include the frontend production domain in addition to `localhost`.
+
+**Estimate:** 1–2h.
+
+**Depends on:** F-078 (backend production URL must exist before frontend can point at it).
+
+---
