@@ -186,6 +186,16 @@ async def _run_analysis_and_persist(
                 if isinstance(analysis.get("tache_rubric"), dict)
                 else None
             ),
+            # F-084 — narrative summary one-liner. Pulled out of the
+            # rubric blob into its own column for queryability + clean
+            # top-level API surface. Empty string from the rubric
+            # fallback collapses to None for consistent legacy/empty
+            # behavior on the frontend.
+            narrative_summary=(
+                (analysis["tache_rubric"].get("narrative_summary") or None)
+                if isinstance(analysis.get("tache_rubric"), dict)
+                else None
+            ),
             raw_llm_response=analysis.get("raw_response", ""),
             criteria_breakdown=json.dumps(profile_eval, ensure_ascii=False),
             cefr_level=profile_eval.get("cefr_level", ""),
@@ -837,6 +847,10 @@ def _format_recording(rec: Recording) -> dict:
             # predates F-083 or when the rubric call failed; F-084
             # frontend renders without the panel in that case.
             "tache_rubric": _safe_json_load(fb.tache_rubric_data, default=None) if fb.tache_rubric_data else None,
+            # F-084 — single-sentence diagnostic hero. None for legacy
+            # rows; frontend falls back to "{cefr_band} on Tâche {n}"
+            # when null.
+            "narrative_summary": fb.narrative_summary,
             "patterns_detectes": json.loads(fb.patterns_detectes) if fb.patterns_detectes else [],
             "patterns_manquants": json.loads(fb.patterns_manquants) if fb.patterns_manquants else [],
             "reflexes_detectes": json.loads(fb.reflexes_detectes) if fb.reflexes_detectes else [],

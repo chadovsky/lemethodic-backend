@@ -75,6 +75,18 @@ RETRY THRESHOLD
 Recommend retry if ANY dimension scores below 2/5, OR overall T1 average < 2.5/5. Reason field cites the specific dimension(s) that triggered.
 
 ═══════════════════════════════════════════════════════════
+NARRATIVE SUMMARY (F-084 — generated AFTER all dimensions are scored)
+═══════════════════════════════════════════════════════════
+After scoring all dimensions, generate a `narrative_summary` field: a single English sentence summarizing this performance. Voice: deadpan tutor for English speakers studying French. Format: "{CEFR band}, headed to {next band}. {What's holding them back, in plain words}."
+
+Examples:
+- "B1+, headed to B2. Connectors are holding you back."
+- "B2, ready to push for C1. Argumentation is solid; tighten your subjunctive."
+- "A2+, foundation work needed. Article use is the first thing to fix."
+
+ONE sentence. No preamble. No quotation marks. Match the tone of the examples.
+
+═══════════════════════════════════════════════════════════
 OUTPUT — JSON only, no preamble
 ═══════════════════════════════════════════════════════════
 {{
@@ -92,7 +104,8 @@ OUTPUT — JSON only, no preamble
     "sentence_construction":{{"score": <0-5>, "examples": ["<1-2 specific examples>"]}}
   }},
   "retry_recommendation": {{"should_retry": <true|false>, "reason": "<short — names the dimension(s) below threshold, or empty when no retry>"}},
-  "next_action_suggestion": "<one sentence — points to a specific L'École lesson number, a recurring module pattern they should practice, or 'ready for next Tâche'>"
+  "next_action_suggestion": "<one sentence — points to a specific L'École lesson number, a recurring module pattern they should practice, or 'ready for next Tâche'>",
+  "narrative_summary": "<single sentence per the NARRATIVE SUMMARY block above>"
 }}"""
 
 
@@ -130,6 +143,18 @@ RETRY THRESHOLD
 Recommend retry if ANY dimension < 2/5, OR overall T2 average < 2.5/5, OR formation_questions specifically < 2.5/5 (without the foundation skill, T2 fails by definition). Reason field cites which.
 
 ═══════════════════════════════════════════════════════════
+NARRATIVE SUMMARY (F-084 — generated AFTER all dimensions are scored)
+═══════════════════════════════════════════════════════════
+After scoring all dimensions, generate a `narrative_summary` field: a single English sentence summarizing this performance. Voice: deadpan tutor for English speakers studying French. Format: "{CEFR band}, headed to {next band}. {What's holding them back, in plain words}."
+
+Examples:
+- "B1+, headed to B2. Connectors are holding you back."
+- "B2, ready to push for C1. Argumentation is solid; tighten your subjunctive."
+- "A2+, foundation work needed. Article use is the first thing to fix."
+
+ONE sentence. No preamble. No quotation marks. Match the tone of the examples.
+
+═══════════════════════════════════════════════════════════
 OUTPUT — JSON only, no preamble
 ═══════════════════════════════════════════════════════════
 {{
@@ -147,7 +172,8 @@ OUTPUT — JSON only, no preamble
     "sentence_construction":{{"score": <0-5>, "examples": ["<1-2 specific examples>"]}}
   }},
   "retry_recommendation": {{"should_retry": <true|false>, "reason": "<short — names dimension(s) below threshold, or empty>"}},
-  "next_action_suggestion": "<one sentence — specific L'École lesson, recurring module practice, or 'ready for next Tâche'>"
+  "next_action_suggestion": "<one sentence — specific L'École lesson, recurring module practice, or 'ready for next Tâche'>",
+  "narrative_summary": "<single sentence per the NARRATIVE SUMMARY block above>"
 }}"""
 
 
@@ -186,6 +212,18 @@ RETRY THRESHOLD
 Recommend retry if ANY dimension < 2/5, OR overall T3 average < 2.5/5, OR argumentation_structuree specifically < 2/5 (T3 without structure is just talking). Reason field cites which.
 
 ═══════════════════════════════════════════════════════════
+NARRATIVE SUMMARY (F-084 — generated AFTER all dimensions are scored)
+═══════════════════════════════════════════════════════════
+After scoring all dimensions, generate a `narrative_summary` field: a single English sentence summarizing this performance. Voice: deadpan tutor for English speakers studying French. Format: "{CEFR band}, headed to {next band}. {What's holding them back, in plain words}."
+
+Examples:
+- "B1+, headed to B2. Connectors are holding you back."
+- "B2, ready to push for C1. Argumentation is solid; tighten your subjunctive."
+- "A2+, foundation work needed. Article use is the first thing to fix."
+
+ONE sentence. No preamble. No quotation marks. Match the tone of the examples.
+
+═══════════════════════════════════════════════════════════
 OUTPUT — JSON only, no preamble
 ═══════════════════════════════════════════════════════════
 {{
@@ -204,7 +242,8 @@ OUTPUT — JSON only, no preamble
     "sentence_construction":{{"score": <0-5>, "examples": ["<1-2 specific examples>"]}}
   }},
   "retry_recommendation": {{"should_retry": <true|false>, "reason": "<short — names dimension(s) below threshold, or empty>"}},
-  "next_action_suggestion": "<one sentence — specific L'École lesson, recurring module practice, or 'ready for next Tâche'>"
+  "next_action_suggestion": "<one sentence — specific L'École lesson, recurring module practice, or 'ready for next Tâche'>",
+  "narrative_summary": "<single sentence per the NARRATIVE SUMMARY block above>"
 }}"""
 
 
@@ -364,6 +403,11 @@ def _coerce_rubric(raw, tache_mode: str) -> dict:
         "universal_sidebars": sidebars,
         "retry_recommendation": final_retry,
         "next_action_suggestion": str(raw.get("next_action_suggestion", ""))[:400],
+        # F-084 — single-sentence diagnostic hero. Cap at 240 chars: the
+        # spec asks for one sentence and the LLM occasionally drifts
+        # into two; trim hard rather than ship a wall of text into the
+        # hero slot.
+        "narrative_summary": str(raw.get("narrative_summary", ""))[:240],
     }
 
 
@@ -382,6 +426,10 @@ def _rubric_fallback(tache_mode: str) -> dict:
         "universal_sidebars": {k: {"score": 0, "examples": []} for k in _SIDEBAR_KEYS},
         "retry_recommendation": {"should_retry": False, "reason": ""},
         "next_action_suggestion": "",
+        # F-084 — empty narrative on fallback. Frontend treats empty
+        # string the same as missing field and falls back to the
+        # cefr-band default heading.
+        "narrative_summary": "",
     }
 
 

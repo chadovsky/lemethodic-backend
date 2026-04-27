@@ -212,15 +212,21 @@ async def pass_3_live() -> int:
         dims = result["tache_specific_dimensions"]
         sidebars = result["universal_sidebars"]
         retry = result["retry_recommendation"]
+        narrative = result.get("narrative_summary", "")
         expected_dim_count = {"tache_1": 5, "tache_2": 5, "tache_3": 6}[mode]
         ok_dims = len(dims) == expected_dim_count and all(d.get("score") is not None for d in dims)
         ok_sidebars = set(sidebars.keys()) == {"conjugation", "grammar_structure", "sentence_construction"}
         ok_retry = isinstance(retry.get("should_retry"), bool)
-        ok = ok_dims and ok_sidebars and ok_retry
+        # F-084 — narrative_summary should be a non-empty single line
+        # under the 240-char trim cap. Fallback runs (no API key) emit
+        # "" — accept either.
+        ok_narrative = isinstance(narrative, str) and len(narrative) <= 240
+        ok = ok_dims and ok_sidebars and ok_retry and ok_narrative
         if not ok:
             failures += 1
         marker = "OK " if ok else "FAIL"
-        print(f"  {marker}  {mode}  dims={len(dims)} (expected {expected_dim_count})  sidebars={list(sidebars.keys())}  retry={retry}")
+        print(f"  {marker}  {mode}  dims={len(dims)}  retry={retry['should_retry']}  narrative_len={len(narrative)}")
+        print(f"       narrative: {narrative!r}")
         if not ok or os.getenv("F083_VERBOSE"):
             print("       summary_prose:", (result.get("summary_prose") or "")[:200].replace("\n", " "))
             print("       next_action:", (result.get("next_action_suggestion") or "")[:160])

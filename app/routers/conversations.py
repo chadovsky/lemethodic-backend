@@ -446,6 +446,13 @@ async def _run_conversation_analysis_and_persist(
             if isinstance(analysis.get("tache_rubric"), dict)
             else None
         ),
+        # F-084 — narrative summary one-liner. See
+        # _run_analysis_and_persist for the rationale.
+        narrative_summary=(
+            (analysis["tache_rubric"].get("narrative_summary") or None)
+            if isinstance(analysis.get("tache_rubric"), dict)
+            else None
+        ),
         raw_llm_response=analysis.get("raw_response", ""),
         criteria_breakdown=json.dumps(profile_eval, ensure_ascii=False),
         cefr_level=profile_eval.get("cefr_level", "") or "",
