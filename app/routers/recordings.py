@@ -27,6 +27,7 @@ from app.services.pattern_catalog import log_unknown_pattern_keys
 from app.services.module_library import persist_detected_modules
 from app.services.scoring_maps import cefr_from_score, clb_from_cefr
 from app.services.transcript_suggestions import suggest_corrections
+from app.services.couche_labels import couches_array
 from app.config import settings
 
 router = APIRouter(prefix="/api/recordings", tags=["recordings"])
@@ -591,12 +592,16 @@ def get_history(
         }
         if r.feedback:
             entry["note_globale"] = r.feedback.note_globale
-            entry["la_carte"] = {
+            # F-088 — la_carte (internal-key dict) replaced with couches
+            # array carrying internal_key + TCF display labels per
+            # entry. Hard cut; admin template + FluentPath frontend
+            # both migrated alongside this change.
+            entry["couches"] = couches_array({
                 "le_fond": r.feedback.score_le_fond,
                 "les_moules_des_idees": r.feedback.score_les_moules_des_idees,
                 "les_moules": r.feedback.score_les_moules,
                 "les_reflexes_anglais": r.feedback.score_les_reflexes_anglais,
-            }
+            })
             entry["score_prononciation"] = r.feedback.score_prononciation
             entry["goulet_nom"] = r.feedback.goulet_nom
             entry["overall_score"] = r.feedback.note_globale
@@ -788,12 +793,16 @@ def _format_recording(rec: Recording) -> dict:
         fb = rec.feedback
         result["diagnostic"] = {
             "note_globale": fb.note_globale,
-            "la_carte": {
+            # F-088 — la_carte replaced with the F-088 couches array
+            # (internal_key + display_label_en + display_label_fr +
+            # score per entry). See app/services/couche_labels.py for
+            # the canonical mapping.
+            "couches": couches_array({
                 "le_fond": fb.score_le_fond,
                 "les_moules_des_idees": fb.score_les_moules_des_idees,
                 "les_moules": fb.score_les_moules,
                 "les_reflexes_anglais": fb.score_les_reflexes_anglais,
-            },
+            }),
             "le_goulet": {
                 "couche": fb.goulet_couche,
                 "nom": fb.goulet_nom,

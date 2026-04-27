@@ -11,3 +11,15 @@ A log of architectural and product decisions made in FluentPath, written at the 
 **Atomicity:** No exceptions. Every "raccourci" identifier in active code becomes "ecole." Historical entries in BACKLOG.md preserved verbatim with a header note. The RaccourciReveal onboarding component renames to EcoleReveal alongside everything else.
 
 **Backward compat:** None. Hard cut. Only one frontend consumer of the affected surfaces.
+
+---
+
+## April 27, 2026 — Couches → TCF criteria relabel (F-088)
+
+**Decision:** Frontend dimension labels relabeled from internal pedagogical names (Le Fond / Les Moules des Idées / Les Moules / Les Réflexes Anglais) to TCF criteria (Étendue / Cohérence / Correction / Aisance). Backend dimensions and scoring unchanged.
+
+**Honesty flag:** "Réflexes Anglais → Aisance" is correlated but not faithful. Réflexes Anglais measures L1-interference (calques, missing *ne*, English word order). Aisance in TCF measures fluidity (rate, hesitations, smoothness). A student can score perfectly on one and badly on the other. The relabel ships now for sprint speed; F-090 (post-launch) does the proper backend refactor with a true Aisance dimension based on F-038 fluency layer signals.
+
+**Methodology preservation:** The About page and methodology copy retain "La Méthode en Couches" with the four internal names. Only score labels change.
+
+**Implementation note:** Backend hard-cut: `/api/recordings/{id}` (and the `/history` companion) replaced the `la_carte` dict with a `couches` array carrying `{internal_key, display_label_en, display_label_fr, score}` per entry. The legacy admin template at `app/templates/index.html` migrated alongside — it still surfaces internal pedagogical names for its audience (internal tools per F5), but reads them via `coucheLabel(internal_key)` against the new array shape. Two consumers, one API shape — see F-088 commit message for the audit.

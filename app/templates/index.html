@@ -3451,7 +3451,12 @@ function displayResults(data){
   renderTache1Extras(data);
   renderTache2Extras(data);
   renderTache3Extras(data);
-  const d=data.diagnostic||{},carte=d.la_carte||{},goulet=d.le_goulet||{},pronon=d.prononciation||{};
+  // F-088 — diagnostic block now exposes `couches` (array) instead of
+  // `la_carte` (dict). Admin template keeps internal pedagogical names
+  // via coucheLabel(internal_key), so the read switches but the
+  // displayed labels (Le Fond / Les Moules / …) don't change.
+  const d=data.diagnostic||{},couches=Array.isArray(d.couches)?d.couches:[],goulet=d.le_goulet||{},pronon=d.prononciation||{};
+  const carte={};couches.forEach(c=>{if(c&&c.internal_key)carte[c.internal_key]=c.score});
   const score=d.note_globale||data.feedback?.overall_score||0;
   const color=score>=14?'var(--green)':score>=10?'var(--orange)':'var(--red)';
 
