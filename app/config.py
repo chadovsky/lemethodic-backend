@@ -9,7 +9,15 @@ class Settings:
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24h
 
-    DATABASE_URL: str = os.getenv("DATABASE_URL", "sqlite:///./tcf_oral.db")
+    # F-077: PostgreSQL is now the dev + prod database. Default points
+    # at the local docker-compose Postgres (matching docker-compose.yml).
+    # The conditional `connect_args` in app/database.py still handles
+    # SQLite if anyone overrides DATABASE_URL to a sqlite path for a
+    # one-off script, but the live app expects Postgres.
+    DATABASE_URL: str = os.getenv(
+        "DATABASE_URL",
+        "postgresql+psycopg://fluentpath:fluentpath_local_dev@localhost:5432/fluentpath",
+    )
 
     # AssemblyAI
     ASSEMBLYAI_API_KEY: str = os.getenv("ASSEMBLYAI_API_KEY", "")

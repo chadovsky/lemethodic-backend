@@ -10,7 +10,7 @@ This is **Chadi's TCF Oral Practice Tool** — a web app where French learners (
 
 ## Tech Stack
 
-- **Backend:** Python 3 + FastAPI + SQLAlchemy (SQLite for dev, PostgreSQL for production)
+- **Backend:** Python 3 + FastAPI + SQLAlchemy + Alembic (PostgreSQL local + prod, F-077)
 - **Speech-to-Text:** AssemblyAI API
 - **AI Analysis:** Anthropic Claude API (claude-sonnet-4-20250514) — processes transcriptions through the 4-layer Les Moules prompt
 - **Frontend:** Vanilla HTML/CSS/JS served via FastAPI templates (Jinja2)
@@ -30,10 +30,42 @@ app/
 │   └── analysis.py      → THE CORE — 4-layer Les Moules AI analysis engine
 ├── templates/           → Jinja2 HTML templates (index.html, admin.html)
 └── static/              → CSS, JS, images
-migrations/              → Alembic database migrations
+alembic/                 → Alembic migrations (F-077)
+alembic.ini              → Alembic config
+docker-compose.yml       → Local PostgreSQL (F-077)
+scripts/                  → Seeders + verification harnesses
+scripts/archive/         → Retired one-off SQLite migration scripts (F-077)
+archive/                 → Pre-routers async scaffold orphans (F-077)
 tests/                   → Test suite
 uploads/                 → User audio recordings
 requirements.txt         → Python dependencies
+```
+
+---
+
+## Local development
+
+The backend runs against PostgreSQL locally (F-077; same engine as prod). One-command setup:
+
+```bash
+docker-compose up -d                  # start local PostgreSQL (port 5432)
+alembic upgrade head                  # create / migrate schema
+python -m scripts.seed_f077_min_fixtures   # one User + one Tache1Opening — required for F-075a/b harnesses on a fresh DB
+python -m uvicorn main:app --reload   # backend
+```
+
+- `docker-compose down` stops the container; data persists via the `postgres_data` named volume.
+- `docker-compose down -v` nukes local data and starts fresh.
+- Direct `psql` access: `psql postgresql://fluentpath:fluentpath_local_dev@localhost:5432/fluentpath`
+- The local-dev password is intentionally non-secret (it's local only and never shipped). Production uses a managed PostgreSQL with a real secret injected via `DATABASE_URL`.
+- Browser cookies from prior SQLite-era sessions reference user IDs that no longer exist — clear cookies for `localhost` after the switch and re-register/login.
+
+### Schema changes
+Use Alembic, never `Base.metadata.create_all`:
+```bash
+alembic revision --autogenerate -m "<short description>"
+# review the generated file; keep `default=datetime.datetime.utcnow` Python-side
+alembic upgrade head
 ```
 
 ---

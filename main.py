@@ -2,7 +2,6 @@ from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
-from app.database import engine, Base
 from app.routers import auth, recordings, admin
 from app.routers import analytics
 from app.routers import writing
@@ -13,13 +12,16 @@ from app.routers import audio
 from app.routers import ecole
 from app.routers import users
 from app.routers import modules
-from app.models import writing as writing_models  # ensure tables are created
 from app.models.models import User
 from app.services.auth import get_current_user
 from app.config import settings
 
-# Create tables
-Base.metadata.create_all(bind=engine)
+# F-077: schema is now owned by Alembic. Run `alembic upgrade head` on
+# fresh checkouts and after pulling migrations. The previous
+# `Base.metadata.create_all(bind=engine)` call was removed here so the
+# app no longer silently creates tables out-of-band — any schema drift
+# now surfaces as an explicit Alembic-level mismatch instead of being
+# papered over.
 
 app = FastAPI(title="TCF Oral Practice Tool")
 
