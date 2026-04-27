@@ -1,7 +1,7 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from app.database import engine, Base
 from app.routers import auth, recordings, admin
 from app.routers import analytics
@@ -14,6 +14,8 @@ from app.routers import ecole
 from app.routers import users
 from app.routers import modules
 from app.models import writing as writing_models  # ensure tables are created
+from app.models.models import User
+from app.services.auth import get_current_user
 from app.config import settings
 
 # Create tables
@@ -95,13 +97,74 @@ static_dir = os.path.join(os.path.dirname(__file__), "app", "static")
 if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
-# F-052: serve the TTS cache so the <audio> elements in the Tâche 1/2
-# UI can fetch ``/tts_audio/<sha256>.mp3``. Ensure the directory exists
-# at startup so StaticFiles doesn't bail out.
-from app.config import settings as _settings  # noqa: E402
-_tts_cache_dir = os.path.abspath(_settings.TTS_CACHE_DIR)
+# F-052 / F-075b: serve the TTS cache so the <audio> elements in the
+# Tâche 1/2 UI can fetch ``/tts_audio/<sha256>.mp3``. Ensure the
+# directory exists at startup.
+#
+# F-075b — replaced the unauthenticated `app.mount("/tts_audio", ...)`
+# with an authenticated route handler. TTS files are SHARED across
+# users (cached by SHA-256 of (text, voice, model)) so there's no
+# ownership check — any logged-in user can fetch any cached file —
+# but they MUST be authenticated. `get_current_user` accepts both
+# the access_token cookie and the Authorization Bearer header; the
+# cookie path is what makes `<audio src="/tts_audio/...">` work
+# without frontend changes (browsers don't attach Authorization
+# headers to media element requests, but they do send cookies).
+#
+# Path traversal guard: reject any filename containing path
+# separators or `..`, then double-check via Path.resolve() that the
+# resolved file is still inside the cache dir (catches symlink
+# escapes too).
+_tts_cache_dir = os.path.abspath(settings.TTS_CACHE_DIR)
 os.makedirs(_tts_cache_dir, exist_ok=True)
-app.mount("/tts_audio", StaticFiles(directory=_tts_cache_dir), name="tts_audio")
+
+
+@app.get("/tts_audio/{filename}")
+def serve_tts_audio(
+    filename: str,
+    user: User = Depends(get_current_user),
+):
+    # First-pass filename guard. Reject anything with path
+    # separators, parent-dir traversal, or null bytes. The cache
+    # writer only ever produces ``<sha256>.mp3`` filenames so this
+    # is the canonical shape; anything else is suspect.
+    if (
+        "/" in filename
+        or "\\" in filename
+        or ".." in filename
+        or "\x00" in filename
+        or filename.startswith(".")
+    ):
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    from pathlib import Path
+    cache_root = Path(_tts_cache_dir).resolve()
+    target = (cache_root / filename).resolve()
+
+    # Second-pass: even after the string-level filter, confirm the
+    # resolved path actually lives inside the cache dir. Catches
+    # symlink-based escapes and any future filename quirk the
+    # string filter doesn't anticipate.
+    try:
+        target.relative_to(cache_root)
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid filename")
+
+    if not target.is_file():
+        raise HTTPException(status_code=404, detail="Audio not found")
+
+    # The TTS pipeline only emits .mp3, but infer defensively in case
+    # a future provider adds wav/ogg cache entries.
+    ext = target.suffix.lower()
+    media_type = {
+        ".mp3": "audio/mpeg",
+        ".wav": "audio/wav",
+        ".ogg": "audio/ogg",
+        ".m4a": "audio/mp4",
+        ".webm": "audio/webm",
+    }.get(ext, "application/octet-stream")
+
+    return FileResponse(target, media_type=media_type)
 
 
 @app.get("/", response_class=HTMLResponse)
