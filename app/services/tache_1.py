@@ -19,6 +19,7 @@ that file to tune examiner behavior without touching this module.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from typing import Iterable
@@ -27,6 +28,7 @@ import httpx
 
 from app.config import settings
 from app.services.analysis import analyze_transcript, _call_claude
+from app.services.tache_rubric import apply_tache_rubric
 from app.services.module_detector import detect_modules
 from app.services.personas.tache_1_examiner import (
     FALLBACK_CLOSE,
@@ -351,6 +353,10 @@ async def analyze_tache_1(
     # _run_analysis_and_persist), so we don't need to touch weights
     # here — analyze_transcript just needs to know what the learner
     # was asked to do.
+    #
+    # F-083 — also kick off the per-Tâche pedagogical rubric in
+    # parallel. asyncio.gather collapses the two Claude calls' latency
+    # to max() instead of sum().
     forwarded = {
         "topic": examiner_context,
         "target_level": kwargs.get("target_level", "B2"),
@@ -358,13 +364,14 @@ async def analyze_tache_1(
         "low_confidence_words": kwargs.get("low_confidence_words", []),
         "exam_profile": kwargs.get("exam_profile", "tcf_canada"),
     }
-    result = await analyze_transcript(
-        transcript=combined_transcript,
-        **forwarded,
+    result, tache_rubric = await asyncio.gather(
+        analyze_transcript(transcript=combined_transcript, **forwarded),
+        apply_tache_rubric("tache_1", combined_transcript, examiner_context),
     )
     if not isinstance(result, dict):
         result = {"raw": str(result)}
     result["mode"] = "tache_1"
+    result["tache_rubric"] = tache_rubric
 
     # ── Tâche 1-specific layer ───────────────────────────────
     candidate_turns = [t for t in turns if _speaker(t) == "candidate"]

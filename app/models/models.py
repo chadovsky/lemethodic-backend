@@ -126,6 +126,15 @@ class Feedback(Base):
     teacher_coaching = Column(Text, default="{}")  # JSON: {criterion_key: {coaching_en, coaching_fr, transformation}}
     feedback_grid = Column(Text, default="{}")     # JSON: {what_works, what_doesnt_work, english_habits, structure_quality}
 
+    # ── F-083 pedagogical rubric (Tâche-specific) ──────────────
+    # JSON blob from app.services.tache_rubric: summary_prose,
+    # tache_specific_dimensions[] (per-Tâche), universal_sidebars
+    # (conjugation/grammar_structure/sentence_construction),
+    # retry_recommendation, next_action_suggestion. Nullable — legacy
+    # rows render with the rubric absent and the frontend (F-084)
+    # degrades gracefully.
+    tache_rubric_data = Column(Text, nullable=True)
+
     # ── Backward compat ────────────────────────────────────────
     # note_globale above is the LEGACY 4-couche holistic score; the new
     # profile-driven overall lives in criteria_breakdown (+ cefr/clb_level).

@@ -24,6 +24,7 @@ module to tune examiner behavior.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 from typing import Iterable
@@ -32,6 +33,7 @@ import httpx
 
 from app.config import settings
 from app.services.analysis import analyze_transcript, _call_claude
+from app.services.tache_rubric import apply_tache_rubric
 from app.services.module_detector import detect_modules
 from app.services.personas.tache_2_examiner import (
     BEHAVIOR_RULES,
@@ -339,13 +341,19 @@ async def analyze_tache_2(
         "low_confidence_words": kwargs.get("low_confidence_words", []),
         "exam_profile": kwargs.get("exam_profile", "tcf_canada"),
     }
-    result = await analyze_transcript(
-        transcript=candidate_transcript,
-        **forwarded,
+    # F-083 — fire the per-Tâche pedagogical rubric in parallel with
+    # the existing diagnostic call so total latency stays at max() of
+    # the two. Yarden runs sequentially after — it depends on the same
+    # Claude Sonnet quota budget but its prompt is conversation-shape
+    # specific and shorter; not worth a third gather slot.
+    result, tache_rubric = await asyncio.gather(
+        analyze_transcript(transcript=candidate_transcript, **forwarded),
+        apply_tache_rubric("tache_2", candidate_transcript, _scenario_context(scenario)),
     )
     if not isinstance(result, dict):
         result = {"raw": str(result)}
     result["mode"] = "tache_2"
+    result["tache_rubric"] = tache_rubric
 
     yarden = await _run_yarden_analysis(
         candidate_questions=candidate_questions,

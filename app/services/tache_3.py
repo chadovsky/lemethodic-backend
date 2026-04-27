@@ -22,11 +22,13 @@ recordings router; this module does not compute the weighted overall.
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 
 from app.config import settings
 from app.services.analysis import analyze_transcript, _call_claude
+from app.services.tache_rubric import apply_tache_rubric
 from app.services.module_detector import detect_modules
 
 logger = logging.getLogger(__name__)
@@ -168,17 +170,25 @@ async def analyze_tache_3(
     overlays Tâche 3 argumentation scoring (5 sub-scores + total +
     weakest argument diagnostic) under ``result["tache_3"]``.
     """
-    result = await analyze_transcript(
-        transcript=transcript or "",
-        topic=tache_3_prompt or topic or "",
-        target_level=target_level,
-        ui_language=ui_language,
-        low_confidence_words=low_confidence_words or [],
-        exam_profile=exam_profile,
+    # F-083 — fire the pedagogical rubric in parallel with the
+    # existing 4-couche analysis. Argumentation analysis (T3 specialty
+    # prompt from F-051) stays sequential afterwards.
+    t3_prompt_or_topic = tache_3_prompt or topic or ""
+    result, tache_rubric = await asyncio.gather(
+        analyze_transcript(
+            transcript=transcript or "",
+            topic=t3_prompt_or_topic,
+            target_level=target_level,
+            ui_language=ui_language,
+            low_confidence_words=low_confidence_words or [],
+            exam_profile=exam_profile,
+        ),
+        apply_tache_rubric("tache_3", transcript or "", t3_prompt_or_topic),
     )
     if not isinstance(result, dict):
         result = {"raw": str(result)}
     result["mode"] = "tache_3"
+    result["tache_rubric"] = tache_rubric
 
     argumentation = await _run_argumentation_analysis(
         prompt=tache_3_prompt or topic or "",

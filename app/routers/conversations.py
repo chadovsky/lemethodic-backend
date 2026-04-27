@@ -439,6 +439,13 @@ async def _run_conversation_analysis_and_persist(
         reflexes_detectes=json.dumps(analysis.get("reflexes_detectes", []), ensure_ascii=False),
         corrections=json.dumps(analysis.get("corrections", []), ensure_ascii=False),
         ordonnance=json.dumps(analysis.get("ordonnance", {}), ensure_ascii=False),
+        # F-083 — pedagogical rubric block (Tâche-aware). See
+        # _run_analysis_and_persist for the same field.
+        tache_rubric_data=(
+            json.dumps(analysis["tache_rubric"], ensure_ascii=False)
+            if isinstance(analysis.get("tache_rubric"), dict)
+            else None
+        ),
         raw_llm_response=analysis.get("raw_response", ""),
         criteria_breakdown=json.dumps(profile_eval, ensure_ascii=False),
         cefr_level=profile_eval.get("cefr_level", "") or "",

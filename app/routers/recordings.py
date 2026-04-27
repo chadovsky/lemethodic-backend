@@ -177,6 +177,15 @@ async def _run_analysis_and_persist(
             reflexes_detectes=json.dumps(analysis.get("reflexes_detectes", []), ensure_ascii=False),
             corrections=json.dumps(analysis.get("corrections", []), ensure_ascii=False),
             ordonnance=json.dumps(analysis.get("ordonnance", {}), ensure_ascii=False),
+            # F-083 — pedagogical rubric block; stored as a JSON blob.
+            # Nullable: legacy rows + analyses that ran before F-083
+            # land here as None and the frontend (F-084) renders
+            # without the rubric panel.
+            tache_rubric_data=(
+                json.dumps(analysis["tache_rubric"], ensure_ascii=False)
+                if isinstance(analysis.get("tache_rubric"), dict)
+                else None
+            ),
             raw_llm_response=analysis.get("raw_response", ""),
             criteria_breakdown=json.dumps(profile_eval, ensure_ascii=False),
             cefr_level=profile_eval.get("cefr_level", ""),
@@ -824,6 +833,10 @@ def _format_recording(rec: Recording) -> dict:
             "la_prochaine_etape": fb.la_prochaine_etape,
             "transcription_corrigee": fb.transcription_corrigee,
             "prononciation": json.loads(fb.prononciation_data) if fb.prononciation_data else {},
+            # F-083 — pedagogical rubric (per-Tâche). None when the row
+            # predates F-083 or when the rubric call failed; F-084
+            # frontend renders without the panel in that case.
+            "tache_rubric": _safe_json_load(fb.tache_rubric_data, default=None) if fb.tache_rubric_data else None,
             "patterns_detectes": json.loads(fb.patterns_detectes) if fb.patterns_detectes else [],
             "patterns_manquants": json.loads(fb.patterns_manquants) if fb.patterns_manquants else [],
             "reflexes_detectes": json.loads(fb.reflexes_detectes) if fb.reflexes_detectes else [],
