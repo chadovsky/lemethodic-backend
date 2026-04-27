@@ -30,6 +30,21 @@ from app.services.transcript_suggestions import suggest_corrections
 from app.services.couche_labels import couches_array
 from app.config import settings
 
+
+# F-075a — defensive route-level size check (Layer B). Layer A in
+# main.py rejects on Content-Length before the body is buffered;
+# this catches spoofed / chunked / missing-header cases. Raises a
+# clean 413 so the frontend can show the same "too large" message
+# regardless of which layer fired.
+def _enforce_audio_size_cap(content: bytes) -> None:
+    cap = settings.MAX_AUDIO_UPLOAD_BYTES
+    if len(content) > cap:
+        cap_mb = cap // (1024 * 1024)
+        raise HTTPException(
+            status_code=413,
+            detail=f"Audio file exceeds maximum allowed size of {cap_mb} MB",
+        )
+
 router = APIRouter(prefix="/api/recordings", tags=["recordings"])
 
 os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
@@ -272,6 +287,7 @@ async def upload_and_analyze(
     filename = f"{uuid.uuid4()}.{ext}"
     filepath = os.path.join(settings.UPLOAD_DIR, filename)
     content = await audio.read()
+    _enforce_audio_size_cap(content)  # F-075a Layer B
     with open(filepath, "wb") as f:
         f.write(content)
 
@@ -369,6 +385,7 @@ async def transcribe_only(
     filename = f"{uuid.uuid4()}.{ext}"
     filepath = os.path.join(settings.UPLOAD_DIR, filename)
     content = await audio.read()
+    _enforce_audio_size_cap(content)  # F-075a Layer B
     with open(filepath, "wb") as f:
         f.write(content)
 

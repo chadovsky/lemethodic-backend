@@ -66,6 +66,16 @@ async def upload_and_transcribe(
     content = await audio.read()
     if not content:
         raise HTTPException(400, "Empty audio body")
+    # F-075a Layer B — defensive size cap. Layer A middleware rejects
+    # via Content-Length before the body is buffered; this catches
+    # spoofed / chunked / missing-header cases.
+    cap = settings.MAX_AUDIO_UPLOAD_BYTES
+    if len(content) > cap:
+        cap_mb = cap // (1024 * 1024)
+        raise HTTPException(
+            status_code=413,
+            detail=f"Audio file exceeds maximum allowed size of {cap_mb} MB",
+        )
     with open(filepath, "wb") as f:
         f.write(content)
 

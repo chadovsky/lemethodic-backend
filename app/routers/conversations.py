@@ -727,6 +727,16 @@ async def append_turn(
         filename = f"{uuid.uuid4()}.{ext}"
         filepath = os.path.join(settings.UPLOAD_DIR, filename)
         content = await audio.read()
+        # F-075a Layer B — defensive size cap. Layer A middleware
+        # rejects via Content-Length before buffering; this catches
+        # spoofed / chunked / missing-header cases.
+        cap = settings.MAX_AUDIO_UPLOAD_BYTES
+        if len(content) > cap:
+            cap_mb = cap // (1024 * 1024)
+            raise HTTPException(
+                status_code=413,
+                detail=f"Audio file exceeds maximum allowed size of {cap_mb} MB",
+            )
         with open(filepath, "wb") as f:
             f.write(content)
         turn_audio_path = filepath

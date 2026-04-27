@@ -20,6 +20,18 @@ class Settings:
     # Audio storage
     UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "./uploads")
     MAX_AUDIO_SECONDS: int = 900  # 15 min max for TCF Task 3
+    # F-075a — server-side cap on incoming audio uploads. Enforced at
+    # two layers:
+    #   (A) main.py middleware on any POST with Content-Type:
+    #       multipart/form-data — rejects via Content-Length before
+    #       FastAPI buffers the body into memory.
+    #   (B) per-route defensive check after `await audio.read()` —
+    #       guards against spoofed / chunked transfer encoding.
+    # 10 MB gives ~6x headroom over the largest legitimate file in the
+    # current corpus (1.68 MB). Raise to 15 MB only if real-world
+    # recordings start approaching the cap; do not exceed 20 MB
+    # without a real reason. Override via env if needed for testing.
+    MAX_AUDIO_UPLOAD_BYTES: int = int(os.getenv("MAX_AUDIO_UPLOAD_BYTES", str(10 * 1024 * 1024)))
 
     # ── F-052 Text-to-Speech (AI examiner voice) ─────────────
     # Provider abstraction: only "openai" is implemented today. If Chadi

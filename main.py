@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from app.database import engine, Base
 from app.routers import auth, recordings, admin
 from app.routers import analytics
@@ -14,6 +14,7 @@ from app.routers import ecole
 from app.routers import users
 from app.routers import modules
 from app.models import writing as writing_models  # ensure tables are created
+from app.config import settings
 
 # Create tables
 Base.metadata.create_all(bind=engine)
@@ -32,6 +33,47 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ═══════════════════════════════════════════════════════════════
+# F-075a — server-side audio upload size cap (Layer A: middleware)
+# ═══════════════════════════════════════════════════════════════
+#
+# Reject oversized multipart uploads BEFORE FastAPI buffers the body
+# into worker memory. The cap is keyed on Content-Type rather than a
+# path allowlist so any future audio-receiving route is guarded by
+# default — no multipart endpoint in this codebase carries anything
+# other than audio today, and the same DoS class applies if a future
+# multipart endpoint is added without explicit protection.
+#
+# Layer B (per-route `await audio.read(); if len(...) > cap: 413`)
+# runs alongside this in the four upload handlers — that catches
+# spoofed / missing Content-Length and chunked-transfer cases the
+# header check can't see. See app/routers/recordings.py + audio.py +
+# conversations.py for the per-route checks.
+@app.middleware("http")
+async def enforce_multipart_upload_cap(request: Request, call_next):
+    if request.method == "POST":
+        content_type = request.headers.get("content-type", "").lower()
+        if content_type.startswith("multipart/form-data"):
+            content_length = request.headers.get("content-length")
+            if content_length:
+                try:
+                    if int(content_length) > settings.MAX_AUDIO_UPLOAD_BYTES:
+                        cap_mb = settings.MAX_AUDIO_UPLOAD_BYTES // (1024 * 1024)
+                        return JSONResponse(
+                            status_code=413,
+                            content={
+                                "detail": f"Audio file exceeds maximum allowed size of {cap_mb} MB"
+                            },
+                        )
+                except ValueError:
+                    # Malformed Content-Length — let it fall through to
+                    # Layer B (route-level read-time check) rather than
+                    # 400 here; the route's own size check is the
+                    # authoritative gate.
+                    pass
+    return await call_next(request)
 
 # Routers
 app.include_router(auth.router)
