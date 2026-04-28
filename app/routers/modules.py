@@ -21,7 +21,7 @@ import logging
 from typing import Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import distinct, func
+from sqlalchemy import String, cast, distinct, func
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -130,7 +130,7 @@ def _user_context_for(
             func.count(distinct(SessionDetectedModule.recording_id)).label("recurrence_count"),
             func.min(SessionDetectedModule.detected_at).label("first_detected_at"),
             func.max(SessionDetectedModule.detected_at).label("last_detected_at"),
-            func.group_concat(distinct(SessionDetectedModule.recording_id)).label("recording_ids_csv"),
+            func.string_agg(distinct(cast(SessionDetectedModule.recording_id, String)), ",").label("recording_ids_csv"),
         )
         .join(Recording, Recording.id == SessionDetectedModule.recording_id)
         .filter(
