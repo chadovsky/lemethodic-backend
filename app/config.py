@@ -25,8 +25,22 @@ class Settings:
     # Claude API
     ANTHROPIC_API_KEY: str = os.getenv("ANTHROPIC_API_KEY", "")
 
-    # Audio storage
-    UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "./uploads")
+    # ── F-078 storage layout ──────────────────────────────────
+    # All persistent file storage lives under STORAGE_LOCAL_ROOT in
+    # local dev. Production (DO Spaces) ignores this — see
+    # app/services/storage.py for backend selection.
+    #
+    # Subdirectories under STORAGE_LOCAL_ROOT:
+    #   uploads/        user audio recordings (storage keys: uploads/<uuid>.<ext>)
+    #   tts_cache/      OpenAI TTS mp3 cache  (storage keys: tts_cache/<sha256>.mp3)
+    #
+    # UPLOAD_DIR / TTS_CACHE_DIR are derived from STORAGE_LOCAL_ROOT
+    # for any code that still references them directly (verification
+    # harnesses, route-level os.makedirs no-ops). New write/read sites
+    # MUST go through app.services.storage instead so the Spaces
+    # backend takes over transparently in production.
+    STORAGE_LOCAL_ROOT: str = os.getenv("STORAGE_LOCAL_ROOT", "./storage")
+    UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", os.path.join(STORAGE_LOCAL_ROOT, "uploads"))
     MAX_AUDIO_SECONDS: int = 900  # 15 min max for TCF Task 3
     # F-075a — server-side cap on incoming audio uploads. Enforced at
     # two layers:
@@ -60,7 +74,11 @@ class Settings:
     TTS_VOICE_TACHE_2: str = os.getenv("TTS_VOICE_TACHE_2", "echo")
     # Cache + cost-log locations. Cache hashes (text, voice, model) →
     # an mp3 on disk; cost log is a plain append-only JSONL.
-    TTS_CACHE_DIR: str = os.getenv("TTS_CACHE_DIR", "data/tts_cache")
+    # F-078: cache dir derives from STORAGE_LOCAL_ROOT for the local
+    # fallback backend. Cost log stays where it was — small append-only
+    # JSONL kept on local disk only; ephemeral on App Platform is fine
+    # for the soft-beta unit-economics dashboard.
+    TTS_CACHE_DIR: str = os.getenv("TTS_CACHE_DIR", os.path.join(STORAGE_LOCAL_ROOT, "tts_cache"))
     TTS_COST_LOG: str = os.getenv("TTS_COST_LOG", "data/tts_cost.log")
 
 settings = Settings()

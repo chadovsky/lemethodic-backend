@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from app.routers import auth, recordings, admin
 from app.routers import analytics
 from app.routers import writing
@@ -14,6 +14,7 @@ from app.routers import users
 from app.routers import modules
 from app.models.models import User
 from app.services.auth import get_current_user
+from app.services import storage
 from app.config import settings
 
 # F-077: schema is now owned by Alembic. Run `alembic upgrade head` on
@@ -25,15 +26,37 @@ from app.config import settings
 
 app = FastAPI(title="TCF Oral Practice Tool")
 
-# CORS — allow the v0/Next.js frontend to talk to this backend.
-# Add production origins here before launch (F-060).
+
+# F-078: dumb 200 health endpoint for App Platform's polling probe.
+# Deliberately does NOT touch the database — a slow query mustn't fail
+# the health check and trigger an unnecessary container restart. Real
+# DB / dependency monitoring goes in a separate `/ready` endpoint
+# post-launch if needed.
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
+
+
+# CORS — Next.js dev origins always allowed; production frontend
+# origin is injected via FRONTEND_ORIGIN env var (set by F-079 once
+# the Vercel URL exists). Multiple production origins can be passed
+# as a comma-separated list — useful for staging + prod side by side.
+import os as _os
+
+_default_dev_origins = [
+    "http://localhost:3000",   # Next.js dev server
+    "http://127.0.0.1:3000",   # alt localhost form
+    "http://localhost:3001",   # alt port for parallel dev runs
+]
+_extra_origins = [
+    o.strip() for o in (_os.getenv("FRONTEND_ORIGIN") or "").split(",") if o.strip()
+]
+_allowed_origins = _default_dev_origins + _extra_origins
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",   # Next.js dev server
-        "http://127.0.0.1:3000",   # alt localhost form
-    ],
-    allow_credentials=True,
+    allow_origins=_allowed_origins,
+    allow_credentials=True,  # cookie auth (F-075b)
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -100,8 +123,7 @@ if os.path.exists(static_dir):
     app.mount("/static", StaticFiles(directory=static_dir), name="static")
 
 # F-052 / F-075b: serve the TTS cache so the <audio> elements in the
-# Tâche 1/2 UI can fetch ``/tts_audio/<sha256>.mp3``. Ensure the
-# directory exists at startup.
+# Tâche 1/2 UI can fetch ``/tts_audio/<sha256>.mp3``.
 #
 # F-075b — replaced the unauthenticated `app.mount("/tts_audio", ...)`
 # with an authenticated route handler. TTS files are SHARED across
@@ -113,12 +135,11 @@ if os.path.exists(static_dir):
 # without frontend changes (browsers don't attach Authorization
 # headers to media element requests, but they do send cookies).
 #
-# Path traversal guard: reject any filename containing path
-# separators or `..`, then double-check via Path.resolve() that the
-# resolved file is still inside the cache dir (catches symlink
-# escapes too).
-_tts_cache_dir = os.path.abspath(settings.TTS_CACHE_DIR)
-os.makedirs(_tts_cache_dir, exist_ok=True)
+# F-078 — file body now comes from `app.services.storage` (Spaces in
+# prod, local-disk fallback otherwise). Filename guards still apply:
+# they prevent malicious filenames from becoming arbitrary storage
+# keys (e.g. an attacker can't request `tts_cache/../../etc/passwd`
+# because the slash check rejects it before we build the key).
 
 
 @app.get("/tts_audio/{filename}")
@@ -126,10 +147,13 @@ def serve_tts_audio(
     filename: str,
     user: User = Depends(get_current_user),
 ):
-    # First-pass filename guard. Reject anything with path
-    # separators, parent-dir traversal, or null bytes. The cache
-    # writer only ever produces ``<sha256>.mp3`` filenames so this
-    # is the canonical shape; anything else is suspect.
+    # Filename guard. Reject anything with path separators,
+    # parent-dir traversal, null bytes, or leading-dot. The TTS
+    # cache writer only emits ``<sha256>.mp3`` filenames so this is
+    # the canonical shape; anything else is suspect. Combined with
+    # the prefix-pinned storage key below, this is sufficient to
+    # contain the requested file inside tts_cache/ even if the
+    # storage backend is permissive about object keys.
     if (
         "/" in filename
         or "\\" in filename
@@ -139,25 +163,13 @@ def serve_tts_audio(
     ):
         raise HTTPException(status_code=400, detail="Invalid filename")
 
-    from pathlib import Path
-    cache_root = Path(_tts_cache_dir).resolve()
-    target = (cache_root / filename).resolve()
-
-    # Second-pass: even after the string-level filter, confirm the
-    # resolved path actually lives inside the cache dir. Catches
-    # symlink-based escapes and any future filename quirk the
-    # string filter doesn't anticipate.
-    try:
-        target.relative_to(cache_root)
-    except ValueError:
-        raise HTTPException(status_code=400, detail="Invalid filename")
-
-    if not target.is_file():
+    storage_key = f"tts_cache/{filename}"
+    if not storage.exists(storage_key):
         raise HTTPException(status_code=404, detail="Audio not found")
 
     # The TTS pipeline only emits .mp3, but infer defensively in case
     # a future provider adds wav/ogg cache entries.
-    ext = target.suffix.lower()
+    ext = os.path.splitext(filename)[1].lower()
     media_type = {
         ".mp3": "audio/mpeg",
         ".wav": "audio/wav",
@@ -166,7 +178,7 @@ def serve_tts_audio(
         ".webm": "audio/webm",
     }.get(ext, "application/octet-stream")
 
-    return FileResponse(target, media_type=media_type)
+    return storage.stream_response(storage_key, content_type=media_type)
 
 
 @app.get("/", response_class=HTMLResponse)

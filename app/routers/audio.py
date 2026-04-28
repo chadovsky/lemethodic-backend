@@ -23,6 +23,7 @@ from sqlalchemy.orm import Session
 from app.config import settings
 from app.database import get_db
 from app.models.models import User
+from app.services import storage
 from app.services.auth import get_current_user
 from app.services.fluency import compute_fluency
 from app.services.stt import transcribe_audio
@@ -31,7 +32,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/audio", tags=["audio"])
 
-os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+# F-078: writes go through app.services.storage; no module-level
+# os.makedirs needed.
 
 
 @router.post("/upload")
@@ -62,7 +64,7 @@ async def upload_and_transcribe(
         ext = "webm"
 
     filename = f"{uuid.uuid4()}.{ext}"
-    filepath = os.path.join(settings.UPLOAD_DIR, filename)
+    storage_key = f"uploads/{filename}"  # F-078: storage key, not filesystem path
     content = await audio.read()
     if not content:
         raise HTTPException(400, "Empty audio body")
@@ -76,13 +78,12 @@ async def upload_and_transcribe(
             status_code=413,
             detail=f"Audio file exceeds maximum allowed size of {cap_mb} MB",
         )
-    with open(filepath, "wb") as f:
-        f.write(content)
+    storage.write_bytes(storage_key, content, content_type=(audio.content_type or "application/octet-stream"))
 
     try:
-        stt_result = await transcribe_audio(filepath)
+        stt_result = await transcribe_audio(content)
     except Exception as exc:
-        logger.exception("F-050 STT failed for user=%s path=%s", user.id, filepath)
+        logger.exception("F-050 STT failed for user=%s key=%s", user.id, storage_key)
         raise HTTPException(500, f"Transcription failed: {exc}")
 
     fluency_data = compute_fluency(
@@ -97,7 +98,11 @@ async def upload_and_transcribe(
         fluency_payload = json.dumps(fluency_data, ensure_ascii=False)
 
     return {
-        "audio_url": filepath,
+        # F-078: this is a storage KEY (e.g. uploads/<uuid>.webm), not
+        # a filesystem path. The frontend treats it as opaque and
+        # round-trips it back on /api/conversations/{id}/turn where it
+        # lands in ConversationTurn.audio_url.
+        "audio_url": storage_key,
         "transcript": stt_result.get("transcript", "") or "",
         "confidence": stt_result.get("confidence", 0.0),
         "words": stt_result.get("words", []),

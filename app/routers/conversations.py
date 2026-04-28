@@ -47,6 +47,7 @@ from app.services.scoring_profiles import (
     is_valid_mode,
 )
 from app.services.stt import transcribe_audio
+from app.services import storage
 from app.services.tache_1 import (
     analyze_tache_1,
     generate_examiner_turn as generate_examiner_turn_t1,
@@ -71,7 +72,8 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/conversations", tags=["conversations"])
 
-os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+# F-078: writes go through app.services.storage; module-level makedirs
+# is no longer needed.
 
 # F-049: now includes tache_2. tache_3 doesn't use conversation plumbing
 # (it's a single monologue upload via the recordings router).
@@ -725,7 +727,7 @@ async def append_turn(
         assert audio is not None  # narrowed by has_audio
         ext = (audio.filename or "clip.webm").split(".")[-1]
         filename = f"{uuid.uuid4()}.{ext}"
-        filepath = os.path.join(settings.UPLOAD_DIR, filename)
+        storage_key = f"uploads/{filename}"  # F-078: storage key, not filesystem path
         content = await audio.read()
         # F-075a Layer B — defensive size cap. Layer A middleware
         # rejects via Content-Length before buffering; this catches
@@ -737,12 +739,11 @@ async def append_turn(
                 status_code=413,
                 detail=f"Audio file exceeds maximum allowed size of {cap_mb} MB",
             )
-        with open(filepath, "wb") as f:
-            f.write(content)
-        turn_audio_path = filepath
+        storage.write_bytes(storage_key, content, content_type=(audio.content_type or "application/octet-stream"))
+        turn_audio_path = storage_key
 
         try:
-            stt_result = await transcribe_audio(filepath)
+            stt_result = await transcribe_audio(content)
         except Exception as exc:
             logger.exception("F-048 STT failed for conversation %s", conv.id)
             raise HTTPException(500, f"Transcription failed: {exc}")

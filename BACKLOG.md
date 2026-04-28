@@ -23,6 +23,25 @@ The codebase stores JSON-shaped data in `Column(Text)` with `json.dumps()` / `js
 
 ---
 
+## F-078.x — Async storage migration (`aioboto3`)
+
+**Filed:** F-078 (production deploy + Spaces), 2026-04-28.
+**Status:** post-launch.
+
+Replace `boto3` synchronous calls in `app/services/storage.py` with `aioboto3` async equivalents. boto3's `put_object` / `get_object` / `head_object` block the event loop during the round-trip (~50–200 ms per call on Spaces). At soft-beta scale (5–10 concurrent users) this is fine — typical session has 1 upload every 30–60 s. Past ~10 simultaneous uploads it serializes and tail latency starts climbing.
+
+**Scope:**
+- Add `aioboto3` to `requirements.txt`.
+- Promote `write_bytes` / `read_bytes` / `exists` / `stream_response` to `async def` in the Spaces branch; the local-disk branch can stay sync (it's already cheap).
+- Update every caller — tts.py is already async; the four upload routes are already async; `/tts_audio` handler is currently sync (`def`) and needs `async def` if it goes through the async branch. Only ~6 sites total.
+- Streaming reads (`stream_response`) should switch from `read_bytes()`-then-`Response(content=...)` to FastAPI's `StreamingResponse` so a 5 MB file doesn't sit fully in memory before the response starts.
+
+**Estimate:** 2–3h.
+
+**Out of scope:** lifecycle policies on Spaces (separate post-launch ticket — orphaned upload cleanup, TTS cache eviction).
+
+---
+
 ## F-079 — Frontend production deploy (Vercel + environment wiring)
 
 **Filed:** 2026-04-28.

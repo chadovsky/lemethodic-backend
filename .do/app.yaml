@@ -1,0 +1,109 @@
+# F-078 — DigitalOcean App Platform spec for fluentpath-backend.
+#
+# First deploy:
+#   doctl apps create --spec .do/app.yaml
+# or via DO console → Apps → "Create App" → "From source code"
+# pointing at github.com/chadovsky/fluentpath-backend (master).
+#
+# Subsequent deploys are automatic via deploy_on_push (any push to
+# master triggers a new build + deploy). The run_command runs
+# `alembic upgrade head` before uvicorn starts so schema changes
+# ship with the same release that introduces them.
+#
+# Secrets (ANTHROPIC_API_KEY, OPENAI_API_KEY, ASSEMBLYAI_API_KEY,
+# SECRET_KEY, DO_SPACES_KEY, DO_SPACES_SECRET) are NOT in this file
+# — they're set via DO console (App → Settings → Environment
+# Variables) as encrypted SECRET-typed values. The spec declares the
+# keys and `type: SECRET`; values are filled in the dashboard.
+#
+# DATABASE_URL is auto-injected by App Platform when the database
+# below is bound to the service. The template syntax `${db.DATABASE_URL}`
+# resolves at boot using the database's `name:` field as the prefix.
+name: fluentpath-backend
+region: fra  # Frankfurt — closest to Morocco
+
+services:
+  - name: api
+    source_dir: /
+    github:
+      repo: chadovsky/fluentpath-backend
+      branch: master
+      deploy_on_push: true
+
+    build_command: pip install -r requirements.txt
+    # Run migrations before starting uvicorn. Alembic upgrade is
+    # idempotent — re-running on an already-migrated DB is a no-op.
+    # `--host 0.0.0.0` is required so App Platform's load balancer
+    # can reach the container; bind-loopback would cause health
+    # checks to time out.
+    run_command: alembic upgrade head && python -m uvicorn main:app --host 0.0.0.0 --port 8080
+
+    instance_size_slug: basic-xxs
+    instance_count: 1
+    http_port: 8080
+
+    health_check:
+      http_path: /health
+      # Alembic upgrade can take 5–15 s on first deploy + cold start.
+      # Delay the first probe so a slow boot doesn't trigger a
+      # restart loop.
+      initial_delay_seconds: 30
+      period_seconds: 10
+      failure_threshold: 9
+
+    envs:
+      # ── Database (auto-injected) ────────────────────────────
+      - key: DATABASE_URL
+        scope: RUN_TIME
+        value: ${db.DATABASE_URL}
+
+      # ── Auth ────────────────────────────────────────────────
+      - key: SECRET_KEY
+        scope: RUN_TIME
+        type: SECRET
+
+      # ── AI APIs ─────────────────────────────────────────────
+      - key: ANTHROPIC_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: OPENAI_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: ASSEMBLYAI_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+
+      # ── Storage (DO Spaces) ─────────────────────────────────
+      # Bucket name is plain — public-ish identifier; the access
+      # keys are the actual secrets.
+      - key: DO_SPACES_BUCKET
+        scope: RUN_TIME
+        value: fluentpath-storage
+      - key: DO_SPACES_REGION
+        scope: RUN_TIME
+        value: fra1
+      - key: DO_SPACES_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: DO_SPACES_SECRET
+        scope: RUN_TIME
+        type: SECRET
+
+      # ── CORS ────────────────────────────────────────────────
+      # Comma-separated list of production frontend origins.
+      # Updated when F-079 ships and the Vercel URL is known.
+      - key: FRONTEND_ORIGIN
+        scope: RUN_TIME
+        value: ""
+
+databases:
+  - name: db
+    engine: PG
+    version: "16"
+    # `production: false` = dev-tier hobby cluster (~$7/mo). Bumped
+    # to a production-tier slug once real-user traffic warrants it.
+    # `cluster_name` is INTENTIONALLY OMITTED so App Platform
+    # provisions a fresh cluster on first deploy. Setting
+    # cluster_name would tell App Platform to bind to an existing
+    # named cluster instead.
+    production: false

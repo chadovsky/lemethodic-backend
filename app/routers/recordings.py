@@ -15,6 +15,7 @@ from app.models.models import (
 )
 from app.services.auth import get_current_user
 from app.services.stt import transcribe_audio
+from app.services import storage
 from app.services.analysis import analyze_transcript, analyze_recording
 from app.services.fluency import compute_fluency
 from app.services.exam_profiles import get_profile
@@ -47,7 +48,10 @@ def _enforce_audio_size_cap(content: bytes) -> None:
 
 router = APIRouter(prefix="/api/recordings", tags=["recordings"])
 
-os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+# F-078: writes go through app.services.storage which creates parent
+# dirs in the local-disk fallback and is a no-op for the Spaces backend.
+# The legacy os.makedirs(UPLOAD_DIR) at module-import time is no longer
+# necessary.
 
 # Oral endpoints may only create oral Recording rows. "writing" is a valid
 # enum value (F-047) but its dispatch lives behind the writing router, so
@@ -285,16 +289,15 @@ async def upload_and_analyze(
     # ── Save audio ─────────────────────────────────────────────
     ext = audio.filename.split(".")[-1] if audio.filename else "webm"
     filename = f"{uuid.uuid4()}.{ext}"
-    filepath = os.path.join(settings.UPLOAD_DIR, filename)
+    storage_key = f"uploads/{filename}"  # F-078: storage key, not filesystem path
     content = await audio.read()
     _enforce_audio_size_cap(content)  # F-075a Layer B
-    with open(filepath, "wb") as f:
-        f.write(content)
+    storage.write_bytes(storage_key, content, content_type=(audio.content_type or "application/octet-stream"))
 
     # ── Create recording ───────────────────────────────────────
     rec = Recording(
         user_id=user.id,
-        audio_path=filepath,
+        audio_path=storage_key,
         target_level=target_level,
         duration_seconds=duration_seconds,
         topic_id=topic_id if topic_id else None,
@@ -320,7 +323,7 @@ async def upload_and_analyze(
 
     # ── Transcribe (now returns word confidence) ───────────────
     try:
-        stt_result = await transcribe_audio(filepath)
+        stt_result = await transcribe_audio(content)
         rec.transcript = stt_result["transcript"]
         rec.word_count = len(rec.transcript.split()) if rec.transcript else 0
         rec.stt_confidence = stt_result.get("confidence", 0)
@@ -383,15 +386,14 @@ async def transcribe_only(
 
     ext = audio.filename.split(".")[-1] if audio.filename else "webm"
     filename = f"{uuid.uuid4()}.{ext}"
-    filepath = os.path.join(settings.UPLOAD_DIR, filename)
+    storage_key = f"uploads/{filename}"  # F-078: storage key, not filesystem path
     content = await audio.read()
     _enforce_audio_size_cap(content)  # F-075a Layer B
-    with open(filepath, "wb") as f:
-        f.write(content)
+    storage.write_bytes(storage_key, content, content_type=(audio.content_type or "application/octet-stream"))
 
     rec = Recording(
         user_id=user.id,
-        audio_path=filepath,
+        audio_path=storage_key,
         target_level=target_level,
         duration_seconds=duration_seconds,
         topic_id=topic_id if topic_id else None,
@@ -408,7 +410,7 @@ async def transcribe_only(
             topic_text = topic.title
 
     try:
-        stt_result = await transcribe_audio(filepath)
+        stt_result = await transcribe_audio(content)
         rec.transcript = stt_result["transcript"]
         rec.word_count = len(rec.transcript.split()) if rec.transcript else 0
         rec.stt_confidence = stt_result.get("confidence", 0)

@@ -4,10 +4,17 @@ Currently wraps OpenAI TTS-1-HD. Designed so a future ticket can swap
 to ElevenLabs by adding an alternate implementation behind the same
 interface (see ``TTS_PROVIDER`` in config).
 
-Caching: per (text, voice, model) — SHA-256 → ``{TTS_CACHE_DIR}/{hash}.mp3``.
-Identical phrases (e.g. the Tâche 1 opening prompts) are synthesized
-once and then served from disk. Cost-logging is a plain JSONL file at
-``TTS_COST_LOG`` for Chadi to eyeball after the sprint.
+Caching: per (text, voice, model) — SHA-256 hash → storage key
+``tts_cache/<hash>.mp3``. F-078: writes go through
+``app.services.storage`` so production lands in DO Spaces and dev falls
+back to local disk under ``STORAGE_LOCAL_ROOT/tts_cache/``. Identical
+phrases (e.g. the Tâche 1 opening prompts) are synthesized once and
+served from cache thereafter.
+
+Cost log stays on local disk (``TTS_COST_LOG``) — append-only JSONL
+that Chadi eyeballs locally and that is acceptable to lose on App
+Platform container restarts (soft-beta unit-economics dashboard, not
+a system of record).
 
 Failure modes:
 - missing API key → returns None (caller shows text-only with a
@@ -34,6 +41,7 @@ from typing import Optional
 import httpx
 
 from app.config import settings
+from app.services import storage
 
 logger = logging.getLogger(__name__)
 
@@ -48,14 +56,6 @@ _RESPONSE_FORMAT = "mp3"  # default for OpenAI TTS; smallest / most portable
 _URL_PREFIX = "/tts_audio"  # matches the static mount in main.py
 
 
-def _cache_dir() -> Path:
-    """Resolve + ensure the cache directory. Lazy so tests can override
-    ``settings.TTS_CACHE_DIR`` between calls."""
-    d = Path(settings.TTS_CACHE_DIR)
-    d.mkdir(parents=True, exist_ok=True)
-    return d
-
-
 def _cost_log_path() -> Path:
     p = Path(settings.TTS_COST_LOG)
     p.parent.mkdir(parents=True, exist_ok=True)
@@ -66,8 +66,10 @@ def _cache_key(text: str, voice: str, model: str) -> str:
     return hashlib.sha256(f"{text}|{voice}|{model}".encode("utf-8")).hexdigest()
 
 
-def _cached_path(cache_key: str) -> Path:
-    return _cache_dir() / f"{cache_key}.{_RESPONSE_FORMAT}"
+def _cache_storage_key(cache_key: str) -> str:
+    """Storage key under which the cached mp3 lives. Forward-slash
+    layout works for both Spaces (object key) and local disk."""
+    return f"tts_cache/{cache_key}.{_RESPONSE_FORMAT}"
 
 
 def _public_url(cache_key: str) -> str:
@@ -153,8 +155,8 @@ async def synthesize(
         return None
 
     key = _cache_key(text, voice, model)
-    cached = _cached_path(key)
-    if cached.exists() and cached.stat().st_size > 0:
+    cache_skey = _cache_storage_key(key)
+    if storage.exists(cache_skey):
         _log_cost("cache_hit", len(text), voice, model, cached=True)
         return _public_url(key)
 
@@ -176,19 +178,14 @@ async def synthesize(
         _log_cost("failed", len(text), voice, model, cached=False)
         return None
 
-    # Write to a temp sibling file then atomically rename. Prevents a
-    # half-written mp3 from being served on a crash between HTTP
-    # completion and disk flush.
-    tmp = cached.with_suffix(cached.suffix + ".tmp")
+    # F-078: storage handles atomicity differently per backend. Spaces
+    # PUT is atomic by definition. The local fallback writes directly
+    # (no temp-rename) — worst case is a corrupted mp3 served once
+    # before being re-cached on next miss; benign for soft-beta.
     try:
-        tmp.write_bytes(audio_bytes)
-        os.replace(tmp, cached)
-    except OSError as exc:
+        storage.write_bytes(cache_skey, audio_bytes, content_type="audio/mpeg")
+    except Exception as exc:
         logger.warning("F-052 cache write failed (%s); returning None", exc)
-        try:
-            tmp.unlink(missing_ok=True)
-        except Exception:
-            pass
         return None
 
     _log_cost("synthesized", len(text), voice, model, cached=False)

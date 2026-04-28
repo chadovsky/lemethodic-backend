@@ -16,6 +16,7 @@ venv/
 # Runtime artifacts
 uploads/
 data/
+storage/  # F-078: local-disk fallback for app.services.storage
 
 # Local Claude Code state
 .claude/

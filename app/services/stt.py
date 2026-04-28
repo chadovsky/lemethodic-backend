@@ -6,9 +6,14 @@ from app.config import settings
 logger = logging.getLogger(__name__)
 
 
-async def transcribe_audio(audio_path: str) -> dict:
+async def transcribe_audio(audio_data: bytes) -> dict:
     """
-    Send audio to AssemblyAI and return transcript + word-level confidence.
+    Send audio bytes to AssemblyAI and return transcript + word-level confidence.
+
+    F-078: signature accepts bytes directly. Pre-F-078 this took a local
+    filesystem path and read the file inline. Decoupling lets callers
+    write to whatever storage backend they want (local disk or DO Spaces
+    via app.services.storage) without STT needing to know about it.
     """
     api_key = settings.ASSEMBLYAI_API_KEY
 
@@ -20,9 +25,6 @@ async def transcribe_audio(audio_path: str) -> dict:
             "low_confidence_words": [],
             "total_words": 0,
         }
-
-    with open(audio_path, "rb") as f:
-        audio_data = f.read()
 
     async with httpx.AsyncClient(timeout=120) as client:
         # Step 1: Upload audio
