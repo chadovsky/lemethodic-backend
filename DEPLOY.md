@@ -8,7 +8,7 @@ Manual provisioning sequence for the FluentPath backend (F-078). Run once at fir
 
 - DO account with billing enabled.
 - `doctl` installed and authenticated (`doctl auth init`) — optional but useful.
-- GitHub repo `chadovsky/fluentpath-backend` exists, master branch is the deploy branch.
+- GitHub repo `chadovsky/lemethodic-backend` exists, master branch is the deploy branch.
 - Local dev verified: F-077 fixtures + F-075a/F-075b/F-083 harnesses pass.
 
 ---
@@ -28,7 +28,7 @@ DO console → **Spaces Object Storage** → **Create a Spaces Bucket**.
 
 DO console → **API** → **Spaces Object Storage Keys** → **Generate New Key**.
 
-- Name: `fluentpath-backend`.
+- Name: `lemethodic-backend`.
 - Copy the **Access Key** and **Secret** immediately — the secret is shown only once.
 - These map to `DO_SPACES_KEY` and `DO_SPACES_SECRET` in App Platform.
 
@@ -45,7 +45,7 @@ doctl apps create --spec .do/app.yaml
 
 **Via console:**
 1. **Apps** → **Create App** → **GitHub** source.
-2. Select `chadovsky/fluentpath-backend`, branch `master`.
+2. Select `chadovsky/lemethodic-backend`, branch `master`.
 3. App Platform parses `.do/app.yaml` automatically. Confirm the detected service + database, click **Next**.
 
 The first deploy provisions the managed PostgreSQL cluster (~3–5 minutes), builds the Python service (~2–3 minutes), runs `alembic upgrade head` against the empty database, then starts uvicorn. Total: 5–10 minutes.

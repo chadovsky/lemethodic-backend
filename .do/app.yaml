@@ -1,9 +1,9 @@
-# F-078 — DigitalOcean App Platform spec for fluentpath-backend.
+# F-078 — DigitalOcean App Platform spec for lemethodic-backend.
 #
 # First deploy:
 #   doctl apps create --spec .do/app.yaml
 # or via DO console → Apps → "Create App" → "From source code"
-# pointing at github.com/chadovsky/fluentpath-backend (master).
+# pointing at github.com/chadovsky/lemethodic-backend (master).
 #
 # Subsequent deploys are automatic via deploy_on_push (any push to
 # master triggers a new build + deploy). The run_command runs
@@ -19,14 +19,14 @@
 # DATABASE_URL is auto-injected by App Platform when the database
 # below is bound to the service. The template syntax `${db.DATABASE_URL}`
 # resolves at boot using the database's `name:` field as the prefix.
-name: fluentpath-backend
+name: lemethodic-backend
 region: fra  # Frankfurt — closest to Morocco
 
 services:
   - name: api
     source_dir: /
     github:
-      repo: chadovsky/fluentpath-backend
+      repo: chadovsky/lemethodic-backend
       branch: master
       deploy_on_push: true
 
