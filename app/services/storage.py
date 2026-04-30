@@ -59,14 +59,6 @@ def _spaces_client():
     Region defaults to ``fra1`` (Frankfurt — closest to Morocco). The
     ``signature_version="s3v4"`` is required for Spaces; default sigv2
     fails with ``InvalidArgument`` on PutObject.
-
-    ``request_checksum_calculation`` / ``response_checksum_validation``
-    are set to ``when_required`` to opt out of the default-on CRC32
-    checksum behavior introduced in botocore 1.36. DO Spaces rejects
-    the ``x-amz-sdk-checksum-algorithm`` header with ``InvalidArgument``
-    on PutObject *and* HeadObject. These kwargs are 1.36+ only — if a
-    1.35.x botocore is installed (per the current pin in
-    ``requirements.txt``) Config construction will raise TypeError.
     """
     import boto3
     from botocore.client import Config
@@ -78,11 +70,7 @@ def _spaces_client():
         endpoint_url=f"https://{region}.digitaloceanspaces.com",
         aws_access_key_id=os.getenv("DO_SPACES_KEY"),
         aws_secret_access_key=os.getenv("DO_SPACES_SECRET"),
-        config=Config(
-            signature_version="s3v4",
-            request_checksum_calculation="when_required",
-            response_checksum_validation="when_required",
-        ),
+        config=Config(signature_version="s3v4"),
     )
 
 
@@ -117,6 +105,15 @@ def write_bytes(key: str, content: bytes, content_type: str = "application/octet
             f"region={os.getenv('DO_SPACES_REGION', 'fra1')!r} "
             f"content_len={len(content)} content_type={content_type!r} "
             f"clean_content_type={clean_content_type!r}",
+            flush=True,
+        )
+        # DEBUG: surface the actual endpoint boto3 is using and the
+        # exact type/prefix of the body, in case content is a wrapper
+        # (BytesIO, memoryview) or the endpoint is being mangled.
+        print(
+            f"DEBUG endpoint_url={client.meta.endpoint_url} "
+            f"type(content)={type(content).__name__} "
+            f"content_first16={content[:16]!r}",
             flush=True,
         )
         try:
