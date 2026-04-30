@@ -178,3 +178,243 @@ The Limited Access scope is supposed to grant per-bucket `s3:*` equivalent permi
 **Out of scope:** introducing a separate IAM-style policy layer in front of Spaces. The fix is to use DO's own scoping correctly, not to invent our own.
 
 ---
+
+## P-102 — Visual quality pass
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Medium (post-launch).
+
+Tailwind UI template, ~$300 budget. Stub — spec TBD.
+
+---
+
+## P-103 — Audio upload security hardening
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** HIGH (pre-launch blocker).
+
+Size cap, user_id ownership enforcement, auth-checked serve. Stub — spec TBD.
+
+---
+
+## P-104 — Background tab timer drift fix
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** HIGH (pre-launch blocker).
+
+Recording timer drifts when the browser tab is backgrounded. Stub — spec TBD.
+
+---
+
+## P-105 — 7-day free trial logic
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** High (pre-launch).
+
+Stub — spec TBD.
+
+---
+
+## P-106 — Stripe integration with dual + geographic pricing
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** High (pre-launch).
+
+Stub — spec TBD.
+
+---
+
+## P-107 — Soft satisfaction guarantee copy + refund flow
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Medium (pre-launch).
+
+Stub — spec TBD.
+
+---
+
+## P-108 — Pronunciation feedback (basic)
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Medium (post-launch).
+
+Stub — spec TBD.
+
+---
+
+## P-109 — TCF Canada speaking simulator MVP
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** High (pre-launch).
+
+Stub — spec TBD.
+
+---
+
+## P-110 — Onboarding refinement (TCF-specific)
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Medium (pre-launch).
+
+Stub — spec TBD.
+
+---
+
+## M-100 — Past Preply student outreach
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** HIGH (highest leverage, costs zero).
+
+Re-engagement angle, not first contact. Stub — spec TBD.
+
+---
+
+## M-101 — Landing page copy in LeMethodic voice
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** High.
+
+Stub — spec TBD.
+
+---
+
+## M-102 — Convert Preply reviews to social proof
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## M-103 — YouTube channel launch
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## M-104 — Reddit community engagement
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## M-105 — LinkedIn long-form content
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## M-106 — Blog launch
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## M-107 — Express Entry Discord/Telegram outreach
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## M-108 — Beta user testimonial pipeline
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** High.
+
+Stub — spec TBD.
+
+---
+
+## B-100 — Stripe account setup
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** HIGH (pre-launch).
+
+Stub — spec TBD.
+
+---
+
+## B-101 — Legal entity decision
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## B-102 — Privacy policy + ToS
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** HIGH (pre-launch).
+
+Stub — spec TBD.
+
+---
+
+## B-103 — Trademark research on "LeMethodic"
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Low.
+
+Stub — spec TBD.
+
+---
+
+## B-104 — Email marketing infrastructure
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## B-105 — Analytics setup
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
