@@ -97,58 +97,12 @@ def write_bytes(key: str, content: bytes, content_type: str = "application/octet
             if content_type
             else "application/octet-stream"
         )
-        # DEBUG: trace entry into Spaces write path. Throwaway, remove once
-        # the prod 500 is diagnosed.
-        print(
-            f"DEBUG storage.write_bytes called key={key!r} "
-            f"bucket={os.getenv('DO_SPACES_BUCKET')!r} "
-            f"region={os.getenv('DO_SPACES_REGION', 'fra1')!r} "
-            f"content_len={len(content)} content_type={content_type!r} "
-            f"clean_content_type={clean_content_type!r}",
-            flush=True,
+        client.put_object(
+            Bucket=os.getenv("DO_SPACES_BUCKET"),
+            Key=key,
+            Body=content,
+            ContentType=clean_content_type,
         )
-        # DEBUG: surface the actual endpoint boto3 is using and the
-        # exact type/prefix of the body, in case content is a wrapper
-        # (BytesIO, memoryview) or the endpoint is being mangled.
-        print(
-            f"DEBUG endpoint_url={client.meta.endpoint_url} "
-            f"type(content)={type(content).__name__} "
-            f"content_first16={content[:16]!r}",
-            flush=True,
-        )
-        try:
-            client.put_object(
-                Bucket=os.getenv("DO_SPACES_BUCKET"),
-                Key=key,
-                Body=content,
-                ContentType=clean_content_type,
-            )
-            # DEBUG: confirm put_object returned without raising. If we
-            # see BEFORE but not this and not the error log, the exception
-            # is escaping our except clause (class mismatch / BaseException).
-            print(f"DEBUG put_object succeeded key={key!r}", flush=True)
-        except Exception as exc:
-            # DEBUG: surface full Spaces error envelope (ArgumentName /
-            # ArgumentValue point at the offending field on InvalidArgument).
-            # Uses print() to stdout because app.services.storage ERROR logs
-            # are dropped by the prod log sink (no handler on root logger).
-            # Remove once the prod 500 is diagnosed.
-            err = getattr(exc, "response", {}).get("Error", {})
-            print(
-                f"Spaces PutObject failed key={key!r} "
-                f"bucket={os.getenv('DO_SPACES_BUCKET')!r} "
-                f"region={os.getenv('DO_SPACES_REGION', 'fra1')!r} "
-                f"error={err!r}",
-                flush=True,
-            )
-            logger.error(
-                "Spaces PutObject failed key=%r bucket=%r region=%r error=%r",
-                key,
-                os.getenv("DO_SPACES_BUCKET"),
-                os.getenv("DO_SPACES_REGION", "fra1"),
-                err,
-            )
-            raise
         return
 
     target = _local_path(key)
