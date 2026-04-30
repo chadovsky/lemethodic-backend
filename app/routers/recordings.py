@@ -1,7 +1,7 @@
 import os, json, uuid, logging
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form
 from pydantic import BaseModel
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 
 logger = logging.getLogger(__name__)
 from app.database import get_db
@@ -597,6 +597,76 @@ def list_tache3_topics(
         "topics": out,
         "gates": {"above_a2": _tache3_is_above_a2(user, db)},
     }
+
+
+# ══════════════════════════════════════════════════════════════════
+# F-110 — GET /api/recordings (lean list endpoint)
+# ══════════════════════════════════════════════════════════════════
+#
+# REST-canonical list endpoint over the current user's recordings.
+# Distinct from /history (which is the dashboard dump with topic +
+# transcript preview + score breakdown + goulet); this one is a lean
+# shape sized for the recordings list view in the new frontend.
+#
+# `joinedload(Recording.feedback)` issues a single LEFT OUTER JOIN
+# so the per-row `r.feedback` access doesn't N+1. Topic isn't
+# accessed here so we don't eager-load it.
+@router.get("")
+def list_recordings(
+    limit: int = Query(default=50, ge=1, le=100),
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Return up to ``limit`` of the current user's recordings, newest
+    first. Recordings without a Feedback row (status != "done") return
+    null cefr_level/clb_level and an empty couches array — the lean
+    shape stays uniform so the frontend can render in-flight rows
+    without special-casing missing keys.
+    """
+    rows = (
+        db.query(Recording)
+        .options(joinedload(Recording.feedback))
+        .filter(Recording.user_id == user.id)
+        .order_by(Recording.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+
+    out: list[dict] = []
+    for r in rows:
+        cefr_level: str | None = None
+        clb_level: int | None = None
+        couches: list[dict] = []
+        if r.feedback is not None:
+            profile_eval = _resolve_exam_profile_block(r.feedback)
+            cefr_level = profile_eval["cefr_level"]
+            clb_level = profile_eval["secondary_framework_value"]
+            # Build the couches array using the per-couche scores on
+            # Feedback. F-088 frontend convention is `internal_key`;
+            # F-110 spec asked for `key`. Re-shape inline rather than
+            # diverging couches_array's signature.
+            for entry in couches_array({
+                "le_fond": r.feedback.score_le_fond,
+                "les_moules_des_idees": r.feedback.score_les_moules_des_idees,
+                "les_moules": r.feedback.score_les_moules,
+                "les_reflexes_anglais": r.feedback.score_les_reflexes_anglais,
+            }):
+                couches.append({
+                    "key": entry["internal_key"],
+                    "score": entry["score"],
+                    "display_label_en": entry["display_label_en"],
+                    "display_label_fr": entry["display_label_fr"],
+                })
+
+        out.append({
+            "id": r.id,
+            "tache_mode": r.tache_mode,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "cefr_level": cefr_level,
+            "clb_level": clb_level,
+            "couches": couches,
+        })
+    return out
 
 
 @router.get("/history")
