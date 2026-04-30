@@ -89,12 +89,26 @@ def write_bytes(key: str, content: bytes, content_type: str = "application/octet
     local fallback; Spaces requires no setup."""
     if _spaces_enabled():
         client = _spaces_client()
-        client.put_object(
-            Bucket=os.getenv("DO_SPACES_BUCKET"),
-            Key=key,
-            Body=content,
-            ContentType=content_type,
-        )
+        try:
+            client.put_object(
+                Bucket=os.getenv("DO_SPACES_BUCKET"),
+                Key=key,
+                Body=content,
+                ContentType=content_type,
+            )
+        except Exception as exc:
+            # DEBUG: surface full Spaces error envelope (ArgumentName /
+            # ArgumentValue point at the offending field on InvalidArgument).
+            # Remove once the prod 500 is diagnosed.
+            err = getattr(exc, "response", {}).get("Error", {})
+            logger.error(
+                "Spaces PutObject failed key=%r bucket=%r region=%r error=%r",
+                key,
+                os.getenv("DO_SPACES_BUCKET"),
+                os.getenv("DO_SPACES_REGION", "fra1"),
+                err,
+            )
+            raise
         return
 
     target = _local_path(key)
