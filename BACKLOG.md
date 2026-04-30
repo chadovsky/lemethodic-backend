@@ -94,3 +94,44 @@ Pre-launch. Deploy `fluentpath-frontend` to Vercel production. Configure `NEXT_P
 - Frontend wiring — separate repo (`lemethodic-frontend`).
 
 ---
+
+## F-110.1 — Reconcile couches `internal_key` → `key` across older endpoints
+
+**Filed:** 2026-04-30.
+**Status:** blocked on coordination decision (see below).
+**Parent:** F-110.
+
+F-110 introduced `key` as the per-couche field name on `GET /api/recordings`. Existing endpoints still emit `internal_key`:
+- `GET /api/recordings/history`
+- `GET /api/recordings/{id}` (the main diagnostic endpoint)
+- `app/services/couche_labels.py::couches_array` (the helper feeding both)
+
+Goal: a single `key` name across every endpoint that returns couches.
+
+**Frontend coupling — verified 2026-04-30 in `fluentpath-frontend/lib/api.ts`:**
+- L316 — `interface RawCouche { internal_key: CoucheKey ... }`
+- L470 — `KNOWN_COUCHE_KEYS.has(c.internal_key as CoucheKey)`
+- L472 — `key: c.internal_key as CoucheKey`
+
+`mapDiagnosticBlock` IS the normalizer, but it READS `internal_key` and WRITES `key`. A backend-only rename would silently empty every couches array in the diagnostic page (filter rejects every row because `c.internal_key` is `undefined`).
+
+**Three coordination strategies:**
+
+1. **Atomic cutover** — Backend ships `key`-only at the same time as frontend reads `c.key`. Cleanest end state; brief breakage window if either side ships first. Best when both repos can deploy together.
+
+2. **Backend dual-emission (transition window)** — Backend emits BOTH `key` and `internal_key` on `couches_array` output. Frontend migrates to `key` whenever convenient. Backend then drops `internal_key` in a F-110.2 follow-up after the frontend deploy lands. Lowest risk; biggest cleanup tail.
+
+3. **Frontend leads** — Frontend reads `c.key ?? c.internal_key` (fallback). Backend renames whenever ready. Frontend later removes the fallback. Unusual ordering — only worth it if the frontend deploy is much faster than the backend.
+
+**My lean:** Option 2 (dual-emission). Pre-launch context — soft beta is days away, not weeks. Eliminating sync risk during launch week is worth the small cleanup tail. The dual-emission code is one line in `couches_array`; the F-110.2 cleanup is also one line.
+
+**Scope of the actual rename pass (whichever strategy):**
+- `app/services/couche_labels.py::couches_array` — emit `key` (and optionally `internal_key` in transition).
+- `app/routers/recordings.py::list_recordings` (F-110) — already emits `key`; remove the inline re-shape once `couches_array` does the right thing natively.
+- `app/routers/recordings.py::get_history` — already calls `couches_array`; transparent change once the helper is fixed.
+- `app/routers/recordings.py::get_recording` (the `/{id}` endpoint) — search for any other call site to confirm; it likely calls `couches_array` too.
+- Any other caller of `couches_array` — grep before changing.
+
+**Estimate:** 30 min for the backend pass + frontend coordination overhead.
+
+---
