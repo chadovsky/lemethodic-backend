@@ -155,3 +155,26 @@ Cleanup of the F-110.1 dual-emission window. Once `fluentpath-frontend/lib/api.t
 **Estimate:** 15 min.
 
 ---
+
+## F-111 — Investigate DO Spaces Limited Access key `InvalidArgument`
+
+**Filed:** 2026-04-30.
+**Status:** post-launch.
+
+During the launch-week debug of a production 500 on `/api/conversations/{id}/turn`, we found that the rotated DO Spaces key (Limited Access scope) was returning `InvalidArgument` on every operation against the bucket — `PutObject` (audio uploads) and `HeadObject` (F-052 TTS cache lookups) alike. Replacing it with a Full Access key resolved both immediately. No other variable changed (same bucket, region, endpoint, code path).
+
+The Limited Access scope is supposed to grant per-bucket `s3:*` equivalent permissions via DO's IAM-like model. Either (a) the scope was mis-applied at key-creation time, (b) DO's Limited Access does not in fact support the operations we need, or (c) there's a bug in DO's auth layer that returns `InvalidArgument` (with a null `Message`) instead of `AccessDenied` for scope mismatches — which is what we observed and is what made the bug nearly impossible to diagnose from response payloads.
+
+**Risk:** the Full Access key currently in production has broader privileges than the principle of least privilege calls for. It can list/delete other buckets in the account, rotate credentials, etc. If this key leaks, the blast radius is the whole Spaces account, not just our app's bucket.
+
+**Scope:**
+- Re-create a Limited Access key against the same bucket and reproduce the failure with the minimal Python repro we used in DO Console.
+- If reproducible, escalate to DO support with the repro: minimal `boto3.client("s3")` + `put_object` against a bucket-scoped Limited Access key returning `InvalidArgument` with no `Message`.
+- If non-reproducible (i.e. it works now), document as a one-off and re-attempt the rollover to a Limited Access key in production.
+- Regardless of outcome, swap production back to a Limited Access key once the root cause is understood.
+
+**Estimate:** 1–2h for the repro pass; unknown for the DO support cycle.
+
+**Out of scope:** introducing a separate IAM-style policy layer in front of Spaces. The fix is to use DO's own scoping correctly, not to invent our own.
+
+---
