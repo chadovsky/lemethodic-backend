@@ -135,3 +135,23 @@ Goal: a single `key` name across every endpoint that returns couches.
 **Estimate:** 30 min for the backend pass + frontend coordination overhead.
 
 ---
+
+## F-110.2 — Drop `internal_key` from `couches_array`
+
+**Filed:** 2026-04-30.
+**Status:** blocked on frontend completing F-110.1 consumer migration.
+**Parent:** F-110.1.
+
+Cleanup of the F-110.1 dual-emission window. Once `fluentpath-frontend/lib/api.ts` migrates from `c.internal_key` to `c.key` (and the legacy admin template at `app/templates/index.html:3459` does the same), drop `internal_key` from `couches_array`'s output so the API surface has one canonical name.
+
+**Concrete cleanup steps:**
+- `app/services/couche_labels.py::couches_array` — remove the `"internal_key": key,` line and update the docstring.
+- `app/routers/recordings.py::list_recordings` (F-110) — the inline re-shape currently reads `entry["internal_key"]`; switch to `entry["key"]` (or remove the re-shape entirely since `couches_array` now emits the spec shape natively).
+- `app/templates/index.html:3459` — `c.internal_key` → `c.key`. (Internal admin tool, can ship in the same backend commit since it lives in this repo.)
+- Grep for any other `internal_key` references that crept in during the transition window — there should be zero.
+
+**Pre-condition gate:** verify with the frontend team / `fluentpath-frontend` repo that no consumer reads `c.internal_key` anymore. F-110.1 verified the call sites at L316, L470, L472 in `lib/api.ts`; all three must read `c.key` before this ticket can ship.
+
+**Estimate:** 15 min.
+
+---

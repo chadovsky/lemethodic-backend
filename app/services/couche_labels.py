@@ -39,13 +39,25 @@ COUCHE_DISPLAY_LABELS: dict[str, dict[str, str]] = {
 
 def couches_array(scores: dict[str, float | int]) -> list[dict]:
     """Serialize a {internal_key: score} dict into the F-088 array shape:
-    [{internal_key, display_label_en, display_label_fr, score}, ...].
+    [{key, internal_key, display_label_en, display_label_fr, score}, ...].
 
     Order follows COUCHE_ORDER. Missing scores default to 0 — keeps the
     response schema stable when a legacy row is missing a column.
+
+    F-110.1 — dual-emits ``key`` and ``internal_key`` during the
+    transition window. Both hold the same value (the internal
+    pedagogical name like ``le_fond``). Once the frontend's
+    ``mapDiagnosticBlock`` migrates to read ``c.key``, F-110.2 drops
+    ``internal_key`` from this output. Until then, both fields are
+    populated so callers on either side of the rename keep working.
     """
     return [
         {
+            "key": key,
+            # F-110.1 transitional. Remove in F-110.2 once frontend
+            # consumers (lib/api.ts mapDiagnosticBlock + the legacy
+            # admin template at app/templates/index.html) migrate to
+            # read `c.key`.
             "internal_key": key,
             "display_label_en": COUCHE_DISPLAY_LABELS[key]["en"],
             "display_label_fr": COUCHE_DISPLAY_LABELS[key]["fr"],
