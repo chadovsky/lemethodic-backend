@@ -418,3 +418,46 @@ Stub — spec TBD.
 Stub — spec TBD.
 
 ---
+
+## P-200 — Writing pedagogy build
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** High (Phase 2, post-launch).
+
+Analysis prompts + 5-criterion scoring + diagnostic surface for the
+writing track. Stub — spec TBD.
+
+---
+
+## P-201 — TEF exam support
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Medium (Phase 2, post-launch).
+
+Multi-exam routing (F-091) + TEF-specific prompts + TEF scoring
+rubric. Stub — spec TBD.
+
+---
+
+## P-202 — DELF exam support
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Medium (Phase 2, post-launch).
+
+Stub — spec TBD.
+
+---
+
+## P-203 — Italian-audience expansion
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Priority:** Low (Phase 2, post-launch).
+
+Per Chadi's noted interest in Italian-speaking French learners.
+Stub — spec TBD.
+
+---
