@@ -59,6 +59,14 @@ def _spaces_client():
     Region defaults to ``fra1`` (Frankfurt — closest to Morocco). The
     ``signature_version="s3v4"`` is required for Spaces; default sigv2
     fails with ``InvalidArgument`` on PutObject.
+
+    ``request_checksum_calculation`` / ``response_checksum_validation``
+    are set to ``when_required`` to opt out of the default-on CRC32
+    checksum behavior introduced in botocore 1.36. DO Spaces rejects
+    the ``x-amz-sdk-checksum-algorithm`` header with ``InvalidArgument``
+    on PutObject *and* HeadObject. These kwargs are 1.36+ only — if a
+    1.35.x botocore is installed (per the current pin in
+    ``requirements.txt``) Config construction will raise TypeError.
     """
     import boto3
     from botocore.client import Config
@@ -70,7 +78,11 @@ def _spaces_client():
         endpoint_url=f"https://{region}.digitaloceanspaces.com",
         aws_access_key_id=os.getenv("DO_SPACES_KEY"),
         aws_secret_access_key=os.getenv("DO_SPACES_SECRET"),
-        config=Config(signature_version="s3v4"),
+        config=Config(
+            signature_version="s3v4",
+            request_checksum_calculation="when_required",
+            response_checksum_validation="when_required",
+        ),
     )
 
 
