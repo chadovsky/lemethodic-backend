@@ -58,7 +58,7 @@ Pre-launch. Deploy `fluentpath-frontend` to Vercel production. Configure `NEXT_P
 ## F-110 — Recordings list endpoint
 
 **Filed:** 2026-04-30.
-**Status:** in progress.
+**Status:** shipped 2026-04-30 (commit `b25298e`).
 **Unblocks:** P-100.
 
 `GET /api/recordings` — REST-canonical list endpoint over the current user's recordings. Distinct from the existing `/api/recordings/history` (which is the dashboard dump with topic + transcript preview + score breakdown); this one is sized for the recordings list view in the new frontend.
@@ -98,7 +98,7 @@ Pre-launch. Deploy `fluentpath-frontend` to Vercel production. Configure `NEXT_P
 ## F-110.1 — Reconcile couches `internal_key` → `key` across older endpoints
 
 **Filed:** 2026-04-30.
-**Status:** blocked on coordination decision (see below).
+**Status:** backend half shipped 2026-04-30 (commit `ca993d1`) — Option 2 (dual-emission) chosen. Frontend migration to `c.key` and final `internal_key` removal tracked in F-110.2.
 **Parent:** F-110.
 
 F-110 introduced `key` as the per-couche field name on `GET /api/recordings`. Existing endpoints still emit `internal_key`:
