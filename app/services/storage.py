@@ -89,6 +89,15 @@ def write_bytes(key: str, content: bytes, content_type: str = "application/octet
     local fallback; Spaces requires no setup."""
     if _spaces_enabled():
         client = _spaces_client()
+        # DEBUG: trace entry into Spaces write path. Throwaway, remove once
+        # the prod 500 is diagnosed.
+        print(
+            f"DEBUG storage.write_bytes called key={key!r} "
+            f"bucket={os.getenv('DO_SPACES_BUCKET')!r} "
+            f"region={os.getenv('DO_SPACES_REGION', 'fra1')!r} "
+            f"content_len={len(content)} content_type={content_type!r}",
+            flush=True,
+        )
         try:
             client.put_object(
                 Bucket=os.getenv("DO_SPACES_BUCKET"),
@@ -96,6 +105,10 @@ def write_bytes(key: str, content: bytes, content_type: str = "application/octet
                 Body=content,
                 ContentType=content_type,
             )
+            # DEBUG: confirm put_object returned without raising. If we
+            # see BEFORE but not this and not the error log, the exception
+            # is escaping our except clause (class mismatch / BaseException).
+            print(f"DEBUG put_object succeeded key={key!r}", flush=True)
         except Exception as exc:
             # DEBUG: surface full Spaces error envelope (ArgumentName /
             # ArgumentValue point at the offending field on InvalidArgument).
