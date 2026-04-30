@@ -99,8 +99,17 @@ def write_bytes(key: str, content: bytes, content_type: str = "application/octet
         except Exception as exc:
             # DEBUG: surface full Spaces error envelope (ArgumentName /
             # ArgumentValue point at the offending field on InvalidArgument).
+            # Uses print() to stdout because app.services.storage ERROR logs
+            # are dropped by the prod log sink (no handler on root logger).
             # Remove once the prod 500 is diagnosed.
             err = getattr(exc, "response", {}).get("Error", {})
+            print(
+                f"Spaces PutObject failed key={key!r} "
+                f"bucket={os.getenv('DO_SPACES_BUCKET')!r} "
+                f"region={os.getenv('DO_SPACES_REGION', 'fra1')!r} "
+                f"error={err!r}",
+                flush=True,
+            )
             logger.error(
                 "Spaces PutObject failed key=%r bucket=%r region=%r error=%r",
                 key,
