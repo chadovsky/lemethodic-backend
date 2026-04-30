@@ -109,9 +109,9 @@ F-110 introduced `key` as the per-couche field name on `GET /api/recordings`. Ex
 Goal: a single `key` name across every endpoint that returns couches.
 
 **Frontend coupling — verified 2026-04-30 in `fluentpath-frontend/lib/api.ts`:**
-- L316 — `interface RawCouche { internal_key: CoucheKey ... }`
-- L470 — `KNOWN_COUCHE_KEYS.has(c.internal_key as CoucheKey)`
-- L472 — `key: c.internal_key as CoucheKey`
+- `interface RawCouche` (type) — declares `internal_key: CoucheKey`.
+- `KNOWN_COUCHE_KEYS` filter — `.filter((c) => KNOWN_COUCHE_KEYS.has(c.internal_key as CoucheKey))`.
+- `mapDiagnosticBlock` mapper — reads `c.internal_key` and writes `key`.
 
 `mapDiagnosticBlock` IS the normalizer, but it READS `internal_key` and WRITES `key`. A backend-only rename would silently empty every couches array in the diagnostic page (filter rejects every row because `c.internal_key` is `undefined`).
 
@@ -150,7 +150,7 @@ Cleanup of the F-110.1 dual-emission window. Once `fluentpath-frontend/lib/api.t
 - `app/templates/index.html:3459` — `c.internal_key` → `c.key`. (Internal admin tool, can ship in the same backend commit since it lives in this repo.)
 - Grep for any other `internal_key` references that crept in during the transition window — there should be zero.
 
-**Pre-condition gate:** verify with the frontend team / `fluentpath-frontend` repo that no consumer reads `c.internal_key` anymore. F-110.1 verified the call sites at L316, L470, L472 in `lib/api.ts`; all three must read `c.key` before this ticket can ship.
+**Pre-condition gate:** verify with the frontend team / `fluentpath-frontend` repo that no consumer reads `c.internal_key` anymore. F-110.1 verified the call sites in `lib/api.ts`: `interface RawCouche` (type), `KNOWN_COUCHE_KEYS` filter, `mapDiagnosticBlock` mapper. All three must read `c.key` before this ticket can ship.
 
 **Estimate:** 15 min.
 
