@@ -521,6 +521,21 @@ Backend scope: SQLAlchemy + Alembic schema tracking per-user progress through cl
 
 ---
 
+## P-210.1 — Per-persona path forking
+
+**Filed:** 2026-05-01.
+**Status:** Queued (deferred until validated demand).
+**Priority:** Low.
+**Parent:** P-210.
+
+When a second persona with materially different cluster sequencing emerges (e.g. foundation persona requiring slower B1.1 phase, or job-prep persona requiring different vocabulary themes), fork the `b1_to_b2` path into per-persona variants. Migration: add `b1_to_b2_visa_urgent` / `b1_to_b2_foundation` / `b1_to_b2_general`, or repurpose the existing `b1_to_b2` entry. Decide format (multiple Path rows vs Path-with-variants column) at filing time.
+
+**Trigger:** real demand from beta users in non-visa-urgent personas, or pedagogical decision that the paths must materially differ.
+
+Currently the schema has one `b1_to_b2` path serving the visa-urgent persona (seeded by P-210, `scripts/seed_b1_b2_path.py`). Personalization for other personas happens at runtime via dashboards, prompts, and copy — not via separate paths. Acceptable for Phase 1.
+
+---
+
 ## P-211 — Cluster content authoring
 
 **Filed:** 2026-05-01.
