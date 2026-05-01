@@ -1,6 +1,21 @@
 import datetime
-from sqlalchemy import Column, Integer, String, Text, Float, Date, DateTime, Boolean, ForeignKey, UniqueConstraint
+from sqlalchemy import (
+    CheckConstraint,
+    Column,
+    Integer,
+    String,
+    Text,
+    Float,
+    Date,
+    DateTime,
+    Boolean,
+    ForeignKey,
+    Index,
+    UniqueConstraint,
+)
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import text
 from app.database import Base
 
 
@@ -511,3 +526,211 @@ class UserEcoleProgress(Base):
 
     user = relationship("User")
     lesson = relationship("EcoleLesson")
+
+
+# ──────────────────────────────────────────────────────────────────────
+# P-202 / P-203 / P-204 — Curriculum, path, and user-progress models.
+# Schema is defined by the Alembic migration; these declarations exist
+# so Base.metadata stays in sync (autogenerate, ORM access).
+# See LEMETHODIC-CURRICULUM v0.2 (docs/LEMETHODIC-CURRICULUM.md) §4–§6.
+# ──────────────────────────────────────────────────────────────────────
+
+
+class VocabularyTheme(Base):
+    __tablename__ = "vocabulary_themes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    slug = Column(String(60), unique=True, nullable=False, index=True)
+    labels = Column(JSONB, nullable=False, default=dict)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    clusters = relationship("Cluster", back_populates="vocabulary_theme")
+
+
+class Cluster(Base):
+    __tablename__ = "clusters"
+
+    id = Column(Integer, primary_key=True, index=True)
+    slug = Column(String(80), unique=True, nullable=False, index=True)
+    labels = Column(JSONB, nullable=False, default=dict)
+
+    grammar_topic = Column(String(120), nullable=False)
+    vocabulary_theme_id = Column(Integer, ForeignKey("vocabulary_themes.id"), nullable=True)
+    # "tache_1" | "tache_2" | "tache_3" — speaking-only Phase 1; CHECK
+    # constraint enforces. "writing" added when P-260 starts.
+    tache_application = Column(String(20), nullable=False)
+    cefr_level = Column(String(10), nullable=False, index=True)
+
+    is_spiral_revisit = Column(Boolean, default=False)
+    parent_cluster_id = Column(Integer, ForeignKey("clusters.id"), nullable=True)
+
+    # "markdown" | "pdf" | "video"
+    lesson_format = Column(String(20), nullable=False)
+    # FR-only Phase 1 — see migration docstring on i18n. Promote to JSONB
+    # when non-FR lesson content is authored.
+    lesson_markdown = Column(Text, default="")
+    lesson_asset_url = Column(String(500), default="")
+
+    exercise_set = Column(JSONB, nullable=False, default=list)
+    practice_prompt = Column(JSONB, nullable=False, default=dict)
+    # Validated against app.schemas.curriculum.DetectionRubric.
+    detection_rubric = Column(JSONB, nullable=False, default=dict)
+
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+
+    __table_args__ = (
+        CheckConstraint(
+            "tache_application IN ('tache_1', 'tache_2', 'tache_3')",
+            name="ck_clusters_tache_application",
+        ),
+    )
+
+    vocabulary_theme = relationship("VocabularyTheme", back_populates="clusters")
+    parent = relationship("Cluster", remote_side=[id])
+    path_clusters = relationship("PathCluster", back_populates="cluster")
+
+
+class Path(Base):
+    __tablename__ = "paths"
+
+    id = Column(Integer, primary_key=True, index=True)
+    slug = Column(String(40), unique=True, nullable=False, index=True)
+    labels = Column(JSONB, nullable=False, default=dict)
+    tagline = Column(JSONB, nullable=False, default=dict)
+
+    level_start = Column(String(10), nullable=False)
+    level_target = Column(String(10), nullable=False)
+    is_active = Column(Boolean, default=True)
+    estimated_weeks = Column(Integer, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    phases = relationship("Phase", back_populates="path", order_by="Phase.position")
+
+
+class Phase(Base):
+    __tablename__ = "phases"
+
+    id = Column(Integer, primary_key=True, index=True)
+    path_id = Column(Integer, ForeignKey("paths.id"), nullable=False, index=True)
+
+    position = Column(Integer, nullable=False)
+    slug = Column(String(40), nullable=False)
+    labels = Column(JSONB, nullable=False, default=dict)
+    description = Column(JSONB, nullable=False, default=dict)
+
+    __table_args__ = (
+        UniqueConstraint("path_id", "position", name="uq_phase_path_position"),
+        UniqueConstraint("path_id", "slug", name="uq_phase_path_slug"),
+    )
+
+    path = relationship("Path", back_populates="phases")
+    path_clusters = relationship(
+        "PathCluster", back_populates="phase", order_by="PathCluster.position"
+    )
+
+
+class PathCluster(Base):
+    __tablename__ = "path_clusters"
+
+    id = Column(Integer, primary_key=True, index=True)
+    phase_id = Column(Integer, ForeignKey("phases.id"), nullable=False, index=True)
+    cluster_id = Column(Integer, ForeignKey("clusters.id"), nullable=False)
+    position = Column(Integer, nullable=False)
+    is_optional = Column(Boolean, default=False)
+
+    __table_args__ = (
+        UniqueConstraint("phase_id", "position", name="uq_pc_phase_position"),
+        UniqueConstraint("phase_id", "cluster_id", name="uq_pc_phase_cluster"),
+    )
+
+    phase = relationship("Phase", back_populates="path_clusters")
+    cluster = relationship("Cluster", back_populates="path_clusters")
+
+
+class UserPathEnrollment(Base):
+    __tablename__ = "user_path_enrollments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    path_id = Column(Integer, ForeignKey("paths.id"), nullable=False)
+
+    enrolled_at_level = Column(String(10), nullable=False)
+    # "high" | "medium" | "low"
+    enrolled_at_confidence = Column(String(20), nullable=True)
+
+    # Cached pointers — derivable from UserClusterStatus + PathCluster
+    # ordering, but cached so the dashboard's hot path is single-row read.
+    current_phase_id = Column(Integer, ForeignKey("phases.id"), nullable=True)
+    current_cluster_id = Column(Integer, ForeignKey("clusters.id"), nullable=True)
+
+    is_active = Column(Boolean, default=True)
+    enrolled_at = Column(DateTime, default=datetime.datetime.utcnow)
+    completed_at = Column(DateTime, nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "path_id", name="uq_enrollment_user_path"),
+        # Partial unique index — at most one ACTIVE enrollment per user.
+        # Postgres-native; mirror of the Alembic CREATE INDEX so
+        # Base.metadata stays consistent.
+        Index(
+            "uq_user_path_enrollments_one_active",
+            "user_id",
+            unique=True,
+            postgresql_where=text("is_active = true"),
+        ),
+    )
+
+
+class UserClusterStatus(Base):
+    """Per-user-per-cluster snapshot. One row, mutated in place."""
+
+    __tablename__ = "user_cluster_statuses"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    cluster_id = Column(Integer, ForeignKey("clusters.id"), nullable=False)
+    # "not_started" | "in_progress" | "absorbed" | "needs_revisit"
+    status = Column(String(20), nullable=False, default="not_started")
+
+    last_rubric_score = Column(Float, nullable=True)
+    last_evaluated_recording_id = Column(Integer, ForeignKey("recordings.id"), nullable=True)
+    revisit_count = Column(Integer, default=0)
+
+    first_started_at = Column(DateTime, nullable=True)
+    last_status_change_at = Column(DateTime, default=datetime.datetime.utcnow)
+    absorbed_at = Column(DateTime, nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "cluster_id", name="uq_user_cluster"),
+    )
+
+
+class UserClusterEvent(Base):
+    """Append-only history log. One row per status transition."""
+
+    __tablename__ = "user_cluster_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    # NOTE: no index=True on user_id — covered by the composite
+    # (user_id, created_at) index below.
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    cluster_id = Column(Integer, ForeignKey("clusters.id"), nullable=False, index=True)
+
+    # NULL on first event ("not_started" → first state transition).
+    from_status = Column(String(20), nullable=True)
+    to_status = Column(String(20), nullable=False)
+    triggered_by_recording_id = Column(Integer, ForeignKey("recordings.id"), nullable=True)
+    rubric_score = Column(Float, nullable=True)
+
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    __table_args__ = (
+        # Block 7 (Mistake Repository) reads "all events for user X,
+        # newest first" — composite index serves it as a prefix scan.
+        Index(
+            "ix_user_cluster_events_user_created",
+            "user_id",
+            "created_at",
+        ),
+    )
