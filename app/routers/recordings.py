@@ -639,22 +639,12 @@ def list_recordings(
             profile_eval = _resolve_exam_profile_block(r.feedback)
             cefr_level = profile_eval["cefr_level"]
             clb_level = profile_eval["secondary_framework_value"]
-            # Build the couches array using the per-couche scores on
-            # Feedback. F-088 frontend convention is `internal_key`;
-            # F-110 spec asked for `key`. Re-shape inline rather than
-            # diverging couches_array's signature.
-            for entry in couches_array({
+            couches = couches_array({
                 "le_fond": r.feedback.score_le_fond,
                 "les_moules_des_idees": r.feedback.score_les_moules_des_idees,
                 "les_moules": r.feedback.score_les_moules,
                 "les_reflexes_anglais": r.feedback.score_les_reflexes_anglais,
-            }):
-                couches.append({
-                    "key": entry["internal_key"],
-                    "score": entry["score"],
-                    "display_label_en": entry["display_label_en"],
-                    "display_label_fr": entry["display_label_fr"],
-                })
+            })
 
         out.append({
             "id": r.id,
@@ -698,10 +688,10 @@ def get_history(
         }
         if r.feedback:
             entry["note_globale"] = r.feedback.note_globale
-            # F-088 — la_carte (internal-key dict) replaced with couches
-            # array carrying internal_key + TCF display labels per
-            # entry. Hard cut; admin template + FluentPath frontend
-            # both migrated alongside this change.
+            # F-088 — la_carte (internal-key dict) replaced with the
+            # couches array (key + TCF display labels + score per
+            # entry). See app/services/couche_labels.py for the
+            # canonical mapping.
             entry["couches"] = couches_array({
                 "le_fond": r.feedback.score_le_fond,
                 "les_moules_des_idees": r.feedback.score_les_moules_des_idees,
@@ -900,9 +890,9 @@ def _format_recording(rec: Recording) -> dict:
         result["diagnostic"] = {
             "note_globale": fb.note_globale,
             # F-088 — la_carte replaced with the F-088 couches array
-            # (internal_key + display_label_en + display_label_fr +
-            # score per entry). See app/services/couche_labels.py for
-            # the canonical mapping.
+            # (key + display_label_en + display_label_fr + score per
+            # entry). See app/services/couche_labels.py for the
+            # canonical mapping.
             "couches": couches_array({
                 "le_fond": fb.score_le_fond,
                 "les_moules_des_idees": fb.score_les_moules_des_idees,

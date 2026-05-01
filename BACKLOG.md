@@ -86,7 +86,7 @@ Pre-launch. Deploy `fluentpath-frontend` to Vercel production. Configure `NEXT_P
 - Recordings without a Feedback row return `cefr_level: null`, `clb_level: null`, `couches: []` — uniform shape so the frontend doesn't special-case missing keys.
 - `joinedload(Recording.feedback)` issues a single `LEFT OUTER JOIN`; no N+1.
 
-**Naming divergence from F-088:** F-088's couches array uses `internal_key`; F-110's spec asks for `key`. The new endpoint returns `key` per spec; `/api/recordings/history` and `/api/recordings/{id}` continue to return `internal_key`. Frontend reconciliation strategy is open — either migrate everyone to `key` (small follow-up) or accept the divergence.
+**Naming divergence from F-088 (resolved 2026-05-01):** F-088's couches array originally used `internal_key`. F-110.1 + F-110.2 reconciled this — every endpoint that returns couches now uses `key` as the per-entry identifier. No divergence remains.
 
 **Out of scope:**
 - Status filtering (`?status=done` etc.) — frontend can filter client-side off `cefr_level !== null`.
@@ -98,7 +98,7 @@ Pre-launch. Deploy `fluentpath-frontend` to Vercel production. Configure `NEXT_P
 ## F-110.1 — Reconcile couches `internal_key` → `key` across older endpoints
 
 **Filed:** 2026-04-30.
-**Status:** backend half shipped 2026-04-30 (commit `ca993d1`) — Option 2 (dual-emission) chosen. Frontend migration to `c.key` and final `internal_key` removal tracked in F-110.2.
+**Status:** Shipped 2026-05-01. Backend dual-emission landed 2026-04-30 (commit `ca993d1`); frontend migration landed 2026-05-01 (`lemethodic-frontend` commit `c5f9b45`); backend `internal_key` removal in F-110.2.
 **Parent:** F-110.
 
 F-110 introduced `key` as the per-couche field name on `GET /api/recordings`. Existing endpoints still emit `internal_key`:
@@ -139,7 +139,7 @@ Goal: a single `key` name across every endpoint that returns couches.
 ## F-110.2 — Drop `internal_key` from `couches_array`
 
 **Filed:** 2026-04-30.
-**Status:** blocked on frontend completing F-110.1 consumer migration.
+**Status:** Shipped 2026-05-01.
 **Parent:** F-110.1.
 
 Cleanup of the F-110.1 dual-emission window. Once `fluentpath-frontend/lib/api.ts` migrates from `c.internal_key` to `c.key` (and the legacy admin template at `app/templates/index.html:3459` does the same), drop `internal_key` from `couches_array`'s output so the API surface has one canonical name.
