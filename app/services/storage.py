@@ -12,12 +12,44 @@ The fallback is also the soft-beta safety net — if Spaces creds are
 misconfigured in production, the app stays functional (container
 restart loses files, but uploads/sessions in-flight don't fail).
 
-**Storage keys** are forward-slash relative paths like
-``uploads/<uuid>.<ext>`` or ``tts_cache/<sha256>.mp3``. The local
-backend writes them under ``STORAGE_LOCAL_ROOT/<key>``; Spaces writes
-them as the literal object key. Callers MUST use forward slashes —
-backslashes would land in S3 as part of the key name on Spaces and
-create cross-platform breakage on disk.
+**Storage keys** are forward-slash relative paths. Two canonical
+shapes are in use:
+
+  * ``uploads/<user_id>/<uuid>.<ext>`` — candidate audio uploads, the
+    P-103 user_id-prefixed form. New uploads use this. Construct via
+    ``user_upload_key(user_id, ext)``; do not assemble by hand at
+    call sites.
+  * ``uploads/<uuid>.<ext>`` — pre-P-103 candidate audio. Old recordings
+    written before 2026-05-01 stay at this shape; both forms coexist
+    forever (Option A — no migration). Any future read path must accept
+    both.
+  * ``tts_cache/<sha256>.mp3`` — TTS cache (shared across users).
+
+The local backend writes keys under ``STORAGE_LOCAL_ROOT/<key>``; Spaces
+writes them as the literal object key. Callers MUST use forward
+slashes — backslashes would land in S3 as part of the key name on
+Spaces and create cross-platform breakage on disk.
+
+**Candidate audio is write-only from the API surface today.** No GET
+endpoint exposes user-uploaded recordings; the conversation turn
+serializer at ``app/routers/conversations.py::_serialize_turn``
+deliberately filters candidate ``audio_url`` out of the response.
+DB-level ownership (``Recording.user_id``) is the authoritative gate;
+the user_id segment in new storage keys is defense-in-depth so a key
+that leaks via logs / Spaces access logs / browser network panels is
+self-scoping.
+
+If a future feature requires playback, design an authenticated
+``GET /api/recordings/{id}/audio`` (or equivalent) endpoint that:
+
+  1. ``Depends(get_current_user)``
+  2. Loads the ``Recording`` row and asserts
+     ``recording.user_id == current_user.id`` before serving.
+  3. Returns either ``stream_response(key, ...)`` or a short-TTL
+     presigned URL (~5 minutes).
+
+Never expose raw ``uploads/*`` paths via any GET endpoint. Tracked as
+P-103.2 in BACKLOG.
 
 **Async note:** boto3 is synchronous. Calling ``write_bytes`` from an
 async route handler blocks the event loop during the upload (~50–200 ms
@@ -28,6 +60,7 @@ from __future__ import annotations
 
 import logging
 import os
+import uuid
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -77,6 +110,21 @@ def _spaces_client():
 def _local_path(key: str) -> Path:
     """Resolve a storage key to its local-disk path under STORAGE_LOCAL_ROOT."""
     return Path(settings.STORAGE_LOCAL_ROOT) / key
+
+
+def user_upload_key(user_id: int, ext: str) -> str:
+    """Construct a per-user storage key for a candidate audio upload.
+
+    Returns ``uploads/<user_id>/<uuid4>.<ext>``. The ``user_id`` segment
+    is defense-in-depth — DB-level ownership (``Recording.user_id`` /
+    conversation ownership) is the authoritative gate; prefixing the
+    key by user just makes leaks self-scoping.
+
+    Old recordings written before this helper landed have keys like
+    ``uploads/<uuid>.<ext>`` (no user prefix). Both shapes coexist;
+    any future read path must accept both. See module docstring.
+    """
+    return f"uploads/{user_id}/{uuid.uuid4()}.{ext}"
 
 
 # ──────────────────────────────────────────────────────────────────

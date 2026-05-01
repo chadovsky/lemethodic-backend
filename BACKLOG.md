@@ -189,13 +189,57 @@ Tailwind UI template, ~$300 budget. Stub — spec TBD.
 
 ---
 
-## P-103 — Audio upload security hardening
+## P-103 — Audio upload security hardening (user_id-prefixed storage keys)
 
 **Filed:** 2026-04-30.
-**Status:** Queued.
+**Status:** Shipped 2026-05-01 — sub-item 2 (user_id-prefixed keys + helper). Sub-items 1 and 3 closed during scoping.
 **Priority:** HIGH (pre-launch blocker).
 
-Size cap, user_id ownership enforcement, auth-checked serve. Stub — spec TBD.
+Originally three sub-items (size cap, user_id ownership, auth-checked serve). Audit on 2026-05-01 found:
+
+- **Sub-item 1 — size cap:** already shipped as F-075a (two-layer defense, 10 MB cap, 413 response, verification harness in `scripts/verify_f075a_size_cap.py`). No further work in P-103. Optional follow-up tracked in **P-103.1**.
+- **Sub-item 2 — user_id ownership:** shipped 2026-05-01. New helper `app/services/storage.py::user_upload_key(user_id, ext)` returns `uploads/{user_id}/{uuid4}.{ext}`. The four upload sites (`recordings.py::upload_and_analyze`, `recordings.py::transcribe_only`, `audio.py::upload_and_transcribe`, `conversations.py::append_turn` legacy F-048 path) now route through it. Migration: Option A — old recordings stay at `uploads/<uuid>.<ext>` and both shapes coexist forever; any future read path must accept both. The "candidate audio is write-only from the API surface" invariant is documented in the storage.py module docstring.
+- **Sub-item 3 — auth-checked serve:** no current serve endpoint for candidate audio (audit confirmed — the conversation turn serializer at `conversations.py::_serialize_turn` deliberately filters candidate `audio_url` out of responses, and there is no `/api/recordings/{id}/audio` endpoint). Closed; deferred to **P-103.2** if/when a playback feature is specified.
+
+**Estimate:** delivered.
+
+---
+
+## P-103.1 — Optional: tighter audio cap + duration enforcement
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Priority:** Low (post-launch, validate first).
+
+Two possible tightenings to the F-075a size cap:
+
+- Lower `MAX_AUDIO_UPLOAD_BYTES` below 10 MB if real-user data shows nobody legitimately uploads files near the cap.
+- Enforce `MAX_AUDIO_SECONDS = 900` server-side. Currently declared in `app/config.py` but not consumed anywhere — duration is taken on trust from the client's `duration_seconds` form field, which the user can spoof.
+
+Validate with usage data before tightening. Premature tightening risks 413-ing legitimate recordings.
+
+**Estimate:** 30 min if validated.
+
+---
+
+## P-103.2 — Deferred: authenticated candidate-audio serve endpoint
+
+**Filed:** 2026-05-01.
+**Status:** Deferred — build only when a playback feature is specified.
+**Priority:** Medium (when needed).
+
+Today candidate audio is write-only from the API surface (no GET endpoint exposes user-uploaded recordings; the conversation turn serializer at `conversations.py::_serialize_turn` deliberately filters candidate `audio_url` out of the response). If a future feature requires playback (e.g. recordings list lets users replay their own clips), the design must be:
+
+- Path: `GET /api/recordings/{id}/audio` (or equivalent under conversations).
+- Auth: `Depends(get_current_user)`.
+- Ownership: load the `Recording`, assert `recording.user_id == current_user.id` before serving.
+- Body: either streamed via `storage.stream_response(...)` or a short-TTL presigned URL (5 minutes typical).
+- Tolerate both storage-key shapes: pre-P-103 `uploads/<uuid>.<ext>` and post-P-103 `uploads/<user_id>/<uuid>.<ext>`. The DB-level ownership check is authoritative; do not parse the storage key to determine ownership.
+- Never expose raw `uploads/*` paths via any GET endpoint.
+
+The invariant statement lives in `app/services/storage.py`'s module docstring; honor it when designing this endpoint.
+
+**Estimate:** 2h when the feature is specified.
 
 ---
 

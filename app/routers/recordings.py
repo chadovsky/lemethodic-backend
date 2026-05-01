@@ -1,4 +1,4 @@
-import os, json, uuid, logging
+import os, json, logging
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, joinedload
@@ -288,8 +288,7 @@ async def upload_and_analyze(
 
     # ── Save audio ─────────────────────────────────────────────
     ext = audio.filename.split(".")[-1] if audio.filename else "webm"
-    filename = f"{uuid.uuid4()}.{ext}"
-    storage_key = f"uploads/{filename}"  # F-078: storage key, not filesystem path
+    storage_key = storage.user_upload_key(user.id, ext)  # P-103: per-user prefix
     content = await audio.read()
     _enforce_audio_size_cap(content)  # F-075a Layer B
     storage.write_bytes(storage_key, content, content_type=(audio.content_type or "application/octet-stream"))
@@ -385,8 +384,7 @@ async def transcribe_only(
     mode = _validate_tache_mode_for_oral(tache_mode)
 
     ext = audio.filename.split(".")[-1] if audio.filename else "webm"
-    filename = f"{uuid.uuid4()}.{ext}"
-    storage_key = f"uploads/{filename}"  # F-078: storage key, not filesystem path
+    storage_key = storage.user_upload_key(user.id, ext)  # P-103: per-user prefix
     content = await audio.read()
     _enforce_audio_size_cap(content)  # F-075a Layer B
     storage.write_bytes(storage_key, content, content_type=(audio.content_type or "application/octet-stream"))

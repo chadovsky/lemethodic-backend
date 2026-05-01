@@ -15,7 +15,6 @@ from __future__ import annotations
 import json
 import logging
 import os
-import uuid
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy.orm import Session
@@ -63,8 +62,7 @@ async def upload_and_transcribe(
     if len(ext) > 10 or not ext.isalnum():
         ext = "webm"
 
-    filename = f"{uuid.uuid4()}.{ext}"
-    storage_key = f"uploads/{filename}"  # F-078: storage key, not filesystem path
+    storage_key = storage.user_upload_key(user.id, ext)  # P-103: per-user prefix
     content = await audio.read()
     if not content:
         raise HTTPException(400, "Empty audio body")

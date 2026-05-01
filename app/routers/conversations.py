@@ -140,8 +140,12 @@ def _require_owner(db: Session, conversation_id: str, user: User) -> Conversatio
 def _serialize_turn(turn: ConversationTurn) -> dict:
     # F-052: expose examiner audio_url (a public /tts_audio/<hash>.mp3
     # URL) to the client. We deliberately do NOT expose candidate
-    # audio_url — those are raw filesystem paths to ``./uploads`` and
-    # aren't web-servable.
+    # audio_url — those are storage keys (``uploads/<user_id>/<uuid>.<ext>``
+    # for new uploads or ``uploads/<uuid>.<ext>`` for pre-P-103 ones)
+    # and there is no GET endpoint that serves them. The "candidate
+    # audio is write-only from the API surface" invariant is documented
+    # in app/services/storage.py; future playback work is tracked as
+    # P-103.2.
     examiner_audio = None
     if turn.speaker == "examiner" and (turn.audio_url or "").startswith("/tts_audio/"):
         examiner_audio = turn.audio_url
@@ -726,8 +730,7 @@ async def append_turn(
         # Legacy F-048 path: multipart audio, server-side STT.
         assert audio is not None  # narrowed by has_audio
         ext = (audio.filename or "clip.webm").split(".")[-1]
-        filename = f"{uuid.uuid4()}.{ext}"
-        storage_key = f"uploads/{filename}"  # F-078: storage key, not filesystem path
+        storage_key = storage.user_upload_key(user.id, ext)  # P-103: per-user prefix
         content = await audio.read()
         # F-075a Layer B — defensive size cap. Layer A middleware
         # rejects via Content-Length before buffering; this catches
