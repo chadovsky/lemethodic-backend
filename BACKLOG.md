@@ -1,5 +1,8 @@
 # BACKLOG.md
 
+**Last updated:** 2026-05-01.
+**Phase 1 Architecture Rework** — see `lemethodic-frontend/LEMETHODIC-CURRICULUM.md` v0.2.
+
 Post-launch / deferred work. Active sprint tickets live in their own scope; this file tracks items explicitly punted out of an in-flight ticket so they don't get lost.
 
 ---
@@ -463,20 +466,208 @@ Stub — spec TBD.
 
 ---
 
-## P-200 — Writing pedagogy build
+## P-200 — Diagnostic engine: detector implementation
 
-**Filed:** 2026-04-30.
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: per-couche pattern detector implementation feeding the diagnostic flow. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-201 — Diagnostic engine: level assignment + confidence
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: level assignment logic and confidence scoring on top of the detectors. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-202 — Cluster data model
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: SQLAlchemy + Alembic schema for the cluster concept. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-203 — Path data model
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: SQLAlchemy + Alembic schema for the path concept (sequence of clusters). Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-204 — User progress model
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: SQLAlchemy + Alembic schema tracking per-user progress through clusters and paths. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-211 — Cluster content authoring
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: data ingestion endpoints for authoring cluster content. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-212 — Starter cluster seed
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: seed script populating the starter cluster set for soft-beta launch. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-220 — Onboarding questionnaire
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: user profile schema changes to capture onboarding questionnaire responses. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-221 — Diagnostic flow integration
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: engine wiring — connect detectors + level assignment + confidence into onboarding and the recordings pipeline. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-240 — Today's recommended action
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: prescription endpoint returning the next-best action for a user given their diagnostic state. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-241 — Cluster-level prescription
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: engine logic for cluster-level prescriptions feeding P-240. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-250 — Threshold calibration
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: calibration tooling for tuning detector / scoring thresholds against real data. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-251 — Lesson content delivery infrastructure
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: storage + serve endpoints for lesson content. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-260 — Writing analysis pipeline
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Phase:** Phase 2 (post-launch).
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: writing-track analysis pipeline. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`. Scope overlaps with P-300 (Writing pedagogy build) — reconcile when both specs exist.
+
+---
+
+## P-262 — Cross-modal prescription
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Phase:** Phase 2 (post-launch).
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: prescription that draws across modalities (oral + writing). Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-266 — Phase 2 detectors
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Phase:** Phase 2 (post-launch).
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: detectors specific to Phase 2 modalities. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## Frontend-only curriculum tickets (P-222, P-230..P-237, P-261, P-267..P-269)
+
+See `lemethodic-frontend/BACKLOG.md` for full roster. No backend scope.
+
+---
+
+## Phase 2 expansion (renumbered from P-200..P-203)
+
+Renumbered 2026-05-01 to free P-200..P-269 for Phase 1 Architecture Rework. See `lemethodic-frontend/LEMETHODIC-CURRICULUM.md` v0.2 §10.
+
+---
+
+## P-300 — Writing pedagogy build
+
+**Filed:** 2026-04-30 (renumbered from P-200 on 2026-05-01).
 **Status:** Queued.
 **Priority:** High (Phase 2, post-launch).
 
 Analysis prompts + 5-criterion scoring + diagnostic surface for the
-writing track. Stub — spec TBD.
+writing track. Stub — spec TBD. Scope overlaps with curriculum P-260 (Writing analysis pipeline) — reconcile when both specs exist.
 
 ---
 
-## P-201 — TEF exam support
+## P-301 — TEF exam support
 
-**Filed:** 2026-04-30.
+**Filed:** 2026-04-30 (renumbered from P-201 on 2026-05-01).
 **Status:** Queued.
 **Priority:** Medium (Phase 2, post-launch).
 
@@ -485,9 +676,9 @@ rubric. Stub — spec TBD.
 
 ---
 
-## P-202 — DELF exam support
+## P-302 — DELF exam support
 
-**Filed:** 2026-04-30.
+**Filed:** 2026-04-30 (renumbered from P-202 on 2026-05-01).
 **Status:** Queued.
 **Priority:** Medium (Phase 2, post-launch).
 
@@ -495,9 +686,9 @@ Stub — spec TBD.
 
 ---
 
-## P-203 — Italian-audience expansion
+## P-303 — Italian-audience expansion
 
-**Filed:** 2026-04-30.
+**Filed:** 2026-04-30 (renumbered from P-203 on 2026-05-01).
 **Status:** Queued.
 **Priority:** Low (Phase 2, post-launch).
 
