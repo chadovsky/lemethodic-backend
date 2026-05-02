@@ -12,6 +12,7 @@ from app.routers import audio
 from app.routers import ecole
 from app.routers import users
 from app.routers import modules
+from app.routers import onboarding
 from app.models.models import User
 from app.services.auth import get_current_user
 from app.services import storage
@@ -115,6 +116,7 @@ app.include_router(audio.router)
 app.include_router(ecole.router)
 app.include_router(users.router)
 app.include_router(modules.router)
+app.include_router(onboarding.router)
 
 # Serve static files
 import os

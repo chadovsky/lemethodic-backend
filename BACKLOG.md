@@ -614,6 +614,52 @@ Backend scope: user profile schema changes to capture onboarding questionnaire r
 
 ---
 
+## P-220.x — Onboarding routing engine (full)
+
+**Filed:** 2026-05-02.
+**Status:** Queued.
+**Priority:** Medium (post-launch, signal-driven).
+**Parent:** P-220.
+
+P-220 ships the questionnaire schema + endpoints + stub routing logic for Q1+Q2 (path slug) and Q11 (UI mode). Q4-Q10 answers are stored on the user record but do not yet drive any backend behavior — see `# TODO P-220.x` comments in `app/routers/onboarding.py::submit_onboarding`.
+
+This ticket concretizes routing for the remaining 6 effects:
+- Q4 (motivation) → vocabulary theme priority weighting
+- Q5 (strongest skill) → diagnostic emphasis (record vs write first; speaking-first when strong-in-speaking, etc.)
+- Q6 (weakest skill blocker type) → cluster prioritization within path (which clusters surface first on the dashboard)
+- Q8 (topics tested on) → cluster prioritization, theme-filtered diagnostic prompts
+- Q9 (native language) → L1 detector calibration (Phase 2 — no-op until non-English detectors exist)
+- Q10 (prior exam history) → credibility-of-self-assessment signal feeding the diagnostic confidence score
+
+**Trigger:** beta cohort signups produce real distribution of answers + the §7 dashboard work commits to a cluster-prioritization mechanism (re-order vs overlay vs sort).
+
+**Depends on:** P-221 (diagnostic flow), P-234 (cluster detail view).
+
+**Estimate:** 2-3 days once dependencies land.
+
+---
+
+## P-220.y — Notification scheduling (Q12 reminder time)
+
+**Filed:** 2026-05-02.
+**Status:** Queued.
+**Priority:** Low (deferred until notification infrastructure exists).
+**Parent:** P-220.
+
+§8.3 originally listed Q12 ("daily reminder time preference") as part of the questionnaire. P-220 omitted it entirely — there's no notification infrastructure to plug a `reminder_time` value into yet (no email/push/SMS sender, no scheduling worker, no quiet-hours logic).
+
+When notifications ship as a feature, this ticket adds:
+- `reminder_time` column on `users` (TIME, nullable)
+- Q12 question + options in `app/services/onboarding_questions.py`
+- `q12_reminder_time` field on `OnboardingSubmitRequest` Pydantic model
+- Wiring into the notification sender
+
+**Trigger:** notification infrastructure exists (separate ticket, currently unfiled).
+
+**Estimate:** 30 min once the sender exists.
+
+---
+
 ## P-221 — Diagnostic flow integration
 
 **Filed:** 2026-05-01.

@@ -8,7 +8,7 @@ import datetime as _dt
 from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from pydantic import BaseModel
 from sqlalchemy import String, cast, distinct, func
 from sqlalchemy.orm import Session
@@ -40,12 +40,21 @@ def me(user: User = Depends(get_current_user)):
     return serialize_user(user)
 
 
-@router.post("/onboarding")
+@router.post("/onboarding", deprecated=True)
 def complete_onboarding(
     data: OnboardingData,
+    response: Response,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
+    """DEPRECATED — use POST /onboarding/submit instead.
+
+    Kept accept-and-no-op for the duration of the FE migration window.
+    Writes the original 5 fields (target_level, exam_profile, exam_date,
+    goal, current_level) and ui_language; the 7 new P-220 fields are NOT
+    written here. Removed entirely once the FE migrates to the new
+    endpoint.
+    """
     user.target_level = data.target_level
     user.exam_profile = data.exam_profile
     user.exam_date = data.exam_date
@@ -55,6 +64,9 @@ def complete_onboarding(
     user.ui_language = data.interface_language
     db.commit()
     db.refresh(user)
+    # RFC 8594-style soft deprecation signaling.
+    response.headers["Deprecation"] = "true"
+    response.headers["Link"] = '</onboarding/submit>; rel="successor-version"'
     return serialize_user(user)
 
 

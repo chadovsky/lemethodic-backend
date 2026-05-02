@@ -42,6 +42,59 @@ class User(Base):
     goal = Column(String(100), nullable=True)               # "immigration" | "studies" | "general"
     current_level = Column(String(20), nullable=True)       # self-reported CEFR band
 
+    # P-220 — extended onboarding fields. CHECK constraints in __table_args__
+    # mirror the Alembic migration b3a55c1e0001 so Base.metadata stays
+    # consistent. All nullable — populated by POST /onboarding/submit.
+    strongest_skill = Column(String(20), nullable=True)
+    weakest_skill = Column(String(32), nullable=True)
+    hours_per_week = Column(String(20), nullable=True)
+    topics_tested_on = Column(JSONB, nullable=True)         # array of TCF theme slugs
+    native_language = Column(String(40), nullable=True)     # slug or free-text override
+    prior_french_exam = Column(String(20), nullable=True)
+    feedback_mode_preference = Column(String(10), nullable=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "strongest_skill IS NULL "
+            "OR strongest_skill IN "
+            "('speaking', 'listening', 'reading', 'writing', 'all_equally_weak')",
+            name="ck_users_strongest_skill",
+        ),
+        CheckConstraint(
+            "weakest_skill IS NULL "
+            "OR weakest_skill IN ("
+            "'speaking_under_pressure', 'listening_fast', 'reading_complex', "
+            "'writing_essays', 'grammar_accuracy', 'vocabulary_depth'"
+            ")",
+            name="ck_users_weakest_skill",
+        ),
+        CheckConstraint(
+            "hours_per_week IS NULL "
+            "OR hours_per_week IN "
+            "('less_than_2', '2_to_5', '5_to_10', 'more_than_10')",
+            name="ck_users_hours_per_week",
+        ),
+        CheckConstraint(
+            "prior_french_exam IS NULL "
+            "OR prior_french_exam IN ('never', 'recent_6mo', 'recent_12mo', 'older')",
+            name="ck_users_prior_french_exam",
+        ),
+        CheckConstraint(
+            "feedback_mode_preference IS NULL "
+            "OR feedback_mode_preference IN ('calm', 'method')",
+            name="ck_users_feedback_mode_preference",
+        ),
+        CheckConstraint(
+            "topics_tested_on IS NULL OR ("
+            "jsonb_typeof(topics_tested_on) = 'array' "
+            "AND topics_tested_on <@ "
+            """'["vie_quotidienne","societe","education","travail",""" \
+            """"loisirs_voyages","sante","environnement","culture_medias"]'::jsonb""" \
+            ")",
+            name="ck_users_topics_tested_on",
+        ),
+    )
+
     recordings = relationship("Recording", back_populates="user")
 
 
@@ -668,6 +721,11 @@ class UserPathEnrollment(Base):
     enrolled_at = Column(DateTime, default=datetime.datetime.utcnow)
     completed_at = Column(DateTime, nullable=True)
 
+    # P-220 — persona derived from exam_date at enrollment time.
+    # Per-enrollment because a user who later switches paths gets a
+    # re-derived persona; previous enrollment retains the original.
+    persona = Column(String(20), nullable=True)
+
     __table_args__ = (
         UniqueConstraint("user_id", "path_id", name="uq_enrollment_user_path"),
         # Partial unique index — at most one ACTIVE enrollment per user.
@@ -678,6 +736,11 @@ class UserPathEnrollment(Base):
             "user_id",
             unique=True,
             postgresql_where=text("is_active = true"),
+        ),
+        CheckConstraint(
+            "persona IS NULL "
+            "OR persona IN ('foundation', 'acceleration', 'cram')",
+            name="ck_user_path_enrollments_persona",
         ),
     )
 
