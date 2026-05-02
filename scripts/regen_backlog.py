@@ -21,15 +21,28 @@ SRC = ROOT / "BACKLOG.md"
 
 ACTIVE_LC = [
     # In stated priority order — Active Queue summary preserves this order.
-    # F-079, M-104, M-103 added 2026-05-02 follow-up triage.
-    # P-260.5 added 2026-05-02 (Sprint product authoring blocker).
-    "P-104", "P-105", "P-106",
-    "P-200", "P-201",
-    "P-220", "P-221", "P-240",
-    "F-079",
-    "B-100", "B-102",
-    "M-100", "M-101", "M-104", "M-103",
-    "P-260.5",
+    # Reordered 2026-05-02: engineering (in dependency order) → pre-launch
+    # product → pre-launch business → pre-launch marketing. P-260.5 sits
+    # above marketing as a hard Sprint-product blocker.
+
+    # Engineering (in dependency order):
+    "P-220",   # FE rebuild in flight, anchor for diagnostic + dashboard work
+    "P-200", "P-201",        # diagnostic engine
+    "P-221",                  # diagnostic flow integration
+    "P-104",                  # background-tab timer drift fix
+    "P-240",                  # today's recommended action
+    "F-079",                  # custom domain wiring
+
+    # Pre-launch product:
+    "P-105", "P-106",         # 7-day trial + Stripe integration
+    "P-260.5",                # Sprint product blocker (3 TCF mocks)
+
+    # Pre-launch business:
+    "B-100", "B-102",         # Stripe account + Privacy/ToS
+
+    # Pre-launch marketing:
+    "M-100", "M-101",         # Preply outreach + landing copy
+    "M-103", "M-104",         # YouTube anchor + Reddit
 ]
 POST_LAUNCH_P1 = [
     "P-107", "P-108", "P-110",

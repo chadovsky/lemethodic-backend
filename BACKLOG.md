@@ -20,59 +20,36 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 
 | # | Ticket | Title |
 |---|---|---|
-| 1 | **P-104** | Background tab timer drift fix |
-| 2 | **P-105** | 7-day free trial logic |
-| 3 | **P-106** | Stripe integration with dual + geographic pricing |
-| 4 | **P-200** | Diagnostic engine: detector implementation |
-| 5 | **P-201** | Diagnostic engine: level assignment + confidence |
-| 6 | **P-220** | Onboarding questionnaire |
-| 7 | **P-221** | Diagnostic flow integration |
-| 8 | **P-240** | Today's recommended action |
-| 9 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
-| 10 | **B-100** | Stripe account setup |
-| 11 | **B-102** | Privacy policy + ToS |
-| 12 | **M-100** | Past Preply student outreach |
-| 13 | **M-101** | Landing page copy in LeMethodic voice |
-| 14 | **M-104** | Reddit community engagement |
+| 1 | **P-220** | Onboarding questionnaire |
+| 2 | **P-200** | Diagnostic engine: detector implementation |
+| 3 | **P-201** | Diagnostic engine: level assignment + confidence |
+| 4 | **P-221** | Diagnostic flow integration |
+| 5 | **P-104** | Background tab timer drift fix |
+| 6 | **P-240** | Today's recommended action |
+| 7 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
+| 8 | **P-105** | 7-day free trial logic |
+| 9 | **P-106** | Stripe integration with dual + geographic pricing |
+| 10 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
+| 11 | **B-100** | Stripe account setup |
+| 12 | **B-102** | Privacy policy + ToS |
+| 13 | **M-100** | Past Preply student outreach |
+| 14 | **M-101** | Landing page copy in LeMethodic voice |
 | 15 | **M-103** | YouTube channel launch (scope-reduced) |
-| 16 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
+| 16 | **M-104** | Reddit community engagement |
 
 ---
 # Active — Launch Critical (16 tickets, 60-day target)
 
-## P-104 — Background tab timer drift fix
+## P-220 — Onboarding questionnaire
 
-**Filed:** 2026-04-30.
-**Status:** Queued.
+**Filed:** 2026-05-01.
+**Status:** Backend shipped 2026-05-02 (commits `4c272da` schema + endpoints + smoke; `bb76eb8` `interface_language` follow-up). FE rebuild in flight (separate ticket on the frontend repo).
 **Tag:** Active — Launch Critical (60-day target).
 
-**Priority:** HIGH (pre-launch blocker).
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10; copy spec at `docs/P-220-onboarding-questionnaire-copy.md`.
 
-Recording timer drifts when the browser tab is backgrounded. Stub — spec TBD.
-
----
-
-## P-105 — 7-day free trial logic
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
-
-**Priority:** High (pre-launch).
-
-Stub — spec TBD.
-
----
-
-## P-106 — Stripe integration with dual + geographic pricing
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
-
-**Priority:** High (pre-launch).
-
-Stub — spec TBD.
+Backend scope: schema migration `b3a55c1e0001` (7 new User columns + `UserPathEnrollment.persona` with CHECK constraints), Pydantic schemas, FR + EN question content, routing service (Q1+Q2 → path slug; Q3 → persona; Q3+Q7 → capacity warning; Q11 → UI mode default), and 2 endpoints (`GET /onboarding/questions`, `POST /onboarding/submit`). Legacy `POST /api/users/onboarding` kept accept-and-no-op with a `Deprecation` header for the FE migration window. Q4-Q10 routing deferred to P-220.x. Q12 reminder time deferred to P-220.y.
 
 ---
 
@@ -102,19 +79,6 @@ Backend scope: level assignment logic and confidence scoring on top of the detec
 
 ---
 
-## P-220 — Onboarding questionnaire
-
-**Filed:** 2026-05-01.
-**Status:** Backend shipped 2026-05-02 (commits `4c272da` schema + endpoints + smoke; `bb76eb8` `interface_language` follow-up). FE rebuild in flight (separate ticket on the frontend repo).
-**Tag:** Active — Launch Critical (60-day target).
-
-**Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10; copy spec at `docs/P-220-onboarding-questionnaire-copy.md`.
-
-Backend scope: schema migration `b3a55c1e0001` (7 new User columns + `UserPathEnrollment.persona` with CHECK constraints), Pydantic schemas, FR + EN question content, routing service (Q1+Q2 → path slug; Q3 → persona; Q3+Q7 → capacity warning; Q11 → UI mode default), and 2 endpoints (`GET /onboarding/questions`, `POST /onboarding/submit`). Legacy `POST /api/users/onboarding` kept accept-and-no-op with a `Deprecation` header for the FE migration window. Q4-Q10 routing deferred to P-220.x. Q12 reminder time deferred to P-220.y.
-
----
-
 ## P-221 — Diagnostic flow integration
 
 **Filed:** 2026-05-01.
@@ -125,6 +89,18 @@ Backend scope: schema migration `b3a55c1e0001` (7 new User columns + `UserPathEn
 **Source:** LEMETHODIC-CURRICULUM v0.2 §10.
 
 Backend scope: engine wiring — connect detectors + level assignment + confidence into onboarding and the recordings pipeline. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-104 — Background tab timer drift fix
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH (pre-launch blocker).
+
+Recording timer drifts when the browser tab is backgrounded. Stub — spec TBD.
 
 ---
 
@@ -161,6 +137,57 @@ Remaining work:
 **Owner:** Chadi (DNS + Vercel) + Engineering (one-line CORS update).
 
 **Depends on:** F-078 (backend production URL must exist before frontend can point at it).
+
+---
+
+## P-105 — 7-day free trial logic
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** High (pre-launch).
+
+Stub — spec TBD.
+
+---
+
+## P-106 — Stripe integration with dual + geographic pricing
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** High (pre-launch).
+
+Stub — spec TBD.
+
+---
+
+## P-260.5 — Author 3 TCF Canada mock exams for Sprint product
+
+**Filed:** 2026-05-02.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH (pre-launch blocker for Sprint product).
+**Source:** Strategy session — Sprint product scope refinement.
+**Depends on:** none (authoring, no code).
+
+**Scope:** author 3 full TCF Canada mock exams. Each mock contains:
+
+- **Tâche 1 prompt** — structured interview, 2 min, no preparation.
+- **Tâche 2 prompt** — interactive exercise, 5.5 min including 2 min preparation.
+- **Tâche 3 prompt** — point of view, 4.5 min, no preparation.
+- **Scoring rubrics** aligned to TCF Canada CEFR criteria (A1 through C2).
+- **Sample strong responses** at B2 level for each Tâche.
+- **Common error patterns** to flag in evaluation.
+
+**Owner:** Chadi (authoring).
+
+**Estimated effort:** 12–18 hours total (~4–6 hours per mock).
+
+**Trigger:** pre-launch — Sprint product cannot ship without these.
 
 ---
 
@@ -212,18 +239,6 @@ Stub — spec TBD.
 
 ---
 
-## M-104 — Reddit community engagement
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
-
-**Priority:** Medium.
-
-Stub — spec TBD.
-
----
-
 ## M-103 — YouTube channel launch (scope-reduced)
 
 **Filed:** 2026-04-30; scope-reduced 2026-05-02.
@@ -240,30 +255,15 @@ Stub — spec TBD.
 
 ---
 
-## P-260.5 — Author 3 TCF Canada mock exams for Sprint product
+## M-104 — Reddit community engagement
 
-**Filed:** 2026-05-02.
+**Filed:** 2026-04-30.
 **Status:** Queued.
 **Tag:** Active — Launch Critical (60-day target).
 
-**Priority:** HIGH (pre-launch blocker for Sprint product).
-**Source:** Strategy session — Sprint product scope refinement.
-**Depends on:** none (authoring, no code).
+**Priority:** Medium.
 
-**Scope:** author 3 full TCF Canada mock exams. Each mock contains:
-
-- **Tâche 1 prompt** — structured interview, 2 min, no preparation.
-- **Tâche 2 prompt** — interactive exercise, 5.5 min including 2 min preparation.
-- **Tâche 3 prompt** — point of view, 4.5 min, no preparation.
-- **Scoring rubrics** aligned to TCF Canada CEFR criteria (A1 through C2).
-- **Sample strong responses** at B2 level for each Tâche.
-- **Common error patterns** to flag in evaluation.
-
-**Owner:** Chadi (authoring).
-
-**Estimated effort:** 12–18 hours total (~4–6 hours per mock).
-
-**Trigger:** pre-launch — Sprint product cannot ship without these.
+Stub — spec TBD.
 
 ---
 
