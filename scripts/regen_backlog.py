@@ -31,7 +31,9 @@ ACTIVE_LC = [
     # P-200 fully shipped 2026-05-02 (3-commit set) — moved to SHIPPED.
     # P-201 fully shipped 2026-05-02 (2-commit set) — moved to SHIPPED.
     # P-221 fully shipped 2026-05-02 (single commit c475bb7) — moved to SHIPPED.
-    "P-104",                  # background-tab timer drift fix
+    # P-104 fully shipped FE-side 2026-05-01 — moved to SHIPPED. BE-side
+    # confirmed no-op (client-reported duration_seconds is metadata only;
+    # no server reconciliation needed by product design).
     "P-240",                  # today's recommended action
     "F-079",                  # custom domain wiring
     "P-222",                  # waitlist UX for A2/B2+ paths (FE-migrated)
@@ -87,8 +89,9 @@ DEFERRED = [
 # P-200 fully shipped (3-commit set, BE only — no FE consumer yet) 2026-05-02.
 # P-201 fully shipped (2-commit set, BE only — FE consumer is dashboard work) 2026-05-02.
 # P-221 fully shipped (single commit c475bb7, BE only — FE banner + results screen pending) 2026-05-02.
+# P-104 fully shipped FE-side 2026-05-01 (commit fluentpath-frontend@48b61a1, BE no-op).
 SHIPPED = [
-    "F-110", "F-110.1", "F-110.2", "P-103",
+    "F-110", "F-110.1", "F-110.2", "P-103", "P-104",
     "P-200", "P-201", "P-202", "P-203", "P-204",
     "P-210", "P-211", "P-212", "P-220", "P-221",
 ]

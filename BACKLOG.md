@@ -20,36 +20,23 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 
 | # | Ticket | Title |
 |---|---|---|
-| 1 | **P-104** | Background tab timer drift fix |
-| 2 | **P-240** | Today's recommended action |
-| 3 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
-| 4 | **P-222** | Waitlist UX for A2 and B2+ paths |
-| 5 | **P-230** | Overall Progress dashboard rebuild |
-| 6 | **P-234** | Cluster detail view |
-| 7 | **P-105** | 7-day free trial logic |
-| 8 | **P-106** | Stripe integration with dual + geographic pricing |
-| 9 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
-| 10 | **B-100** | Stripe account setup |
-| 11 | **B-102** | Privacy policy + ToS |
-| 12 | **M-100** | Past Preply student outreach |
-| 13 | **M-101** | Landing page copy in LeMethodic voice |
-| 14 | **M-103** | YouTube channel launch (scope-reduced) |
-| 15 | **M-104** | Reddit community engagement |
+| 1 | **P-240** | Today's recommended action |
+| 2 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
+| 3 | **P-222** | Waitlist UX for A2 and B2+ paths |
+| 4 | **P-230** | Overall Progress dashboard rebuild |
+| 5 | **P-234** | Cluster detail view |
+| 6 | **P-105** | 7-day free trial logic |
+| 7 | **P-106** | Stripe integration with dual + geographic pricing |
+| 8 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
+| 9 | **B-100** | Stripe account setup |
+| 10 | **B-102** | Privacy policy + ToS |
+| 11 | **M-100** | Past Preply student outreach |
+| 12 | **M-101** | Landing page copy in LeMethodic voice |
+| 13 | **M-103** | YouTube channel launch (scope-reduced) |
+| 14 | **M-104** | Reddit community engagement |
 
 ---
-# Active — Launch Critical (15 tickets, 60-day target)
-
-## P-104 — Background tab timer drift fix
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
-
-**Priority:** HIGH (pre-launch blocker).
-
-Recording timer drifts when the browser tab is backgrounded. Stub — spec TBD.
-
----
+# Active — Launch Critical (14 tickets, 60-day target)
 
 ## P-240 — Today's recommended action
 
@@ -1174,6 +1161,25 @@ Originally three sub-items (size cap, user_id ownership, auth-checked serve). Au
 - **Sub-item 3 — auth-checked serve:** no current serve endpoint for candidate audio (audit confirmed — the conversation turn serializer at `conversations.py::_serialize_turn` deliberately filters candidate `audio_url` out of responses, and there is no `/api/recordings/{id}/audio` endpoint). Closed; deferred to **P-103.2** if/when a playback feature is specified.
 
 **Estimate:** delivered.
+
+---
+
+## P-104 — Background tab timer drift fix
+
+**Filed:** 2026-04-30.
+**Status:** Shipped 2026-05-01 (FE-side, commit `fluentpath-frontend@48b61a1`).
+
+**Priority:** HIGH (pre-launch blocker).
+
+Recording timer drifted when the browser tab was backgrounded — Chrome throttles `setInterval` / `setTimeout` callbacks in hidden tabs (≥1Hz cap, paused entirely under intensive throttling after ~5 min hidden + 30s idle). The original counter-based pattern (`setInterval(() => onTick(remaining - 1), 1000)`) drifted by N seconds for every N missed ticks.
+
+Fixed FE-side via wall-clock reconciliation:
+- `components/speaking/CountdownTimer.tsx` (F-076) — owned-mode polls every 250ms, but each tick computes `Math.floor((Date.now() - startTime) / 1000)`. Wall-clock-immune. `visibilitychange` listener forces immediate tick on refocus.
+- `hooks/useAudioRecorder.ts` (P-104, 2026-05-01) — `durationMs` driven by `Date.now()` deltas (not `performance.now()`, which Chrome throttles). `visibilitychange` listener forces recompute on refocus so downstream `useEffect([durationMs])` watchers — including per-Tâche cap auto-stops — fire promptly.
+
+**No BE role.** Confirmed 2026-05-03 plan-first investigation: `duration_seconds` arrives as a Form field on `/api/recordings/upload` + `/api/conversations/turn/upload` and is stored verbatim — client-reported metadata, not authoritative for STT/analysis. The audio file itself is the source of truth. No server-side timing reconciliation needed by product design (no scoring/billing fraud vector). Web Worker timer (option B) ruled out — Chrome page-visibility throttling now applies to dedicated workers too. Server-side validation (option C) ruled out — adds latency without product benefit.
+
+P-104.x (deep-throttle setTimeout fallback for the 5+ min unattended case) remains FE-side, deferred. Stays on FE BACKLOG; not migrated to BE.
 
 ---
 
