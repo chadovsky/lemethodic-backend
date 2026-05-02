@@ -30,7 +30,7 @@ ACTIVE_LC = [
     # P-220 fully shipped 2026-05-02 — moved to SHIPPED section.
     # P-200 fully shipped 2026-05-02 (3-commit set) — moved to SHIPPED.
     # P-201 fully shipped 2026-05-02 (2-commit set) — moved to SHIPPED.
-    "P-221",                  # diagnostic flow integration
+    # P-221 fully shipped 2026-05-02 (single commit c475bb7) — moved to SHIPPED.
     "P-104",                  # background-tab timer drift fix
     "P-240",                  # today's recommended action
     "F-079",                  # custom domain wiring
@@ -86,10 +86,11 @@ DEFERRED = [
 # P-220 fully shipped (BE + FE + production verification) 2026-05-02.
 # P-200 fully shipped (3-commit set, BE only — no FE consumer yet) 2026-05-02.
 # P-201 fully shipped (2-commit set, BE only — FE consumer is dashboard work) 2026-05-02.
+# P-221 fully shipped (single commit c475bb7, BE only — FE banner + results screen pending) 2026-05-02.
 SHIPPED = [
     "F-110", "F-110.1", "F-110.2", "P-103",
     "P-200", "P-201", "P-202", "P-203", "P-204",
-    "P-210", "P-211", "P-212", "P-220",
+    "P-210", "P-211", "P-212", "P-220", "P-221",
 ]
 # Decided not to pursue. Keep entry to preserve history.
 CLOSED = ["M-105"]

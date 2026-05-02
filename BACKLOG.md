@@ -20,38 +20,24 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 
 | # | Ticket | Title |
 |---|---|---|
-| 1 | **P-221** | Diagnostic flow integration |
-| 2 | **P-104** | Background tab timer drift fix |
-| 3 | **P-240** | Today's recommended action |
-| 4 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
-| 5 | **P-222** | Waitlist UX for A2 and B2+ paths |
-| 6 | **P-230** | Overall Progress dashboard rebuild |
-| 7 | **P-234** | Cluster detail view |
-| 8 | **P-105** | 7-day free trial logic |
-| 9 | **P-106** | Stripe integration with dual + geographic pricing |
-| 10 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
-| 11 | **B-100** | Stripe account setup |
-| 12 | **B-102** | Privacy policy + ToS |
-| 13 | **M-100** | Past Preply student outreach |
-| 14 | **M-101** | Landing page copy in LeMethodic voice |
-| 15 | **M-103** | YouTube channel launch (scope-reduced) |
-| 16 | **M-104** | Reddit community engagement |
+| 1 | **P-104** | Background tab timer drift fix |
+| 2 | **P-240** | Today's recommended action |
+| 3 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
+| 4 | **P-222** | Waitlist UX for A2 and B2+ paths |
+| 5 | **P-230** | Overall Progress dashboard rebuild |
+| 6 | **P-234** | Cluster detail view |
+| 7 | **P-105** | 7-day free trial logic |
+| 8 | **P-106** | Stripe integration with dual + geographic pricing |
+| 9 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
+| 10 | **B-100** | Stripe account setup |
+| 11 | **B-102** | Privacy policy + ToS |
+| 12 | **M-100** | Past Preply student outreach |
+| 13 | **M-101** | Landing page copy in LeMethodic voice |
+| 14 | **M-103** | YouTube channel launch (scope-reduced) |
+| 15 | **M-104** | Reddit community engagement |
 
 ---
-# Active — Launch Critical (16 tickets, 60-day target)
-
-## P-221 — Diagnostic flow integration
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
-
-**Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
-
-Backend scope: engine wiring — connect detectors + level assignment + confidence into onboarding and the recordings pipeline. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
-
----
+# Active — Launch Critical (15 tickets, 60-day target)
 
 ## P-104 — Background tab timer drift fix
 
@@ -1312,6 +1298,30 @@ Commits:
 **Source:** LEMETHODIC-CURRICULUM v0.2 §10; copy spec at `docs/P-220-onboarding-questionnaire-copy.md`.
 
 Backend scope shipped: schema migration `b3a55c1e0001` (7 new User columns + `UserPathEnrollment.persona` with CHECK constraints), Pydantic schemas, FR + EN question content, routing service (Q1+Q2 → path slug; Q3 → persona; Q3+Q7 → capacity warning; Q11 → UI mode default), and 2 endpoints (`GET /onboarding/questions`, `POST /onboarding/submit`). Legacy `POST /api/users/onboarding` kept accept-and-no-op with a `Deprecation` header for the FE migration window. Q4-Q10 routing deferred to P-220.x. Q12 reminder time deferred to P-220.y.
+
+---
+
+## P-221 — Diagnostic flow integration
+
+**Filed:** 2026-05-01.
+**Status:** Shipped 2026-05-02 (single commit `c475bb7`).
+
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: read-only state machine over the 3-recording diagnostic flow. New endpoint `GET /api/diagnostic/state` returns `stage` (in_progress | complete | no_path), `recordings_done`, per-Tâche coverage, `next_recommended_tache`, and `latest_assessment_id`. Drives the FE banner on `/ecole` and the one-time diagnostic-results screen.
+
+Plan-first lock-in (2026-05-02): Q1=(B) implicit-with-banner — first 3 recordings ARE the diagnostic, no hard gating. Q2=(B) `/ecole` with diagnostic banner — `redirect_to_diagnostic` becomes "show banner" rather than "navigate elsewhere". Q3=stage="complete" derived from "latest UserLevelAssessment exists" (no new column; converges with P-201's recording_count >= 3 trigger). Q4=(C) lightweight diagnostic-results screen as one-time gate (FE-side, consumes already-shipped data).
+
+`AssignedBlock` on `GET /api/users/me/level` extended with `n_clusters_evaluated` so the FE results screen can render coverage telemetry without a second endpoint hit. Already persisted on `UserLevelAssessment`; just exposed.
+
+No alembic migration. No new table, no new column. `recordings.py` / `conversations.py` untouched — purely additive.
+
+Files: `app/schemas/diagnostic.py` (new), `app/services/diagnostic_state.py` (new), `app/routers/diagnostic.py` (new), `app/schemas/level.py` (extended), `app/routers/users.py` (pass-through), `main.py` (router registration), `scripts/smoke_p221.py` (new — 32 checks across 4 steps, all PASS).
+
+Production verified 2026-05-02: 56 paths in `/openapi.json`, 27 schemas, `/api/diagnostic/state` registered, `DiagnosticStateResponse` + `TacheCoverage` schemas present, `AssignedBlock` carries `coverage` + `n_clusters_evaluated`.
+
+FE follow-up (P-221.fe — file when needed): `/ecole` banner consuming `/api/diagnostic/state`, `/diagnostic/results` one-time gate consuming `/api/users/me/level` + `/api/diagnostic/state`. Out of BE scope.
 
 ---
 
