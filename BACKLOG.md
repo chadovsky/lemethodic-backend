@@ -20,38 +20,24 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 
 | # | Ticket | Title |
 |---|---|---|
-| 1 | **P-220** | Onboarding questionnaire |
-| 2 | **P-200** | Diagnostic engine: detector implementation |
-| 3 | **P-201** | Diagnostic engine: level assignment + confidence |
-| 4 | **P-221** | Diagnostic flow integration |
-| 5 | **P-104** | Background tab timer drift fix |
-| 6 | **P-240** | Today's recommended action |
-| 7 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
-| 8 | **P-105** | 7-day free trial logic |
-| 9 | **P-106** | Stripe integration with dual + geographic pricing |
-| 10 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
-| 11 | **B-100** | Stripe account setup |
-| 12 | **B-102** | Privacy policy + ToS |
-| 13 | **M-100** | Past Preply student outreach |
-| 14 | **M-101** | Landing page copy in LeMethodic voice |
-| 15 | **M-103** | YouTube channel launch (scope-reduced) |
-| 16 | **M-104** | Reddit community engagement |
+| 1 | **P-200** | Diagnostic engine: detector implementation |
+| 2 | **P-201** | Diagnostic engine: level assignment + confidence |
+| 3 | **P-221** | Diagnostic flow integration |
+| 4 | **P-104** | Background tab timer drift fix |
+| 5 | **P-240** | Today's recommended action |
+| 6 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
+| 7 | **P-105** | 7-day free trial logic |
+| 8 | **P-106** | Stripe integration with dual + geographic pricing |
+| 9 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
+| 10 | **B-100** | Stripe account setup |
+| 11 | **B-102** | Privacy policy + ToS |
+| 12 | **M-100** | Past Preply student outreach |
+| 13 | **M-101** | Landing page copy in LeMethodic voice |
+| 14 | **M-103** | YouTube channel launch (scope-reduced) |
+| 15 | **M-104** | Reddit community engagement |
 
 ---
-# Active — Launch Critical (16 tickets, 60-day target)
-
-## P-220 — Onboarding questionnaire
-
-**Filed:** 2026-05-01.
-**Status:** Backend shipped 2026-05-02 (commits `4c272da` schema + endpoints + smoke; `bb76eb8` `interface_language` follow-up). FE rebuild in flight (separate ticket on the frontend repo).
-**Tag:** Active — Launch Critical (60-day target).
-
-**Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10; copy spec at `docs/P-220-onboarding-questionnaire-copy.md`.
-
-Backend scope: schema migration `b3a55c1e0001` (7 new User columns + `UserPathEnrollment.persona` with CHECK constraints), Pydantic schemas, FR + EN question content, routing service (Q1+Q2 → path slug; Q3 → persona; Q3+Q7 → capacity warning; Q11 → UI mode default), and 2 endpoints (`GET /onboarding/questions`, `POST /onboarding/submit`). Legacy `POST /api/users/onboarding` kept accept-and-no-op with a `Deprecation` header for the FE migration window. Q4-Q10 routing deferred to P-220.x. Q12 reminder time deferred to P-220.y.
-
----
+# Active — Launch Critical (15 tickets, 60-day target)
 
 ## P-200 — Diagnostic engine: detector implementation
 
@@ -1015,6 +1001,25 @@ Backend scope: data ingestion infrastructure for authoring cluster content. Pars
 **Source:** LEMETHODIC-CURRICULUM v0.2 §10.
 
 Original scope (preserved for history): backend seed script populating the starter cluster set for soft-beta launch. Now covered by P-210 (`scripts/seed_b1_b2_path.py`, commit `79cd629`) for the 1 path / 5 phases / 22 cluster slots, and P-211 (`scripts/ingest_b1_b2_cluster_content.py`, commit `d862794`) for content. Both running against production.
+
+---
+
+## P-220 — Onboarding questionnaire
+
+**Filed:** 2026-05-01.
+**Status:** Shipped 2026-05-02 (BE + FE + production verification complete).
+
+Commits:
+- BE backend: `4c272da` (POST /onboarding/submit + GET /onboarding/questions, schema migration `b3a55c1e0001`, Pydantic schemas, routing service, smoke).
+- BE follow-up: `bb76eb8` (`interface_language` field — optional `Literal["en","fr"]`, persists to `User.ui_language`).
+- FE rebuild: `ab524e1` (lemethodic-frontend — data-driven flow, 11 questions, en/fr i18n, EcoleReveal rewrite).
+
+**Production verified:** `lemethodic-frontend.vercel.app/onboarding` walked through end-to-end. All 4 verification rounds green.
+
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10; copy spec at `docs/P-220-onboarding-questionnaire-copy.md`.
+
+Backend scope shipped: schema migration `b3a55c1e0001` (7 new User columns + `UserPathEnrollment.persona` with CHECK constraints), Pydantic schemas, FR + EN question content, routing service (Q1+Q2 → path slug; Q3 → persona; Q3+Q7 → capacity warning; Q11 → UI mode default), and 2 endpoints (`GET /onboarding/questions`, `POST /onboarding/submit`). Legacy `POST /api/users/onboarding` kept accept-and-no-op with a `Deprecation` header for the FE migration window. Q4-Q10 routing deferred to P-220.x. Q12 reminder time deferred to P-220.y.
 
 ---
 

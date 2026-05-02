@@ -26,7 +26,7 @@ ACTIVE_LC = [
     # above marketing as a hard Sprint-product blocker.
 
     # Engineering (in dependency order):
-    "P-220",   # FE rebuild in flight, anchor for diagnostic + dashboard work
+    # P-220 fully shipped 2026-05-02 — moved to SHIPPED section.
     "P-200", "P-201",        # diagnostic engine
     "P-221",                  # diagnostic flow integration
     "P-104",                  # background-tab timer drift fix
@@ -67,9 +67,10 @@ DEFERRED = [
     "B-103",
 ]
 # 2026-05-02 follow-up triage: P-212 superseded by P-210 + P-211.
+# P-220 fully shipped (BE + FE + production verification) 2026-05-02.
 SHIPPED = [
     "F-110", "F-110.1", "F-110.2", "P-103",
-    "P-202", "P-203", "P-204", "P-210", "P-211", "P-212",
+    "P-202", "P-203", "P-204", "P-210", "P-211", "P-212", "P-220",
 ]
 # Decided not to pursue. Keep entry to preserve history.
 CLOSED = ["M-105"]
