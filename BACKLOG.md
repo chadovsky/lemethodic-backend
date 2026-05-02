@@ -387,6 +387,31 @@ Stub — spec TBD.
 
 ---
 
+## B-106 — BACKLOG architecture consolidation
+
+**Filed:** 2026-05-02.
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Priority:** Post-launch P1.
+**Source:** Two-BACKLOG drift discovered during M-101a planning (2026-05-02).
+
+**Scope:** pick a single canonical BACKLOG location and migration strategy. Today there are two BACKLOG files — one in `chadovsky/lemethodic-backend` (this repo, `## ID — Title` format, tag-grouped, regen-tooled) and one in `chadovsky/lemethodic-frontend` (`### ID — Title` format, week-grouped Shipped + scope-grouped Queued). Drift inventory at filing: 23 FE-only tickets, 43 BE-only tickets, 19 shared (6 title conflicts, 12 status conflicts including 7 BE-shipped-but-FE-says-Queued tickets). Neither file alone shows the full project.
+
+Options to pick from:
+- **(A) BE-canonical** — single file in this repo; FE Claude reads via raw URL or git submodule. Existing regen tooling works as-is. Requires FE workflow change.
+- **(B) FE-canonical** — single file in frontend repo; BE Claude reads via raw URL. Requires migrating regen tooling + format conversion.
+- **(C) Deduplicated repo** — extract BACKLOG to a third repo (or `lemethodic-meta` / `lemethodic-tickets`). Both Claudes read it. Cleanest separation but adds a repo and access pattern.
+- **(D) Unified single BACKLOG in BE-canonical format** — migrate FE-only tickets into BE BACKLOG; deprecate FE's file with a one-line redirect. Use existing BE regen + tag scheme. Simplest end state.
+
+Recommended path (per BE's drift report 2026-05-02): **D**. Reasoning: BE's tag-grouped + regen-tooled file is more current; migrating ~23 FE-only tickets is straightforward; deprecating the FE file removes a source of confusion; both Claude workflows update to read this file as source of truth.
+
+**Trigger:** post-launch. Pre-launch the work is shippable on the existing two-file model with manual reconciliation; consolidation is structural debt cleanup, not a launch blocker.
+
+**Risk if deferred:** continued drift. Each new ticket filed in the wrong file widens the gap. Mitigation: cross-post critical tickets between files manually until B-106 ships.
+
+---
+
 ## M-102 — Convert Preply reviews to social proof
 
 **Filed:** 2026-04-30.
