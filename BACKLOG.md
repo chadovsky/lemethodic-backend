@@ -20,37 +20,23 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 
 | # | Ticket | Title |
 |---|---|---|
-| 1 | **P-200** | Diagnostic engine: detector implementation |
-| 2 | **P-201** | Diagnostic engine: level assignment + confidence |
-| 3 | **P-221** | Diagnostic flow integration |
-| 4 | **P-104** | Background tab timer drift fix |
-| 5 | **P-240** | Today's recommended action |
-| 6 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
-| 7 | **P-105** | 7-day free trial logic |
-| 8 | **P-106** | Stripe integration with dual + geographic pricing |
-| 9 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
-| 10 | **B-100** | Stripe account setup |
-| 11 | **B-102** | Privacy policy + ToS |
-| 12 | **M-100** | Past Preply student outreach |
-| 13 | **M-101** | Landing page copy in LeMethodic voice |
-| 14 | **M-103** | YouTube channel launch (scope-reduced) |
-| 15 | **M-104** | Reddit community engagement |
+| 1 | **P-201** | Diagnostic engine: level assignment + confidence |
+| 2 | **P-221** | Diagnostic flow integration |
+| 3 | **P-104** | Background tab timer drift fix |
+| 4 | **P-240** | Today's recommended action |
+| 5 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
+| 6 | **P-105** | 7-day free trial logic |
+| 7 | **P-106** | Stripe integration with dual + geographic pricing |
+| 8 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
+| 9 | **B-100** | Stripe account setup |
+| 10 | **B-102** | Privacy policy + ToS |
+| 11 | **M-100** | Past Preply student outreach |
+| 12 | **M-101** | Landing page copy in LeMethodic voice |
+| 13 | **M-103** | YouTube channel launch (scope-reduced) |
+| 14 | **M-104** | Reddit community engagement |
 
 ---
-# Active — Launch Critical (15 tickets, 60-day target)
-
-## P-200 — Diagnostic engine: detector implementation
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
-
-**Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
-
-Backend scope: per-couche pattern detector implementation feeding the diagnostic flow. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
-
----
+# Active — Launch Critical (14 tickets, 60-day target)
 
 ## P-201 — Diagnostic engine: level assignment + confidence
 
@@ -935,6 +921,25 @@ Originally three sub-items (size cap, user_id ownership, auth-checked serve). Au
 - **Sub-item 3 — auth-checked serve:** no current serve endpoint for candidate audio (audit confirmed — the conversation turn serializer at `conversations.py::_serialize_turn` deliberately filters candidate `audio_url` out of responses, and there is no `/api/recordings/{id}/audio` endpoint). Closed; deferred to **P-103.2** if/when a playback feature is specified.
 
 **Estimate:** delivered.
+
+---
+
+## P-200 — Diagnostic engine: detector implementation
+
+**Filed:** 2026-05-01.
+**Status:** Shipped 2026-05-02 (BE only — no FE consumer yet; the dashboard reads will land with §7 dashboard work).
+
+Commits (3-commit set):
+- Migration: `c4f2d1e3a0b5_p200_detection_columns.py` — adds `last_detection_result` on `user_cluster_statuses` (CHECK ∈ {clean, wobble, fail, not_observed}) and `findings_json` JSONB on `user_cluster_events`.
+- Engine: `32bce5b` — `app/services/detection.py` (cluster detection via Claude, modeled on `module_detector.py` F-080b pattern), `app/schemas/detection.py` (Pydantic), `app/services/cluster_status_persistence.py`.
+- Integration: `54e2040` — wires `detect_clusters` into `analyze_tache_1/2/3` after F-080b's `detect_modules`; wires `persist_detection_result` into both finalization paths (`recordings.py /upload` for Tâche 3; `conversations.py /end` for Tâche 1+2). Failure isolation identical to F-080b — never blocks the recording response.
+
+**Production:** detection now runs on every new recording across all 3 Tâches. Cluster findings persist to `user_cluster_statuses` (latest snapshot) + `user_cluster_events` (per-recording payload in `findings_json`). Lifecycle (`status` column) untouched — that axis remains independent and will be driven by P-241 (cluster-level prescription).
+
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope shipped: one Claude call per recording (Q2 decision), filtered to clusters where `tache_application == recording.tache_mode` AND `detection_rubric.markers` is non-empty (placeholders B1.4 + B1.5 excluded automatically). Per-cluster best-effort parsing in `_coerce_payload` — one malformed finding doesn't lose the rest. 34 smoke checks pass (`scripts/smoke_p200.py`). Calibration is post-launch (P-250).
 
 ---
 
