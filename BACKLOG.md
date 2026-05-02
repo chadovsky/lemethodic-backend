@@ -35,9 +35,10 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 13 | **M-101** | Landing page copy in LeMethodic voice |
 | 14 | **M-104** | Reddit community engagement |
 | 15 | **M-103** | YouTube channel launch (scope-reduced) |
+| 16 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
 
 ---
-# Active — Launch Critical (15 tickets, 60-day target)
+# Active — Launch Critical (16 tickets, 60-day target)
 
 ## P-104 — Background tab timer drift fix
 
@@ -236,6 +237,33 @@ Stub — spec TBD.
 **Re-evaluate post-launch:** if the anchor video drives meaningful traffic or referral signal within 4-8 weeks, decide whether to commit to a sustained cadence (monthly anchor + occasional shorts) or leave the channel as a one-shot artifact. Default: leave as-is unless signal is clear.
 
 **Owner:** Chadi (recording + editing + thumbnail). Solo founder cost is high — no monthly commitment until signal justifies it.
+
+---
+
+## P-260.5 — Author 3 TCF Canada mock exams for Sprint product
+
+**Filed:** 2026-05-02.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH (pre-launch blocker for Sprint product).
+**Source:** Strategy session — Sprint product scope refinement.
+**Depends on:** none (authoring, no code).
+
+**Scope:** author 3 full TCF Canada mock exams. Each mock contains:
+
+- **Tâche 1 prompt** — structured interview, 2 min, no preparation.
+- **Tâche 2 prompt** — interactive exercise, 5.5 min including 2 min preparation.
+- **Tâche 3 prompt** — point of view, 4.5 min, no preparation.
+- **Scoring rubrics** aligned to TCF Canada CEFR criteria (A1 through C2).
+- **Sample strong responses** at B2 level for each Tâche.
+- **Common error patterns** to flag in evaluation.
+
+**Owner:** Chadi (authoring).
+
+**Estimated effort:** 12–18 hours total (~4–6 hours per mock).
+
+**Trigger:** pre-launch — Sprint product cannot ship without these.
 
 ---
 

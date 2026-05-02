@@ -22,12 +22,14 @@ SRC = ROOT / "BACKLOG.md"
 ACTIVE_LC = [
     # In stated priority order — Active Queue summary preserves this order.
     # F-079, M-104, M-103 added 2026-05-02 follow-up triage.
+    # P-260.5 added 2026-05-02 (Sprint product authoring blocker).
     "P-104", "P-105", "P-106",
     "P-200", "P-201",
     "P-220", "P-221", "P-240",
     "F-079",
     "B-100", "B-102",
     "M-100", "M-101", "M-104", "M-103",
+    "P-260.5",
 ]
 POST_LAUNCH_P1 = [
     "P-107", "P-108", "P-110",
