@@ -20,39 +20,25 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 
 | # | Ticket | Title |
 |---|---|---|
-| 1 | **P-201** | Diagnostic engine: level assignment + confidence |
-| 2 | **P-221** | Diagnostic flow integration |
-| 3 | **P-104** | Background tab timer drift fix |
-| 4 | **P-240** | Today's recommended action |
-| 5 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
-| 6 | **P-222** | Waitlist UX for A2 and B2+ paths |
-| 7 | **P-230** | Overall Progress dashboard rebuild |
-| 8 | **P-234** | Cluster detail view |
-| 9 | **P-105** | 7-day free trial logic |
-| 10 | **P-106** | Stripe integration with dual + geographic pricing |
-| 11 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
-| 12 | **B-100** | Stripe account setup |
-| 13 | **B-102** | Privacy policy + ToS |
-| 14 | **M-100** | Past Preply student outreach |
-| 15 | **M-101** | Landing page copy in LeMethodic voice |
-| 16 | **M-103** | YouTube channel launch (scope-reduced) |
-| 17 | **M-104** | Reddit community engagement |
+| 1 | **P-221** | Diagnostic flow integration |
+| 2 | **P-104** | Background tab timer drift fix |
+| 3 | **P-240** | Today's recommended action |
+| 4 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
+| 5 | **P-222** | Waitlist UX for A2 and B2+ paths |
+| 6 | **P-230** | Overall Progress dashboard rebuild |
+| 7 | **P-234** | Cluster detail view |
+| 8 | **P-105** | 7-day free trial logic |
+| 9 | **P-106** | Stripe integration with dual + geographic pricing |
+| 10 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
+| 11 | **B-100** | Stripe account setup |
+| 12 | **B-102** | Privacy policy + ToS |
+| 13 | **M-100** | Past Preply student outreach |
+| 14 | **M-101** | Landing page copy in LeMethodic voice |
+| 15 | **M-103** | YouTube channel launch (scope-reduced) |
+| 16 | **M-104** | Reddit community engagement |
 
 ---
-# Active — Launch Critical (17 tickets, 60-day target)
-
-## P-201 — Diagnostic engine: level assignment + confidence
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
-
-**Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
-
-Backend scope: level assignment logic and confidence scoring on top of the detectors. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
-
----
+# Active — Launch Critical (16 tickets, 60-day target)
 
 ## P-221 — Diagnostic flow integration
 
@@ -1221,6 +1207,26 @@ Commits (3-commit set):
 **Source:** LEMETHODIC-CURRICULUM v0.2 §10.
 
 Backend scope shipped: one Claude call per recording (Q2 decision), filtered to clusters where `tache_application == recording.tache_mode` AND `detection_rubric.markers` is non-empty (placeholders B1.4 + B1.5 excluded automatically). Per-cluster best-effort parsing in `_coerce_payload` — one malformed finding doesn't lose the rest. 34 smoke checks pass (`scripts/smoke_p200.py`). Calibration is post-launch (P-250).
+
+---
+
+## P-201 — Diagnostic engine: level assignment + confidence
+
+**Filed:** 2026-05-01.
+**Status:** Shipped 2026-05-02 (BE only — FE consumer is the §7 dashboard work).
+
+Commits (2-commit set):
+- Migration: `247a44e` — `d7e4f3c2b1a9_p201_user_level_assessments.py`. Append-only `user_level_assessments` table with CHECK constraints on `assigned_level` (∈ below_B1 / B1_emerging / B1_solid / above_B1 / insufficient_data) and `assigned_confidence` (∈ high / medium / low). Composite index `(user_id, computed_at)` for the "latest assessment for user X" query.
+- Service + endpoint + integration: `ecf8e21` — `app/services/level_assignment.py` (rule-based algorithm: hybrid coverage × agreement, hardcoded thresholds), `app/schemas/level.py` (Pydantic dual-axis response), `GET /api/users/me/level` endpoint, trigger hooks in `recordings.py` + `conversations.py` (fires when `recording_count >= 3`, F-080b/P-200 failure isolation), `scripts/smoke_p201.py` (8 steps, 49 checks).
+
+**Production:** dual-axis level reporting now live. `GET /api/users/me/level` returns `{self_reported, assigned, agreement}` for any authenticated user; `assigned` block populates after the user has 3+ recordings; `agreement` field signals `matches | discrepancy | self_only | assigned_only | neither` so the FE can render at-a-glance.
+
+**Honest level labels** (below_B1 / B1_emerging / B1_solid / above_B1 / insufficient_data) instead of raw CEFR codes — Phase 1's 13 authored clusters are all B1, so we directly validate B1 but only INFER above/below. Labels graduate to {A2, B1, B2, C1} when other-level curriculum content lands (P-211b).
+
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope shipped: trigger fires `recording_count >= 3` (any Tâche distribution); algorithm reads latest detection per cluster from `user_cluster_statuses`; cluster denominator dynamic via `_count_active_clusters_for_user_path` (generalizes when other paths land); INSERT-only writes preserve full assessment history for P-250 calibration + dashboard "level over time" surface (Block 8 Confidence Visualizer per §7). Threshold calibration deferred to P-250 against beta data.
 
 ---
 

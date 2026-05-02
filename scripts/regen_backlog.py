@@ -29,7 +29,7 @@ ACTIVE_LC = [
     # Engineering (in dependency order):
     # P-220 fully shipped 2026-05-02 — moved to SHIPPED section.
     # P-200 fully shipped 2026-05-02 (3-commit set) — moved to SHIPPED.
-    "P-201",                  # diagnostic engine — level assignment + confidence
+    # P-201 fully shipped 2026-05-02 (2-commit set) — moved to SHIPPED.
     "P-221",                  # diagnostic flow integration
     "P-104",                  # background-tab timer drift fix
     "P-240",                  # today's recommended action
@@ -85,9 +85,10 @@ DEFERRED = [
 # 2026-05-02 follow-up triage: P-212 superseded by P-210 + P-211.
 # P-220 fully shipped (BE + FE + production verification) 2026-05-02.
 # P-200 fully shipped (3-commit set, BE only — no FE consumer yet) 2026-05-02.
+# P-201 fully shipped (2-commit set, BE only — FE consumer is dashboard work) 2026-05-02.
 SHIPPED = [
     "F-110", "F-110.1", "F-110.2", "P-103",
-    "P-200", "P-202", "P-203", "P-204",
+    "P-200", "P-201", "P-202", "P-203", "P-204",
     "P-210", "P-211", "P-212", "P-220",
 ]
 # Decided not to pursue. Keep entry to preserve history.
