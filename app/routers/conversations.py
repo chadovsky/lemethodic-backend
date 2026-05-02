@@ -57,6 +57,8 @@ from app.services.tache_2 import (
     generate_examiner_turn as generate_examiner_turn_t2,
 )
 from app.services.module_library import persist_detected_modules
+from app.services.cluster_status_persistence import persist_detection_result
+from app.schemas.detection import empty_payload
 from app.services.tts import synthesize as tts_synthesize
 from app.services.personas.tache_1_examiner import (
     MAX_CANDIDATE_TURNS as T1_MAX_CANDIDATE_TURNS,
@@ -512,6 +514,27 @@ async def _run_conversation_analysis_and_persist(
         # the recording_id so the user still lands on /diagnostic.
         logger.exception(
             "F-080b: persist_detected_modules raised on recording_id=%s "
+            "(%s); session finalize continues.",
+            rec.id,
+            exc,
+        )
+
+    # P-200: cluster detection persistence — same defensive posture as
+    # F-080b above. Tâche 1/2 dialogues land here; Tâche 3 monologues
+    # land in recordings.py /upload's _run_analysis_and_persist.
+    try:
+        cluster_payload = analysis.get("cluster_findings_payload") or empty_payload()
+        persist_detection_result(
+            db=db,
+            user_id=rec.user_id,
+            recording=rec,
+            payload=cluster_payload,
+        )
+        db.commit()
+    except Exception as exc:
+        db.rollback()
+        logger.exception(
+            "P-200: persist_detection_result raised on recording_id=%s "
             "(%s); session finalize continues.",
             rec.id,
             exc,

@@ -26,6 +26,8 @@ from app.services.scoring_profiles import (
 )
 from app.services.pattern_catalog import log_unknown_pattern_keys
 from app.services.module_library import persist_detected_modules
+from app.services.cluster_status_persistence import persist_detection_result
+from app.schemas.detection import empty_payload
 from app.services.scoring_maps import cefr_from_score, clb_from_cefr
 from app.services.transcript_suggestions import suggest_corrections
 from app.services.couche_labels import couches_array
@@ -257,6 +259,27 @@ async def _run_analysis_and_persist(
         except Exception as exc:
             logger.exception(
                 "F-080b: persist_detected_modules raised on recording_id=%s "
+                "(%s); upload completes regardless.",
+                rec.id,
+                exc,
+            )
+
+        # P-200: persist cluster detection results — same defensive
+        # posture as F-080b above. Never lets detection failures
+        # block the recording response.
+        try:
+            cluster_payload = analysis.get("cluster_findings_payload") or empty_payload()
+            persist_detection_result(
+                db=db,
+                user_id=rec.user_id,
+                recording=rec,
+                payload=cluster_payload,
+            )
+            db.commit()
+        except Exception as exc:
+            db.rollback()
+            logger.exception(
+                "P-200: persist_detection_result raised on recording_id=%s "
                 "(%s); upload completes regardless.",
                 rec.id,
                 exc,

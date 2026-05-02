@@ -30,6 +30,8 @@ from app.config import settings
 from app.services.analysis import analyze_transcript, _call_claude
 from app.services.tache_rubric import apply_tache_rubric
 from app.services.module_detector import detect_modules
+from app.services.detection import detect_clusters
+from app.schemas.detection import empty_payload
 from app.services.personas.tache_1_examiner import (
     FALLBACK_CLOSE,
     MAX_CANDIDATE_TURNS,
@@ -417,10 +419,16 @@ async def analyze_tache_1(
         detection = await detect_modules(combined_transcript, "tache_1", db)
         result["detected_modules"] = detection["detected_modules"]
         result["primary_module"] = detection["primary_module"]
+        # P-200: cluster detection runs after F-080b. Persistence happens
+        # in conversations.py /end. Never raises.
+        result["cluster_findings_payload"] = await detect_clusters(
+            combined_transcript, "tache_1", db
+        )
     else:
         # Crossover/test path with no DB session — leave defaults so the
         # persistence layer is a no-op.
         result["detected_modules"] = []
         result["primary_module"] = None
+        result["cluster_findings_payload"] = empty_payload()
 
     return result

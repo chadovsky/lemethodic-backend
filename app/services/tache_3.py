@@ -30,6 +30,8 @@ from app.config import settings
 from app.services.analysis import analyze_transcript, _call_claude
 from app.services.tache_rubric import apply_tache_rubric
 from app.services.module_detector import detect_modules
+from app.services.detection import detect_clusters
+from app.schemas.detection import empty_payload
 
 logger = logging.getLogger(__name__)
 
@@ -211,8 +213,15 @@ async def analyze_tache_3(
         detection = await detect_modules(transcript or "", "tache_3", db)
         result["detected_modules"] = detection["detected_modules"]
         result["primary_module"] = detection["primary_module"]
+        # P-200: cluster detection runs after F-080b, same sequential
+        # pattern. Persistence happens in the recording-router's persist
+        # path (recordings.py /upload). Never raises.
+        result["cluster_findings_payload"] = await detect_clusters(
+            transcript or "", "tache_3", db
+        )
     else:
         result["detected_modules"] = []
         result["primary_module"] = None
+        result["cluster_findings_payload"] = empty_payload()
 
     return result

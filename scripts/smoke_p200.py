@@ -342,6 +342,102 @@ def step_8_check_constraint() -> None:
         db.close()
 
 
+def step_9_analyzer_wiring() -> None:
+    """Commit-3 wiring test: monkey-patch detect_clusters → canned
+    DetectionPayload → call analyze_tache_3 → assert
+    cluster_findings_payload threaded through to result dict.
+
+    Lighter than a full _run_analysis_and_persist round-trip — exercises
+    the analyzer-side wiring (the new code path) without depending on
+    Claude API / STT / audio uploads. Persistence path is covered by
+    Step 7 already.
+    """
+    print("\nStep 9: analyzer wiring (commit-3 integration)")
+    import asyncio
+    from unittest.mock import patch
+
+    from app.config import settings as app_settings
+    from app.services import tache_3 as tache_3_module
+    from app.schemas.detection import (
+        ClusterFinding,
+        DetectionPayload,
+        MarkerFiring,
+    )
+
+    # Canned payload the monkey-patched detect_clusters returns.
+    canned = DetectionPayload(
+        cluster_findings=[
+            ClusterFinding(
+                cluster_slug="B1.1.C1",
+                detection_result="fail",
+                fired_markers=[MarkerFiring(
+                    marker_id="B1.1.C1.a",
+                    severity="high",
+                    evidence="hier j'ai mangé",
+                )],
+                silent_markers=["B1.1.C1.b"],
+                status_logic_path="needs_revisit",
+                rubric_score=0.0,
+            ),
+            ClusterFinding(
+                cluster_slug="B1.1.C2",
+                detection_result="clean",
+                fired_markers=[],
+                silent_markers=["B1.1.C2.a", "B1.1.C2.b"],
+                status_logic_path="absorbed",
+                rubric_score=1.0,
+            ),
+        ],
+        model="canned-test-model",
+        input_tokens=100,
+        output_tokens=50,
+    )
+
+    async def fake_detect_clusters(transcript, tache_mode, db):
+        return canned
+
+    db = SessionLocal()
+    saved_key = app_settings.ANTHROPIC_API_KEY
+    app_settings.ANTHROPIC_API_KEY = ""  # demo mode for the 4-couche call
+    try:
+        # Patch the symbol the analyzer imported (tache_3_module.detect_clusters
+        # is the name resolved at call-time — patch the module's binding).
+        with patch.object(tache_3_module, "detect_clusters", fake_detect_clusters):
+            result = asyncio.run(
+                tache_3_module.analyze_tache_3(
+                    transcript="Hier j'ai mangé une pomme c'était bon.",
+                    topic="Une expérience récente",
+                    target_level="B1",
+                    ui_language="en",
+                    low_confidence_words=[],
+                    exam_profile="tcf_canada",
+                    tache_3_prompt="Racontez une expérience récente.",
+                    db=db,
+                )
+            )
+    finally:
+        app_settings.ANTHROPIC_API_KEY = saved_key
+        db.close()
+
+    check("analyze_tache_3 returns dict", isinstance(result, dict))
+    check("result has cluster_findings_payload key",
+          "cluster_findings_payload" in result)
+    payload_in_result = result.get("cluster_findings_payload")
+    check("cluster_findings_payload is a DetectionPayload",
+          isinstance(payload_in_result, DetectionPayload),
+          type(payload_in_result).__name__)
+    if isinstance(payload_in_result, DetectionPayload):
+        check("payload has 2 findings (canned)",
+              len(payload_in_result.cluster_findings) == 2,
+              str(len(payload_in_result.cluster_findings)))
+        slugs = {f.cluster_slug for f in payload_in_result.cluster_findings}
+        check("payload findings reference B1.1.C1 + B1.1.C2",
+              slugs == {"B1.1.C1", "B1.1.C2"}, str(slugs))
+        check("payload model = 'canned-test-model'",
+              payload_in_result.model == "canned-test-model",
+              payload_in_result.model or "")
+
+
 def cleanup() -> None:
     print("\nCleanup")
     db = SessionLocal()
@@ -373,6 +469,7 @@ def main() -> int:
         step_6_no_api_key()
         step_7_persistence()
         step_8_check_constraint()
+        step_9_analyzer_wiring()
     finally:
         cleanup()
 
