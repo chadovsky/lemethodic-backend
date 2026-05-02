@@ -25,18 +25,21 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 3 | **P-104** | Background tab timer drift fix |
 | 4 | **P-240** | Today's recommended action |
 | 5 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
-| 6 | **P-105** | 7-day free trial logic |
-| 7 | **P-106** | Stripe integration with dual + geographic pricing |
-| 8 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
-| 9 | **B-100** | Stripe account setup |
-| 10 | **B-102** | Privacy policy + ToS |
-| 11 | **M-100** | Past Preply student outreach |
-| 12 | **M-101** | Landing page copy in LeMethodic voice |
-| 13 | **M-103** | YouTube channel launch (scope-reduced) |
-| 14 | **M-104** | Reddit community engagement |
+| 6 | **P-222** | Waitlist UX for A2 and B2+ paths |
+| 7 | **P-230** | Overall Progress dashboard rebuild |
+| 8 | **P-234** | Cluster detail view |
+| 9 | **P-105** | 7-day free trial logic |
+| 10 | **P-106** | Stripe integration with dual + geographic pricing |
+| 11 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
+| 12 | **B-100** | Stripe account setup |
+| 13 | **B-102** | Privacy policy + ToS |
+| 14 | **M-100** | Past Preply student outreach |
+| 15 | **M-101** | Landing page copy in LeMethodic voice |
+| 16 | **M-103** | YouTube channel launch (scope-reduced) |
+| 17 | **M-104** | Reddit community engagement |
 
 ---
-# Active — Launch Critical (14 tickets, 60-day target)
+# Active — Launch Critical (17 tickets, 60-day target)
 
 ## P-201 — Diagnostic engine: level assignment + confidence
 
@@ -109,6 +112,42 @@ Remaining work:
 **Owner:** Chadi (DNS + Vercel) + Engineering (one-line CORS update).
 
 **Depends on:** F-078 (backend production URL must exist before frontend can point at it).
+
+---
+
+## P-222 — Waitlist UX for A2 and B2+ paths
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §8.4.
+
+Stub migrated from FE. When a user's diagnostic places them on a not-yet-built path (A2→B1, B2→C1, C1→C2), show a waitlist screen with explanation, free interim resources, and optional early-access opt-in. Backend may need a small waitlist-email-capture endpoint depending on the FE wiring choice. Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
+## P-230 — Overall Progress dashboard rebuild
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.4 / §7.4.
+
+Stub migrated from FE. Rebuild `/progress` per curriculum doc §7.4 (Block 2 Goulet Stack + Block 5 Dialogue Box + Block 8 Confidence Visualizer). Replaces the original P-100 surface entirely. Calm mode default + method mode opt-in. Depends on P-201 + P-204 (BE-side, level + cluster status). Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
+## P-234 — Cluster detail view
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.4 / §7.8.
+
+Stub migrated from FE. Per-cluster page with lesson + exercises + practice prompt + history. Multi-format lesson rendering (markdown / PDF embed / video embed). Depends on P-202 (cluster schema, shipped) + P-211 (content authoring, shipped). Full original body in FE BACKLOG until B-106 consolidation ships.
 
 ---
 
@@ -294,7 +333,19 @@ P-211 ingests cluster `lesson_markdown` verbatim from the authored docs, includi
 
 ---
 
-## P-220.z — Per-question illustrations and pastels (Phase 1 polish)
+## P-213 — Dialogue Box template authoring
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.2 / Block 5.
+
+Stub migrated from FE. Author 30-50 Dialogue Box templates (Block 5) varied by context. Placeholders for detected data. Owner: Chadi (authoring). Depends on P-240 (prescription engine — Active LC). Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
+## P-220.z — Onboarding per-question illustrations and pastels (Phase 1 polish)
 
 **Filed:** 2026-05-02.
 **Status:** Queued.
@@ -309,6 +360,78 @@ P-211 ingests cluster `lesson_markdown` verbatim from the authored docs, includi
 **Owner:** Chadi (illustrations or commissioning) + Engineering (wire-up).
 
 **Trigger:** post-launch, when visual polish becomes priority over functional shipping.
+
+---
+
+## P-231 — Speaking dashboard
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.4 / §7.5.
+
+Stub migrated from FE. Implement §7.5 — new surface drilled down from Speaking tab. Includes Block 3 (Recording Replay with Inline Diagnostics). Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
+## P-232 — Per-Tâche dashboards
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.4 / §7.6.
+
+Stub migrated from FE. Three dashboards (T1, T2, T3). Block 3 reused. Depends on P-231. Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
+## P-233 — Curriculum view (path surface)
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.4 / §7.7.
+
+Stub migrated from FE. New surface accessible from main nav. Includes Block 4 (Path Topography). Depends on P-203 + P-204 (shipped) + P-210 (shipped). Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
+## P-235 — Ceiling Marker Map
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.4 / Block 1.
+
+Stub migrated from FE. Implement Block 1. Surfaceable from Overall Progress (method mode) and Curriculum view (method mode). Consumes P-200 marker firings (shipped). Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
+## P-236 — Mistake Repository
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.4 / Block 7.
+
+Stub migrated from FE. Standalone tab inside Progress. Reads `user_cluster_events` (the append-only event log from P-204) — the composite (user_id, created_at) index supports the "newest events for user X" query at scale. Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
+## P-237 — Time-Adaptive UI (lean version)
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.4 / Block 6.
+
+Stub migrated from FE. Implement Block 6 lean version. `daysUntilExam` reads + conditional rendering for Dialogue Box copy, Goulet Stack ordering, exam countdown weight, practice CTA emphasis. Full mode redesigns deferred to P-267 (Phase 2). Depends on P-230 + P-231 + P-233. Full original body in FE BACKLOG until B-106 consolidation ships.
 
 ---
 
@@ -412,6 +535,42 @@ Recommended path (per BE's drift report 2026-05-02): **D**. Reasoning: BE's tag-
 
 ---
 
+## C-100 — Clean up test user id=5 from production DB
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation.
+
+Stub migrated from FE. A test user (id=5) and any orphaned data it owns linger in production. Identify owned rows (recordings, conversations, user_cluster_*) and remove. One-shot SQL cleanup via DO Console or a one-shot script. Trivial scope. Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
+## F-109 — Full name not preserved end-to-end
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation.
+
+Stub migrated from FE. Full-name field set during signup gets dropped or truncated somewhere in the BE/FE pipeline — round-trip doesn't preserve the original input cleanly. Investigate: signup endpoint validation, User.full_name persistence, /me serializer, FE display rendering. Bug fix; not a structural change. Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
+## M-101.z — Landing page custom hero asset + per-section icons
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Filed during M-101 FE rebuild planning.
+
+Stub migrated from FE. Author or commission the landing page's custom hero asset + per-section icons (Phase 1 polish). M-101a ships with placeholder/borrowed P-220 imagery; this ticket replaces with brand-specific assets. Same shape as P-220.z's per-question illustrations. Owner: Chadi (commissioning) + Engineering (wire-up). Trigger: post-launch when visual polish becomes priority over functional shipping. Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
 ## M-102 — Convert Preply reviews to social proof
 
 **Filed:** 2026-04-30.
@@ -501,6 +660,19 @@ Today candidate audio is write-only from the API surface (no GET endpoint expose
 The invariant statement lives in `app/services/storage.py`'s module docstring; honor it when designing this endpoint.
 
 **Estimate:** 2h when the feature is specified.
+
+---
+
+## P-104.x — Wall-clock setTimeout cap fallback for deep-throttle edge case
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Post-launch P2 — signal-driven (defer until real signal).
+**Parent:** P-104.
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation.
+
+Stub migrated from FE. Sub-ticket of P-104 (background tab timer drift fix). When the browser deep-throttles tabs in the background past a threshold, even Date.now()-corrected timers can still drift; this ticket adds a wall-clock-cap fallback. Trigger: real-user reports of recording duration drift after P-104 ships. Full original body in FE BACKLOG until B-106 consolidation ships.
 
 ---
 
@@ -617,6 +789,18 @@ When notifications ship as a feature, this ticket adds:
 
 ---
 
+## EX-100 — Evaluate execution tooling for ticket-by-ticket efficiency
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued — review needed.
+**Tag:** Post-launch P2 — signal-driven (defer until real signal).
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation.
+
+Stub migrated from FE. Cross-cutting tooling evaluation — review whether the current ticket-by-ticket execution flow (plan-first → spike → review → ship) has bottlenecks worth addressing (template scaffolding, repeated boilerplate, etc.). Trigger: post-launch retrospective. Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
 ## M-106 — Blog launch
 
 **Filed:** 2026-04-30; deferred 2026-05-02.
@@ -648,6 +832,18 @@ Backend scope: writing-track analysis pipeline. Stub — full spec in `lemethodi
 
 ---
 
+## P-261 — Writing dashboard
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Phase 2 / deferred indefinitely.
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.7.
+
+Stub migrated from FE. Phase 2 dashboard surface for the writing track. Pairs with P-260 (writing analysis pipeline). Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
 ## P-262 — Cross-modal prescription
 
 **Filed:** 2026-05-01.
@@ -661,7 +857,43 @@ Backend scope: prescription that draws across modalities (oral + writing). Stub 
 
 ---
 
-## P-266 — Phase 2 detectors
+## P-263 — A2 path full content
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Phase 2 / deferred indefinitely.
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.7.
+
+Stub migrated from FE. Author the full A2→B1 path content (Phase A2.1 through A2.4). Phase 2 — currently only B1→B2 ships in Phase 1. Owner: Chadi. Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
+## P-264 — B2→C1 path full content
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Phase 2 / deferred indefinitely.
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.7.
+
+Stub migrated from FE. Author the full B2→C1 path content. Phase 2. Owner: Chadi. Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
+## P-265 — C1→C2 path
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Phase 2 / deferred indefinitely.
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.7.
+
+Stub migrated from FE. Author the C1→C2 path. Phase 2 — out of scope for the Phase 1 product per curriculum doc §4.4. Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
+## P-266 — Tense + conjugation + idiomaticity detectors
 
 **Filed:** 2026-05-01.
 **Status:** Queued.
@@ -683,6 +915,30 @@ See `lemethodic-frontend/BACKLOG.md` for full roster. No backend scope.
 ## Phase 2 expansion (renumbered from P-200..P-203)
 
 Renumbered 2026-05-01 to free P-200..P-269 for Phase 1 Architecture Rework. See `lemethodic-frontend/LEMETHODIC-CURRICULUM.md` v0.2 §10.
+
+---
+
+## P-268 — Audio-synced playback for Recording Replay
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Phase 2 / deferred indefinitely.
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.7.
+
+Stub migrated from FE. Sync audio playback with transcript word-level timing for Block 3 Recording Replay. Needs a streamed-audio endpoint (per P-103.2 design notes) + word-timing data from STT (already captured). Phase 2. Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
+## P-269 — Streak system
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Queued.
+**Tag:** Phase 2 / deferred indefinitely.
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.7.
+
+Stub migrated from FE. Daily streak tracking + UI surface. Needs persistence (BE-side: User.last_active_at + streak counter) + dashboard rendering (FE). Phase 2. Full original body in FE BACKLOG until B-106 consolidation ships.
 
 ---
 
@@ -1034,7 +1290,7 @@ Original scope (preserved for history): backend seed script populating the start
 
 ---
 
-## P-220 — Onboarding questionnaire
+## P-220 — Onboarding questionnaire rebuild
 
 **Filed:** 2026-05-01.
 **Status:** Shipped 2026-05-02 (BE + FE + production verification complete).

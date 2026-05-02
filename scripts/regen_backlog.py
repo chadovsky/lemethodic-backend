@@ -24,6 +24,7 @@ ACTIVE_LC = [
     # Reordered 2026-05-02: engineering (in dependency order) → pre-launch
     # product → pre-launch business → pre-launch marketing. P-260.5 sits
     # above marketing as a hard Sprint-product blocker.
+    # 2026-05-02 reconciliation: P-222, P-230, P-234 migrated from FE BACKLOG.
 
     # Engineering (in dependency order):
     # P-220 fully shipped 2026-05-02 — moved to SHIPPED section.
@@ -33,6 +34,9 @@ ACTIVE_LC = [
     "P-104",                  # background-tab timer drift fix
     "P-240",                  # today's recommended action
     "F-079",                  # custom domain wiring
+    "P-222",                  # waitlist UX for A2/B2+ paths (FE-migrated)
+    "P-230",                  # overall progress dashboard rebuild (FE-migrated)
+    "P-234",                  # cluster detail view (FE-migrated)
 
     # Pre-launch product:
     "P-105", "P-106",         # 7-day trial + Stripe integration
@@ -48,21 +52,32 @@ ACTIVE_LC = [
 POST_LAUNCH_P1 = [
     "P-107", "P-108", "P-110",
     "P-211b",
+    "P-213",                  # FE-migrated: dialogue box template authoring
     "P-220.z",
+    "P-231", "P-232", "P-233", # FE-migrated: speaking / per-tâche / curriculum view dashboards
+    "P-235", "P-236", "P-237", # FE-migrated: ceiling marker map / mistake repo / time-adaptive UI lean
     "P-241", "P-250", "P-251",
     "B-101", "B-104", "B-105", "B-106",
+    "C-100",                  # FE-migrated: prod test-user cleanup
+    "F-109",                  # FE-migrated: full-name persistence bug
+    "M-101.z",                # FE-migrated: landing page hero asset
     "M-102", "M-107", "M-108",
 ]
 POST_LAUNCH_P2 = [
     # P-103.2 promoted from Kill (clear trigger, design contract preserved).
     # M-106 promoted from Marketing pick-1 (long-tail SEO, deferred with trigger).
-    "P-102", "P-103.1", "P-103.2", "P-109",
+    # 2026-05-02 reconciliation: P-104.x, EX-100 migrated from FE BACKLOG.
+    "P-102", "P-103.1", "P-103.2", "P-104.x", "P-109",
     "P-210.1", "P-211a", "P-211c",
     "P-220.x", "P-220.y",
+    "EX-100",
     "M-106",
 ]
 DEFERRED = [
-    "P-260", "P-262", "P-266",
+    # 2026-05-02 reconciliation: P-261, P-263, P-264, P-265, P-268, P-269
+    # migrated from FE BACKLOG.
+    "P-260", "P-261", "P-262", "P-263", "P-264", "P-265", "P-266",
+    "P-268", "P-269",
     "P-300", "P-301", "P-302", "P-303",
     "F-077.x", "F-078.x", "F-111",
     "B-103",
