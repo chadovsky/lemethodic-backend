@@ -20,36 +20,22 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 
 | # | Ticket | Title |
 |---|---|---|
-| 1 | **P-240** | Today's recommended action |
-| 2 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
-| 3 | **P-222** | Waitlist UX for A2 and B2+ paths |
-| 4 | **P-230** | Overall Progress dashboard rebuild |
-| 5 | **P-234** | Cluster detail view |
-| 6 | **P-105** | 7-day free trial logic |
-| 7 | **P-106** | Stripe integration with dual + geographic pricing |
-| 8 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
-| 9 | **B-100** | Stripe account setup |
-| 10 | **B-102** | Privacy policy + ToS |
-| 11 | **M-100** | Past Preply student outreach |
-| 12 | **M-101** | Landing page copy in LeMethodic voice |
-| 13 | **M-103** | YouTube channel launch (scope-reduced) |
-| 14 | **M-104** | Reddit community engagement |
+| 1 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
+| 2 | **P-222** | Waitlist UX for A2 and B2+ paths |
+| 3 | **P-230** | Overall Progress dashboard rebuild |
+| 4 | **P-234** | Cluster detail view |
+| 5 | **P-105** | 7-day free trial logic |
+| 6 | **P-106** | Stripe integration with dual + geographic pricing |
+| 7 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
+| 8 | **B-100** | Stripe account setup |
+| 9 | **B-102** | Privacy policy + ToS |
+| 10 | **M-100** | Past Preply student outreach |
+| 11 | **M-101** | Landing page copy in LeMethodic voice |
+| 12 | **M-103** | YouTube channel launch (scope-reduced) |
+| 13 | **M-104** | Reddit community engagement |
 
 ---
-# Active — Launch Critical (14 tickets, 60-day target)
-
-## P-240 — Today's recommended action
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
-
-**Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
-
-Backend scope: prescription endpoint returning the next-best action for a user given their diagnostic state. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
-
----
+# Active — Launch Critical (13 tickets, 60-day target)
 
 ## F-079 — Custom domain wiring (lemethodic.com → Vercel)
 
@@ -391,6 +377,31 @@ Stub migrated from FE. Standalone tab inside Progress. Reads `user_cluster_event
 **Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.4 / Block 6.
 
 Stub migrated from FE. Implement Block 6 lean version. `daysUntilExam` reads + conditional rendering for Dialogue Box copy, Goulet Stack ordering, exam countdown weight, practice CTA emphasis. Full mode redesigns deferred to P-267 (Phase 2). Depends on P-230 + P-231 + P-233. Full original body in FE BACKLOG until B-106 consolidation ships.
+
+---
+
+## P-240b — Today's focus prose layer (Dialogue Box rendering)
+
+**Filed:** 2026-05-02 (split from P-240 plan-first scope).
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Priority:** Post-launch P1.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §7.2 Block 5 — "The Dialogue Box".
+**Dependencies:** P-240 (shipped 2026-05-02) + P-213 (queued — Chadi authoring 30-50 templates).
+**Trigger:** P-213 ships.
+
+Render the Block 5 Dialogue Box prose layer in the `dialogue_box` slot of `TodayActionResponse` (already reserved as null in P-240's contract — purely additive).
+
+Block 5 is "not a chart" — short Chadi-voice contextual messages with placeholders for detected data. Example from §7.2:
+
+> "Last week you cleared 3 of your top 5 bottlenecks. Today's focus: relative pronouns. Why this one? Because it shows up in your last 4 Tâche 2 recordings, and it's blocking the leap to fluent question-framing."
+
+P-213 produces 30-50 template variants (after good week, after plateau, after regression, mid-cluster, end-of-phase). P-240b is the engine that picks the right template given the user's current `reason_code` + recent UserClusterEvent history + cluster context, then fills the placeholders.
+
+Algorithm scope (TBD when P-213 lands): keyed selection on `reason_code` + recency signals (e.g., regression + 3+ events in 7 days → "regression streak" template). Placeholder fill from already-shipped detection telemetry (cluster name, recording count, Tâche application, last fail timestamp).
+
+Out of scope: Claude API call for prose generation. Templates are authored content — selection + fill is rule-based.
 
 ---
 
@@ -1328,6 +1339,41 @@ Files: `app/schemas/diagnostic.py` (new), `app/services/diagnostic_state.py` (ne
 Production verified 2026-05-02: 56 paths in `/openapi.json`, 27 schemas, `/api/diagnostic/state` registered, `DiagnosticStateResponse` + `TacheCoverage` schemas present, `AssignedBlock` carries `coverage` + `n_clusters_evaluated`.
 
 FE follow-up (P-221.fe — file when needed): `/ecole` banner consuming `/api/diagnostic/state`, `/diagnostic/results` one-time gate consuming `/api/users/me/level` + `/api/diagnostic/state`. Out of BE scope.
+
+---
+
+## P-240 — Today's recommended action
+
+**Filed:** 2026-05-01.
+**Status:** Shipped 2026-05-02 (single commit `6b8ee43` — action layer). Prose layer deferred as **P-240b** (Post-launch P1, blocked on P-213).
+
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.5 (drives §7.4 section 2 "Today's focus" surface).
+
+Backend scope: read-only prescription engine over user's enrolled path. New endpoint `GET /api/users/me/today` returns `action` (kind / cluster_id / cluster_slug / tache_application / practice_prompt / reason_code), `context` (current_phase_id / current_phase_position / clusters_remaining_in_path / last_recording_at), and `dialogue_box` (reserved null slot for P-240b prose layer). Replaces the hardcoded "Tâche 2 · Agence de voyages" DailyActionCard on /ecole.
+
+Plan-first lock-in (2026-05-02): rule-based not LLM (Q2) — 13-cluster Phase 1 inventory makes LLM overkill, latency-sensitive hot path, determinism over creativity. On-demand not cached (Q3) — <10ms total query cost, cache invalidation harder than the savings. Separate endpoint not embedded in `/diagnostic/state` (Q4) — different lifecycles (diagnostic state is set-it-and-forget-it, today's action evolves on every recording). Scope split (Q1) — action layer this commit, prose layer P-240b.
+
+Rule chain (first-match-wins, factored in `app/services/recommendation.py::_pick_cluster` so P-241 can import it for hard navigation gating):
+
+1. `regression` — any cluster with `last_detection_result == "fail"` (even when lifecycle status is `absorbed`). The "regression on what user thought was solid" case dominates needs_revisit.
+2. `needs_revisit` — `status == "needs_revisit"`.
+3. `in_progress` — `status == "in_progress"`. Consistency wins over advancing.
+4. `next_in_path` — lowest-position `not_started` cluster (rows missing from UserClusterStatus treated as not_started).
+5. `free_practice` — all path clusters absorbed, no active fail.
+6. `no_path` — no active enrollment (mirrors `/api/diagnostic/state`'s `no_path` semantics).
+
+Tiebreak across multiple matches within a rule: lowest `PathCluster.position` (advance the path linearly).
+
+`UserPathEnrollment.current_phase_id` / `current_cluster_id` cache columns exist but have ZERO writers in app code (verified via grep, 2026-05-02). Algorithm derives current cluster + phase on-the-fly from `UserClusterStatus` + `PathCluster.position` ordering. Revisit caching once a writer ships.
+
+Files: `app/schemas/today.py` (new), `app/services/recommendation.py` (new), `app/routers/today.py` (new), `main.py` (router registration), `scripts/smoke_p240.py` (new — 33 checks across 4 steps, all PASS).
+
+No alembic migration. No new table, no new column. `recordings.py` / `conversations.py` / `users.py` untouched — purely additive.
+
+P-241 (cluster-level prescription / hard navigation gate) imports `_pick_cluster` directly when it ships; same rule chain, different enforcement teeth.
+
+FE follow-up (P-240.fe — file when needed): replace `DailyActionCard` hardcoded content on /ecole's HomeScreen with a fetch-and-render against `/api/users/me/today`. Out of BE scope.
 
 ---
 

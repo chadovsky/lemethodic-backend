@@ -34,7 +34,9 @@ ACTIVE_LC = [
     # P-104 fully shipped FE-side 2026-05-01 — moved to SHIPPED. BE-side
     # confirmed no-op (client-reported duration_seconds is metadata only;
     # no server reconciliation needed by product design).
-    "P-240",                  # today's recommended action
+    # P-240 fully shipped 2026-05-02 (single commit 6b8ee43, action layer
+    # only) — moved to SHIPPED. Prose layer split as P-240b (Post-launch
+    # P1, blocked on P-213 templates).
     "F-079",                  # custom domain wiring
     "P-222",                  # waitlist UX for A2/B2+ paths (FE-migrated)
     "P-230",                  # overall progress dashboard rebuild (FE-migrated)
@@ -58,6 +60,7 @@ POST_LAUNCH_P1 = [
     "P-220.z",
     "P-231", "P-232", "P-233", # FE-migrated: speaking / per-tâche / curriculum view dashboards
     "P-235", "P-236", "P-237", # FE-migrated: ceiling marker map / mistake repo / time-adaptive UI lean
+    "P-240b",                 # P-240 prose layer split — blocked on P-213
     "P-241", "P-250", "P-251",
     "B-101", "B-104", "B-105", "B-106",
     "C-100",                  # FE-migrated: prod test-user cleanup
@@ -90,10 +93,12 @@ DEFERRED = [
 # P-201 fully shipped (2-commit set, BE only — FE consumer is dashboard work) 2026-05-02.
 # P-221 fully shipped (single commit c475bb7, BE only — FE banner + results screen pending) 2026-05-02.
 # P-104 fully shipped FE-side 2026-05-01 (commit fluentpath-frontend@48b61a1, BE no-op).
+# P-240 action layer shipped 2026-05-02 (single commit 6b8ee43); prose layer
+# split as P-240b (Post-launch P1, blocked on P-213).
 SHIPPED = [
     "F-110", "F-110.1", "F-110.2", "P-103", "P-104",
     "P-200", "P-201", "P-202", "P-203", "P-204",
-    "P-210", "P-211", "P-212", "P-220", "P-221",
+    "P-210", "P-211", "P-212", "P-220", "P-221", "P-240",
 ]
 # Decided not to pursue. Keep entry to preserve history.
 CLOSED = ["M-105"]
