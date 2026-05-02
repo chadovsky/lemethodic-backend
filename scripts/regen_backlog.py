@@ -20,24 +20,30 @@ SRC = ROOT / "BACKLOG.md"
 # ── Triage classifications (2026-05-02) ──────────────────────────
 
 ACTIVE_LC = [
-    # In the user's stated priority order — preserved as the Active Queue order.
+    # In stated priority order — Active Queue summary preserves this order.
+    # F-079, M-104, M-103 added 2026-05-02 follow-up triage.
     "P-104", "P-105", "P-106",
     "P-200", "P-201",
     "P-220", "P-221", "P-240",
+    "F-079",
     "B-100", "B-102",
-    "M-100", "M-101",
+    "M-100", "M-101", "M-104", "M-103",
 ]
 POST_LAUNCH_P1 = [
     "P-107", "P-108", "P-110",
     "P-211b",
+    "P-220.z",
     "P-241", "P-250", "P-251",
     "B-101", "B-104", "B-105",
     "M-102", "M-107", "M-108",
 ]
 POST_LAUNCH_P2 = [
-    "P-102", "P-103.1", "P-109",
+    # P-103.2 promoted from Kill (clear trigger, design contract preserved).
+    # M-106 promoted from Marketing pick-1 (long-tail SEO, deferred with trigger).
+    "P-102", "P-103.1", "P-103.2", "P-109",
     "P-210.1", "P-211a", "P-211c",
     "P-220.x", "P-220.y",
+    "M-106",
 ]
 DEFERRED = [
     "P-260", "P-262", "P-266",
@@ -45,12 +51,13 @@ DEFERRED = [
     "F-077.x", "F-078.x", "F-111",
     "B-103",
 ]
-KILL = ["P-212", "P-103.2"]
-MARKETING_PICK_ONE = ["M-103", "M-104", "M-105", "M-106"]
-SHIPPED = ["F-110", "F-110.1", "F-110.2", "P-103",
-           "P-202", "P-203", "P-204", "P-210", "P-211"]
-# F-079 unclassified -> Pending Classification section.
-PENDING = ["F-079"]
+# 2026-05-02 follow-up triage: P-212 superseded by P-210 + P-211.
+SHIPPED = [
+    "F-110", "F-110.1", "F-110.2", "P-103",
+    "P-202", "P-203", "P-204", "P-210", "P-211", "P-212",
+]
+# Decided not to pursue. Keep entry to preserve history.
+CLOSED = ["M-105"]
 
 
 # Tag value injected as **Tag:** line per ticket body.
@@ -59,23 +66,42 @@ TAG_TEXT = {
     "p1":         "Post-launch P1 (2-4 weeks after launch)",
     "p2":         "Post-launch P2 — signal-driven (defer until real signal)",
     "deferred":   "Phase 2 / deferred indefinitely",
-    "kill":       "Kill candidate — verification pending",
-    "mkt_pick1":  "Marketing — Choose 1, close 3",
-    "shipped":    None,   # no tag for shipped
-    "pending":    "Pending classification",
+    "shipped":    None,   # no tag for shipped — status reflects history
+    "closed":     "Closed — decided not to pursue",
 }
 
 # Section ordering in the regenerated file.
 SECTIONS = [
-    ("active_lc",  "Active — Launch Critical (12 tickets, 60-day target)",  ACTIVE_LC),
-    ("p1",         "Post-launch P1 (2-4 weeks after launch)",                POST_LAUNCH_P1),
-    ("p2",         "Post-launch P2 — signal-driven",                         POST_LAUNCH_P2),
-    ("deferred",   "Phase 2 / deferred indefinitely",                        DEFERRED),
-    ("mkt_pick1",  "Marketing — Choose 1, close 3 (verify with founder)",   MARKETING_PICK_ONE),
-    ("kill",       "Kill candidates — verification pending",                 KILL),
-    ("pending",    "Pending classification",                                 PENDING),
-    ("shipped",    "Shipped",                                                SHIPPED),
+    ("active_lc",  f"Active — Launch Critical ({len(ACTIVE_LC)} tickets, 60-day target)",  ACTIVE_LC),
+    ("p1",         "Post-launch P1 (2-4 weeks after launch)",                              POST_LAUNCH_P1),
+    ("p2",         "Post-launch P2 — signal-driven",                                       POST_LAUNCH_P2),
+    ("deferred",   "Phase 2 / deferred indefinitely",                                      DEFERRED),
+    ("closed",     "Closed",                                                               CLOSED),
+    ("shipped",    "Shipped",                                                              SHIPPED),
 ]
+
+
+# Hardcoded preamble. Re-render it on every regen — DO NOT extract from
+# the existing file. Earlier (pre-fix) the regen extracted
+# everything-before-first-ticket as preamble, which captured stale
+# Active Queue summaries from prior runs and stacked them. Hardcoding
+# keeps regen idempotent.
+PREAMBLE = """# BACKLOG.md
+
+**Last updated:** 2026-05-02 (re-baseline pass + 5-decision follow-up).
+**Phase 1 Architecture Rework** — see `lemethodic-frontend/LEMETHODIC-CURRICULUM.md` v0.2.
+
+Active and deferred work tracking. Tickets are organized by **Tag** —
+the section a ticket lives in matches its `**Tag:**` line. Section
+ordering: Active → P1 → P2 → Deferred → Closed → Shipped. The Active
+Queue summary at the top of this file reproduces only the launch-critical
+slate in priority order; bodies live below.
+
+Re-runnable via `scripts/regen_backlog.py` — change classification
+constants there and regenerate.
+
+---
+"""
 
 
 # ── Parsing ──────────────────────────────────────────────────────
@@ -86,26 +112,31 @@ HEADER_RE = re.compile(
 )
 
 
-def parse_backlog(text: str) -> tuple[str, dict[str, str]]:
-    """Returns (preamble, {ticket_id: body_block}).
+SECTION_HEADING_RE = re.compile(r"^# .+$", re.MULTILINE)
 
-    body_block includes the `## ID — Title` line through the trailing `---`
-    separator (or end-of-file). Tickets keep their full original content
-    so we don't lose any author intent.
+
+def parse_backlog(text: str) -> dict[str, str]:
+    """Returns {ticket_id: body_block}.
+
+    body_block includes the `## ID — Title` line through the line before
+    the next ticket header. Strips any stray top-level `# Heading` lines
+    that leaked into a body — those are section headings from prior
+    regen runs that should not be preserved across regenerations.
     """
     matches = list(HEADER_RE.finditer(text))
     if not matches:
-        return text, {}
-    preamble = text[:matches[0].start()]
+        return {}
     bodies: dict[str, str] = {}
     for i, m in enumerate(matches):
         end = matches[i + 1].start() if i + 1 < len(matches) else len(text)
         block = text[m.start():end].rstrip()
-        # Normalize trailing `---` so re-rendering is idempotent.
+        # Strip top-level section headings that leaked into this ticket
+        # body (anything matching ^# at line start). Keeps regen idempotent.
+        block = SECTION_HEADING_RE.sub("", block).strip()
         if not block.endswith("---"):
             block = block + "\n\n---"
         bodies[m.group(1)] = block + "\n\n"
-    return preamble, bodies
+    return bodies
 
 
 # ── Tag injection ────────────────────────────────────────────────
@@ -116,16 +147,22 @@ TAG_LINE_RE = re.compile(r"^\*\*Tag:\*\*.*\n", re.MULTILINE)
 
 def inject_tag(body: str, tag_value: str | None) -> str:
     """Idempotent: strips any existing **Tag:** line, then inserts the
-    new one (if any) right after the **Status:** line."""
+    new one (if any) right after the **Status:** line.
+
+    new_tag_line carries no trailing newline; the existing body[m.end():]
+    already begins with `\\n` (Status's line terminator), so a hardcoded
+    trailing `\\n` in new_tag_line would double up on second-pass regen
+    and break idempotency."""
     body = TAG_LINE_RE.sub("", body)
     if tag_value is None:
         return body
-    new_tag_line = f"**Tag:** {tag_value}.\n"
+    new_tag_line = f"**Tag:** {tag_value}."
     m = STATUS_LINE_RE.search(body)
     if not m:
         # No Status line — append tag line right after the heading line.
         lines = body.split("\n", 1)
-        return lines[0] + "\n\n" + new_tag_line + (lines[1] if len(lines) > 1 else "")
+        rest = lines[1] if len(lines) > 1 else ""
+        return lines[0] + "\n\n" + new_tag_line + "\n" + rest
     return body[:m.end()] + "\n" + new_tag_line + body[m.end():]
 
 
@@ -163,23 +200,9 @@ def build_active_queue(bodies: dict[str, str]) -> str:
 # ── Render ───────────────────────────────────────────────────────
 
 
-def render(preamble: str, bodies: dict[str, str]) -> str:
-    """Build the new file content."""
-    # Update the preamble: bump 'Last updated' if present, otherwise leave alone.
-    new_preamble = re.sub(
-        r"\*\*Last updated:\*\*\s+[\d-]+\.",
-        "**Last updated:** 2026-05-02 (re-baseline pass).",
-        preamble,
-    )
-    # Append a one-line note about the re-baseline.
-    if "**Last updated:**" in new_preamble and "re-baseline" not in new_preamble:
-        new_preamble += (
-            "\nThis file was re-organized 2026-05-02 by tag (Active — Launch "
-            "Critical, Post-launch P1, Post-launch P2, Deferred, Shipped). "
-            "Re-runnable via `scripts/regen_backlog.py`.\n\n"
-        )
-
-    chunks = [new_preamble.rstrip() + "\n\n", build_active_queue(bodies)]
+def render(bodies: dict[str, str]) -> str:
+    """Build the new file content. Preamble is hardcoded — see PREAMBLE."""
+    chunks = [PREAMBLE.rstrip() + "\n\n", build_active_queue(bodies)]
 
     seen: set[str] = set()
     for key, heading, ids in SECTIONS:
@@ -213,24 +236,33 @@ def render(preamble: str, bodies: dict[str, str]) -> str:
 
 def main() -> int:
     text = SRC.read_text(encoding="utf-8")
-    preamble, bodies = parse_backlog(text)
+    bodies = parse_backlog(text)
     print(f"parsed {len(bodies)} tickets from BACKLOG.md")
 
     classified = sum(len(ids) for _, _, ids in SECTIONS)
     print(f"classifications cover {classified} ids "
           f"(some may not yet exist as bodies)")
 
-    new_text = render(preamble, bodies)
+    new_text = render(bodies)
     SRC.write_text(new_text, encoding="utf-8")
     print(f"wrote {len(new_text)} bytes to BACKLOG.md")
 
     # Sanity round-trip: re-parse and confirm every original ticket survives.
-    _, bodies_after = parse_backlog(new_text)
+    bodies_after = parse_backlog(new_text)
     missing = set(bodies) - set(bodies_after)
     extra = set(bodies_after) - set(bodies)
     print(f"round-trip: {len(bodies_after)} tickets in regenerated file")
     print(f"  missing from rewrite: {sorted(missing)}")
     print(f"  added by rewrite:     {sorted(extra)}")
+
+    # Idempotency proof: write twice, expect identical output.
+    bodies_2 = parse_backlog(SRC.read_text(encoding="utf-8"))
+    text_2 = render(bodies_2)
+    if text_2 == new_text:
+        print("idempotency: OK (second regen produced identical output)")
+    else:
+        print("idempotency: FAIL — second regen differs")
+        return 1
     return 0 if not missing else 1
 
 

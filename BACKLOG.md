@@ -1,9 +1,16 @@
 # BACKLOG.md
 
-**Last updated:** 2026-05-02 (re-baseline pass).
+**Last updated:** 2026-05-02 (re-baseline pass + 5-decision follow-up).
 **Phase 1 Architecture Rework** — see `lemethodic-frontend/LEMETHODIC-CURRICULUM.md` v0.2.
 
-Post-launch / deferred work. Active sprint tickets live in their own scope; this file tracks items explicitly punted out of an in-flight ticket so they don't get lost.
+Active and deferred work tracking. Tickets are organized by **Tag** —
+the section a ticket lives in matches its `**Tag:**` line. Section
+ordering: Active → P1 → P2 → Deferred → Closed → Shipped. The Active
+Queue summary at the top of this file reproduces only the launch-critical
+slate in priority order; bodies live below.
+
+Re-runnable via `scripts/regen_backlog.py` — change classification
+constants there and regenerate.
 
 ---
 
@@ -21,13 +28,16 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 6 | **P-220** | Onboarding questionnaire |
 | 7 | **P-221** | Diagnostic flow integration |
 | 8 | **P-240** | Today's recommended action |
-| 9 | **B-100** | Stripe account setup |
-| 10 | **B-102** | Privacy policy + ToS |
-| 11 | **M-100** | Past Preply student outreach |
-| 12 | **M-101** | Landing page copy in LeMethodic voice |
+| 9 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
+| 10 | **B-100** | Stripe account setup |
+| 11 | **B-102** | Privacy policy + ToS |
+| 12 | **M-100** | Past Preply student outreach |
+| 13 | **M-101** | Landing page copy in LeMethodic voice |
+| 14 | **M-104** | Reddit community engagement |
+| 15 | **M-103** | YouTube channel launch (scope-reduced) |
 
 ---
-# Active — Launch Critical (12 tickets, 60-day target)
+# Active — Launch Critical (15 tickets, 60-day target)
 
 ## P-104 — Background tab timer drift fix
 
@@ -130,6 +140,29 @@ Backend scope: prescription endpoint returning the next-best action for a user g
 
 ---
 
+## F-079 — Custom domain wiring (lemethodic.com → Vercel)
+
+**Filed:** 2026-04-28; reframed 2026-05-02 (Vercel deploy already shipped).
+**Status:** Vercel deploy shipped (`lemethodic-frontend.vercel.app`). Custom domain wiring pending.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH (pre-launch — without DNS the FE has no canonical production URL).
+
+Remaining work:
+- ✓ Vercel deploy: shipped.
+- ✗ DNS A records (registrar → Vercel) — pending.
+- ✗ Vercel custom domain config (`lemethodic.com` + `www` subdomain) — pending.
+- ✗ Backend CORS allowlist (`main.py`) update to include `https://lemethodic.com` — pending.
+- ✗ Verify HTTPS via Vercel-managed Let's Encrypt cert.
+
+**Estimated effort:** ~1 hour of Chadi's time (DNS + Vercel config + propagation wait). No engineering work beyond the CORS allowlist line.
+
+**Owner:** Chadi (DNS + Vercel) + Engineering (one-line CORS update).
+
+**Depends on:** F-078 (backend production URL must exist before frontend can point at it).
+
+---
+
 ## B-100 — Stripe account setup
 
 **Filed:** 2026-04-30.
@@ -175,6 +208,34 @@ Re-engagement angle, not first contact. Stub — spec TBD.
 **Priority:** High.
 
 Stub — spec TBD.
+
+---
+
+## M-104 — Reddit community engagement
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## M-103 — YouTube channel launch (scope-reduced)
+
+**Filed:** 2026-04-30; scope-reduced 2026-05-02.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** Medium (pre-launch credibility artifact, not a sustained channel commitment).
+
+**Scope (reduced):** 1 anchor video pre-launch as a credibility artifact — ~5-10 min, exam-prep tactic on a topic with low SEO competition (e.g., "TCF Canada Tâche 3 — what scoring actually rewards"). Single video establishes the channel + serves as a referral asset; cadence is **not** committed pre-launch.
+
+**Re-evaluate post-launch:** if the anchor video drives meaningful traffic or referral signal within 4-8 weeks, decide whether to commit to a sustained cadence (monthly anchor + occasional shorts) or leave the channel as a one-shot artifact. Default: leave as-is unless signal is clear.
+
+**Owner:** Chadi (recording + editing + thumbnail). Solo founder cost is high — no monthly commitment until signal justifies it.
 
 ---
 
@@ -230,6 +291,24 @@ P-211 ingests cluster `lesson_markdown` verbatim from the authored docs, includi
 **Trigger:** when the cluster detail view (P-234) is implemented.
 
 **Scope:** define the filter contract — either a section-heading denylist applied client-side, or a markdown delimiter pattern (`<!-- author -->`, `<!-- student -->`) that the authoring side starts emitting. Land filter logic in the frontend renderer; backend stays pristine.
+
+---
+
+## P-220.z — Per-question illustrations and pastels (Phase 1 polish)
+
+**Filed:** 2026-05-02.
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Priority:** Post-launch P1.
+**Source:** P-220 FE rebuild plan-first.
+**Depends on:** P-220 (FE rebuild).
+
+**Scope:** author or commission per-question illustrations + pastel backgrounds for the 11 onboarding questions. The P-220 FE rebuild cycles the existing 6 illustrations/pastels as a placeholder; this ticket replaces them with question-specific assets.
+
+**Owner:** Chadi (illustrations or commissioning) + Engineering (wire-up).
+
+**Trigger:** post-launch, when visual polish becomes priority over functional shipping.
 
 ---
 
@@ -377,6 +456,29 @@ Validate with usage data before tightening. Premature tightening risks 413-ing l
 
 ---
 
+## P-103.2 — Deferred: authenticated candidate-audio serve endpoint
+
+**Filed:** 2026-05-01.
+**Status:** Deferred — build only when a playback feature is specified.
+**Tag:** Post-launch P2 — signal-driven (defer until real signal).
+
+**Priority:** Medium (when needed).
+
+Today candidate audio is write-only from the API surface (no GET endpoint exposes user-uploaded recordings; the conversation turn serializer at `conversations.py::_serialize_turn` deliberately filters candidate `audio_url` out of the response). If a future feature requires playback (e.g. recordings list lets users replay their own clips), the design must be:
+
+- Path: `GET /api/recordings/{id}/audio` (or equivalent under conversations).
+- Auth: `Depends(get_current_user)`.
+- Ownership: load the `Recording`, assert `recording.user_id == current_user.id` before serving.
+- Body: either streamed via `storage.stream_response(...)` or a short-TTL presigned URL (5 minutes typical).
+- Tolerate both storage-key shapes: pre-P-103 `uploads/<uuid>.<ext>` and post-P-103 `uploads/<user_id>/<uuid>.<ext>`. The DB-level ownership check is authoritative; do not parse the storage key to determine ownership.
+- Never expose raw `uploads/*` paths via any GET endpoint.
+
+The invariant statement lives in `app/services/storage.py`'s module docstring; honor it when designing this endpoint.
+
+**Estimate:** 2h when the feature is specified.
+
+---
+
 ## P-109 — TCF Canada speaking simulator MVP
 
 **Filed:** 2026-04-30.
@@ -487,6 +589,22 @@ When notifications ship as a feature, this ticket adds:
 **Trigger:** notification infrastructure exists (separate ticket, currently unfiled).
 
 **Estimate:** 30 min once the sender exists.
+
+---
+
+## M-106 — Blog launch
+
+**Filed:** 2026-04-30; deferred 2026-05-02.
+**Status:** Queued (deferred with explicit trigger).
+**Tag:** Post-launch P2 — signal-driven (defer until real signal).
+
+**Priority:** Medium.
+
+**Trigger:** 3+ months post-launch, sustained traction, revenue justifying content investment. The long-tail SEO payoff is real but takes 6-12 months to compound — investing pre-launch competes with YouTube (M-103) and Reddit (M-104) for solo founder time without faster returns.
+
+**Scope (when triggered):** SEO'd long-form content targeting visa-urgent search terms ("TCF Canada Tâche 3 examples", "Express Entry French requirements", "B1 to B2 in 3 months"). Repurpose YouTube anchor video transcripts where applicable.
+
+Stub — full spec TBD when trigger fires.
 
 ---
 
@@ -673,108 +791,17 @@ Stub — spec TBD.
 
 ---
 
-# Marketing — Choose 1, close 3 (verify with founder)
-
-## M-103 — YouTube channel launch
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Tag:** Marketing — Choose 1, close 3.
-
-**Priority:** Medium.
-
-Stub — spec TBD.
-
----
-
-## M-104 — Reddit community engagement
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Tag:** Marketing — Choose 1, close 3.
-
-**Priority:** Medium.
-
-Stub — spec TBD.
-
----
+# Closed
 
 ## M-105 — LinkedIn long-form content
 
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Tag:** Marketing — Choose 1, close 3.
+**Filed:** 2026-04-30; closed 2026-05-02.
+**Status:** Closed — decided not to pursue. LinkedIn is the wrong audience for the visa-urgent persona; the B2B angle (immigration consultants / employer-sponsored TCF prep) is not a current channel and not a priority.
+**Tag:** Closed — decided not to pursue.
 
-**Priority:** Medium.
+**Re-open trigger:** B2B angle becomes a real channel (e.g., immigration-consultant referral pipeline material).
 
-Stub — spec TBD.
-
----
-
-## M-106 — Blog launch
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Tag:** Marketing — Choose 1, close 3.
-
-**Priority:** Medium.
-
-Stub — spec TBD.
-
----
-
-# Kill candidates — verification pending
-
-## P-212 — Starter cluster seed
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Tag:** Kill candidate — verification pending.
-
-**Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
-
-Backend scope: seed script populating the starter cluster set for soft-beta launch. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
-
----
-
-## P-103.2 — Deferred: authenticated candidate-audio serve endpoint
-
-**Filed:** 2026-05-01.
-**Status:** Deferred — build only when a playback feature is specified.
-**Tag:** Kill candidate — verification pending.
-
-**Priority:** Medium (when needed).
-
-Today candidate audio is write-only from the API surface (no GET endpoint exposes user-uploaded recordings; the conversation turn serializer at `conversations.py::_serialize_turn` deliberately filters candidate `audio_url` out of the response). If a future feature requires playback (e.g. recordings list lets users replay their own clips), the design must be:
-
-- Path: `GET /api/recordings/{id}/audio` (or equivalent under conversations).
-- Auth: `Depends(get_current_user)`.
-- Ownership: load the `Recording`, assert `recording.user_id == current_user.id` before serving.
-- Body: either streamed via `storage.stream_response(...)` or a short-TTL presigned URL (5 minutes typical).
-- Tolerate both storage-key shapes: pre-P-103 `uploads/<uuid>.<ext>` and post-P-103 `uploads/<user_id>/<uuid>.<ext>`. The DB-level ownership check is authoritative; do not parse the storage key to determine ownership.
-- Never expose raw `uploads/*` paths via any GET endpoint.
-
-The invariant statement lives in `app/services/storage.py`'s module docstring; honor it when designing this endpoint.
-
-**Estimate:** 2h when the feature is specified.
-
----
-
-# Pending classification
-
-## F-079 — Frontend production deploy (Vercel + environment wiring)
-
-**Filed:** 2026-04-28.
-**Status:** pre-launch. Placeholder — will be properly specced before implementation.
-**Tag:** Pending classification.
-
-
-Pre-launch. Deploy `fluentpath-frontend` to Vercel production. Configure `NEXT_PUBLIC_API_URL` pointing at backend production URL (set after F-078 ships). Update backend CORS allowlist (`main.py`) to include the frontend production domain in addition to `localhost`.
-
-**Estimate:** 1–2h.
-
-**Depends on:** F-078 (backend production URL must exist before frontend can point at it).
+Original priority was Medium. Decided not to pursue per 2026-05-02 marketing triage — solo founder bandwidth is the binding constraint, and Reddit (M-104) + YouTube (M-103) cover the visa-urgent persona at lower cost with better audience fit.
 
 ---
 
@@ -948,6 +975,18 @@ Idempotent one-shot seed. Cluster slugs follow the 4-segment marker convention (
 **Source:** LEMETHODIC-CURRICULUM v0.2 §10.
 
 Backend scope: data ingestion infrastructure for authoring cluster content. Parses the 4 vendored cluster docs in `docs/clusters/` (synced from `lemethodic-frontend/curriculum/clusters/`); for each of the 13 authored clusters writes `lesson_markdown`, `practice_prompt`, `detection_rubric` (prose-faithful per the relaxed schema), and updates `tache_application` to match the authored prompt header (7 of 13 flip from the seed default). The 9 placeholder clusters (B1.4 + B1.5) get a placeholder string. Ten markers in 2 clusters (B1.1.C1, B1.1.C2) auto-rewritten from legacy 3-segment to canonical 4-segment, with a loud warning summary — source-doc fix tracked in P-211a.
+
+---
+
+## P-212 — Starter cluster seed
+
+**Filed:** 2026-05-01; superseded 2026-05-02.
+**Status:** Superseded by P-210 + P-211 (shipped 2026-05-01). The 22-cluster B1→B2 path is in production with 13 clusters fully authored and 9 placeholders pending Les Moules content. Nothing in P-212's original scope remains uncovered.
+
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Original scope (preserved for history): backend seed script populating the starter cluster set for soft-beta launch. Now covered by P-210 (`scripts/seed_b1_b2_path.py`, commit `79cd629`) for the 1 path / 5 phases / 22 cluster slots, and P-211 (`scripts/ingest_b1_b2_cluster_content.py`, commit `d862794`) for content. Both running against production.
 
 ---
 
