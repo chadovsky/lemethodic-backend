@@ -77,6 +77,11 @@ def submit_onboarding(
     user.prior_french_exam = payload.q10_prior_exam_history
     user.feedback_mode_preference = payload.q11_feedback_mode
 
+    # FR/EN toggle — only write through when the client sent a value, so
+    # legacy clients that omit the field don't clobber existing ui_language.
+    if payload.interface_language is not None:
+        user.ui_language = payload.interface_language
+
     # Q4-Q10 are stored but not yet routed-on. P-220.x picks up routing.
     # TODO P-220.x: motivation -> theme priority weighting
     # TODO P-220.x: strongest/weakest skill -> diagnostic emphasis

@@ -413,6 +413,36 @@ def step_5_endpoints() -> None:
               body["capacity_warning"]["recommended_minimum_hours"] == "5_to_10")
     check("persona=cram for 3-week exam", body["persona"] == "cram", body.get("persona"))
 
+    # interface_language sub-checks — present-and-valid sets ui_language,
+    # absent leaves it unchanged, invalid value 422s.
+    db = SessionLocal()
+    u_pre = db.query(User).filter_by(id=user_id).first()
+    pre_ui_language = u_pre.ui_language
+    db.close()
+
+    payload_with_lang = dict(payload_b1b2, interface_language="fr")
+    r = client.post("/onboarding/submit", json=payload_with_lang, headers=auth_headers)
+    check("interface_language=fr accepted", r.status_code == 200,
+          f"{r.status_code} {r.text[:120]}")
+    db = SessionLocal()
+    check("ui_language persisted to 'fr'",
+          db.query(User).filter_by(id=user_id).first().ui_language == "fr")
+    db.close()
+
+    payload_no_lang = dict(payload_b1b2)  # field absent
+    r = client.post("/onboarding/submit", json=payload_no_lang, headers=auth_headers)
+    check("submit without interface_language still 200", r.status_code == 200,
+          str(r.status_code))
+    db = SessionLocal()
+    check("ui_language unchanged (still 'fr' from prior submit)",
+          db.query(User).filter_by(id=user_id).first().ui_language == "fr")
+    db.close()
+
+    payload_bad_lang = dict(payload_b1b2, interface_language="es")
+    r = client.post("/onboarding/submit", json=payload_bad_lang, headers=auth_headers)
+    check("interface_language=es returns 422", r.status_code == 422,
+          str(r.status_code))
+
     # Old endpoint still works + emits deprecation header
     legacy_payload = {
         "target_level": "B2",

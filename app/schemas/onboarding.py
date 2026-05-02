@@ -122,6 +122,12 @@ class OnboardingSubmitRequest(BaseModel):
     q10_prior_exam_history: PriorExamHistorySlug
     q11_feedback_mode: FeedbackModeSlug
 
+    # FE FR/EN toggle. Maps to User.ui_language column (same convention as
+    # the legacy /api/users/onboarding endpoint). Optional so legacy clients
+    # that don't send it keep working unchanged; absent value means "leave
+    # ui_language as-is".
+    interface_language: Optional[Literal["en", "fr"]] = None
+
     @model_validator(mode="after")
     def _exam_date_xor_no_exam(self) -> "OnboardingSubmitRequest":
         if not self.q3_no_exam_scheduled and self.q3_exam_date is None:
