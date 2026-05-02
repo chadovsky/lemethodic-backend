@@ -60,13 +60,20 @@ class SelfReportedBlock(BaseModel):
 
 
 class AssignedBlock(BaseModel):
-    """Latest system-derived assessment from P-201 algorithm."""
+    """Latest system-derived assessment from P-201 algorithm.
+
+    P-221 extension: surfaces `n_clusters_evaluated` so the FE
+    diagnostic-results screen can render coverage telemetry ("we
+    detected signal across 8 of 13 areas") without a second endpoint
+    call. Both fields are already persisted on UserLevelAssessment.
+    """
 
     model_config = ConfigDict(extra="forbid")
 
     level: AssignedLevel
     confidence: AssignedConfidence
     coverage: float = Field(ge=0.0, le=1.0)
+    n_clusters_evaluated: int = Field(ge=0)
     computed_at: datetime
 
 

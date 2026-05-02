@@ -89,6 +89,7 @@ def get_user_level(
             level=latest.assigned_level,
             confidence=latest.assigned_confidence,
             coverage=latest.coverage,
+            n_clusters_evaluated=latest.n_clusters_evaluated,
             computed_at=latest.computed_at,
         )
         if latest
