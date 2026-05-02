@@ -1,9 +1,596 @@
 # BACKLOG.md
 
-**Last updated:** 2026-05-01.
+**Last updated:** 2026-05-02 (re-baseline pass).
 **Phase 1 Architecture Rework** — see `lemethodic-frontend/LEMETHODIC-CURRICULUM.md` v0.2.
 
 Post-launch / deferred work. Active sprint tickets live in their own scope; this file tracks items explicitly punted out of an in-flight ticket so they don't get lost.
+
+---
+
+## Active Queue — Launch Critical (60-day target)
+
+In stated priority order. Full ticket bodies live below in the "Active — Launch Critical" section.
+
+| # | Ticket | Title |
+|---|---|---|
+| 1 | **P-104** | Background tab timer drift fix |
+| 2 | **P-105** | 7-day free trial logic |
+| 3 | **P-106** | Stripe integration with dual + geographic pricing |
+| 4 | **P-200** | Diagnostic engine: detector implementation |
+| 5 | **P-201** | Diagnostic engine: level assignment + confidence |
+| 6 | **P-220** | Onboarding questionnaire |
+| 7 | **P-221** | Diagnostic flow integration |
+| 8 | **P-240** | Today's recommended action |
+| 9 | **B-100** | Stripe account setup |
+| 10 | **B-102** | Privacy policy + ToS |
+| 11 | **M-100** | Past Preply student outreach |
+| 12 | **M-101** | Landing page copy in LeMethodic voice |
+
+---
+# Active — Launch Critical (12 tickets, 60-day target)
+
+## P-104 — Background tab timer drift fix
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH (pre-launch blocker).
+
+Recording timer drifts when the browser tab is backgrounded. Stub — spec TBD.
+
+---
+
+## P-105 — 7-day free trial logic
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** High (pre-launch).
+
+Stub — spec TBD.
+
+---
+
+## P-106 — Stripe integration with dual + geographic pricing
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** High (pre-launch).
+
+Stub — spec TBD.
+
+---
+
+## P-200 — Diagnostic engine: detector implementation
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: per-couche pattern detector implementation feeding the diagnostic flow. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-201 — Diagnostic engine: level assignment + confidence
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: level assignment logic and confidence scoring on top of the detectors. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-220 — Onboarding questionnaire
+
+**Filed:** 2026-05-01.
+**Status:** Backend shipped 2026-05-02 (commits `4c272da` schema + endpoints + smoke; `bb76eb8` `interface_language` follow-up). FE rebuild in flight (separate ticket on the frontend repo).
+**Tag:** Active — Launch Critical (60-day target).
+
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10; copy spec at `docs/P-220-onboarding-questionnaire-copy.md`.
+
+Backend scope: schema migration `b3a55c1e0001` (7 new User columns + `UserPathEnrollment.persona` with CHECK constraints), Pydantic schemas, FR + EN question content, routing service (Q1+Q2 → path slug; Q3 → persona; Q3+Q7 → capacity warning; Q11 → UI mode default), and 2 endpoints (`GET /onboarding/questions`, `POST /onboarding/submit`). Legacy `POST /api/users/onboarding` kept accept-and-no-op with a `Deprecation` header for the FE migration window. Q4-Q10 routing deferred to P-220.x. Q12 reminder time deferred to P-220.y.
+
+---
+
+## P-221 — Diagnostic flow integration
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: engine wiring — connect detectors + level assignment + confidence into onboarding and the recordings pipeline. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-240 — Today's recommended action
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: prescription endpoint returning the next-best action for a user given their diagnostic state. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## B-100 — Stripe account setup
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH (pre-launch).
+
+Stub — spec TBD.
+
+---
+
+## B-102 — Privacy policy + ToS
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH (pre-launch).
+
+Stub — spec TBD.
+
+---
+
+## M-100 — Past Preply student outreach
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH (highest leverage, costs zero).
+
+Re-engagement angle, not first contact. Stub — spec TBD.
+
+---
+
+## M-101 — Landing page copy in LeMethodic voice
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** High.
+
+Stub — spec TBD.
+
+---
+
+# Post-launch P1 (2-4 weeks after launch)
+
+## P-107 — Soft satisfaction guarantee copy + refund flow
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Priority:** Medium (pre-launch).
+
+Stub — spec TBD.
+
+---
+
+## P-108 — Pronunciation feedback (basic)
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Priority:** Medium (post-launch).
+
+Stub — spec TBD.
+
+---
+
+## P-110 — Onboarding refinement (TCF-specific)
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Priority:** Medium (pre-launch).
+
+Stub — spec TBD.
+
+---
+
+## P-211b — Render-time student-facing filter for cluster lesson body
+
+**Filed:** 2026-05-02.
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Priority:** Medium.
+**Parent:** P-211.
+
+P-211 ingests cluster `lesson_markdown` verbatim from the authored docs, including author meta-notes that are not student-facing — e.g. `## Why most students fail this in production`, `## Authoring notes (for Chadi, not for the student)`, `## Spiral connection (where this cluster comes back)`. The decision was: keep the source intact in the DB and decide what to render at the UI layer.
+
+**Trigger:** when the cluster detail view (P-234) is implemented.
+
+**Scope:** define the filter contract — either a section-heading denylist applied client-side, or a markdown delimiter pattern (`<!-- author -->`, `<!-- student -->`) that the authoring side starts emitting. Land filter logic in the frontend renderer; backend stays pristine.
+
+---
+
+## P-241 — Cluster-level prescription
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: engine logic for cluster-level prescriptions feeding P-240. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-250 — Threshold calibration
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: calibration tooling for tuning detector / scoring thresholds against real data. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-251 — Lesson content delivery infrastructure
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: storage + serve endpoints for lesson content. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## B-101 — Legal entity decision
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## B-104 — Email marketing infrastructure
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## B-105 — Analytics setup
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## M-102 — Convert Preply reviews to social proof
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## M-107 — Express Entry Discord/Telegram outreach
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## M-108 — Beta user testimonial pipeline
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Priority:** High.
+
+Stub — spec TBD.
+
+---
+
+# Post-launch P2 — signal-driven
+
+## P-102 — Visual quality pass
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Post-launch P2 — signal-driven (defer until real signal).
+
+**Priority:** Medium (post-launch).
+
+Tailwind UI template, ~$300 budget. Stub — spec TBD.
+
+---
+
+## P-103.1 — Optional: tighter audio cap + duration enforcement
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Tag:** Post-launch P2 — signal-driven (defer until real signal).
+
+**Priority:** Low (post-launch, validate first).
+
+Two possible tightenings to the F-075a size cap:
+
+- Lower `MAX_AUDIO_UPLOAD_BYTES` below 10 MB if real-user data shows nobody legitimately uploads files near the cap.
+- Enforce `MAX_AUDIO_SECONDS = 900` server-side. Currently declared in `app/config.py` but not consumed anywhere — duration is taken on trust from the client's `duration_seconds` form field, which the user can spoof.
+
+Validate with usage data before tightening. Premature tightening risks 413-ing legitimate recordings.
+
+**Estimate:** 30 min if validated.
+
+---
+
+## P-109 — TCF Canada speaking simulator MVP
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Post-launch P2 — signal-driven (defer until real signal).
+
+**Priority:** High (pre-launch).
+
+Stub — spec TBD.
+
+---
+
+## P-210.1 — Per-persona path forking
+
+**Filed:** 2026-05-01.
+**Status:** Queued (deferred until validated demand).
+**Tag:** Post-launch P2 — signal-driven (defer until real signal).
+
+**Priority:** Low.
+**Parent:** P-210.
+
+When a second persona with materially different cluster sequencing emerges (e.g. foundation persona requiring slower B1.1 phase, or job-prep persona requiring different vocabulary themes), fork the `b1_to_b2` path into per-persona variants. Migration: add `b1_to_b2_visa_urgent` / `b1_to_b2_foundation` / `b1_to_b2_general`, or repurpose the existing `b1_to_b2` entry. Decide format (multiple Path rows vs Path-with-variants column) at filing time.
+
+**Trigger:** real demand from beta users in non-visa-urgent personas, or pedagogical decision that the paths must materially differ.
+
+Currently the schema has one `b1_to_b2` path serving the visa-urgent persona (seeded by P-210, `scripts/seed_b1_b2_path.py`). Personalization for other personas happens at runtime via dashboards, prompts, and copy — not via separate paths. Acceptable for Phase 1.
+
+---
+
+## P-211a — Normalize marker_id format in source cluster docs
+
+**Filed:** 2026-05-02.
+**Status:** Queued.
+**Tag:** Post-launch P2 — signal-driven (defer until real signal).
+
+**Priority:** Low.
+**Parent:** P-211.
+
+The 4-segment canonical format `{level}.{phase_num}.C{cluster_num}.{letter}` is locked backend-side (schema + Pydantic). Two clusters in `lemethodic-frontend/curriculum/clusters/B1.1-clusters-1-and-2.md` (Cluster 1, Cluster 2) use the legacy 3-segment form (`B1.1.a`, `B1.2.a`). The P-211 ingest auto-rewrites them at parse time and emits a loud warning summary, but the source docs should be normalized so authoring drift doesn't accumulate.
+
+**Trigger:** when frontend cluster docs get a v0.2 pass (or any other authoring touch on the B1.1 file).
+
+**Scope:** rewrite 10 marker references inline in `B1.1-clusters-1-and-2.md`. Re-vendor to `docs/clusters/`. Rerun ingest with `--force` to confirm no rewrites surface in the summary banner.
+
+---
+
+## P-211c — Vocabulary theme assignment pass
+
+**Filed:** 2026-05-02.
+**Status:** Queued.
+**Tag:** Post-launch P2 — signal-driven (defer until real signal).
+
+**Priority:** Low.
+**Parent:** P-211 (also touches P-210).
+
+P-210 (path seed) and P-211 (content ingest) both leave `cluster.vocabulary_theme_id = NULL` on all 22 B1→B2 clusters. The 27 vocabulary themes are seeded in `vocabulary_themes` by the P-202 migration; the cluster→theme mapping isn't authored yet. Pedagogical decision per cluster: which `vocabulary_themes.slug` contextualizes its grammar topic (e.g. B1.3.C13 "Expression de la cause" → likely `debats_opinions`; B1.2.C7 "Y et EN" → cross-cutting, may legitimately stay NULL).
+
+**Trigger:** post-Phase 1, once theme-driven UX surfaces (theme filters on the recordings list, theme-grouped progress views) are designed and need a real cluster→theme mapping to drive them.
+
+**Scope:** Chadi-led mapping pass producing a `cluster_slug → theme_slug` table (or NULL); short SQL UPDATE batch keyed by slug. No schema change — column is already nullable per the P-202 design call.
+
+---
+
+## P-220.x — Onboarding routing engine (full)
+
+**Filed:** 2026-05-02.
+**Status:** Queued.
+**Tag:** Post-launch P2 — signal-driven (defer until real signal).
+
+**Priority:** Medium (post-launch, signal-driven).
+**Parent:** P-220.
+
+P-220 ships the questionnaire schema + endpoints + stub routing logic for Q1+Q2 (path slug) and Q11 (UI mode). Q4-Q10 answers are stored on the user record but do not yet drive any backend behavior — see `# TODO P-220.x` comments in `app/routers/onboarding.py::submit_onboarding`.
+
+This ticket concretizes routing for the remaining 6 effects:
+- Q4 (motivation) → vocabulary theme priority weighting
+- Q5 (strongest skill) → diagnostic emphasis (record vs write first; speaking-first when strong-in-speaking, etc.)
+- Q6 (weakest skill blocker type) → cluster prioritization within path (which clusters surface first on the dashboard)
+- Q8 (topics tested on) → cluster prioritization, theme-filtered diagnostic prompts
+- Q9 (native language) → L1 detector calibration (Phase 2 — no-op until non-English detectors exist)
+- Q10 (prior exam history) → credibility-of-self-assessment signal feeding the diagnostic confidence score
+
+**Trigger:** beta cohort signups produce real distribution of answers + the §7 dashboard work commits to a cluster-prioritization mechanism (re-order vs overlay vs sort).
+
+**Depends on:** P-221 (diagnostic flow), P-234 (cluster detail view).
+
+**Estimate:** 2-3 days once dependencies land.
+
+---
+
+## P-220.y — Notification scheduling (Q12 reminder time)
+
+**Filed:** 2026-05-02.
+**Status:** Queued.
+**Tag:** Post-launch P2 — signal-driven (defer until real signal).
+
+**Priority:** Low (deferred until notification infrastructure exists).
+**Parent:** P-220.
+
+§8.3 originally listed Q12 ("daily reminder time preference") as part of the questionnaire. P-220 omitted it entirely — there's no notification infrastructure to plug a `reminder_time` value into yet (no email/push/SMS sender, no scheduling worker, no quiet-hours logic).
+
+When notifications ship as a feature, this ticket adds:
+- `reminder_time` column on `users` (TIME, nullable)
+- Q12 question + options in `app/services/onboarding_questions.py`
+- `q12_reminder_time` field on `OnboardingSubmitRequest` Pydantic model
+- Wiring into the notification sender
+
+**Trigger:** notification infrastructure exists (separate ticket, currently unfiled).
+
+**Estimate:** 30 min once the sender exists.
+
+---
+
+# Phase 2 / deferred indefinitely
+
+## P-260 — Writing analysis pipeline
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Tag:** Phase 2 / deferred indefinitely.
+
+**Phase:** Phase 2 (post-launch).
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: writing-track analysis pipeline. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`. Scope overlaps with P-300 (Writing pedagogy build) — reconcile when both specs exist.
+
+---
+
+## P-262 — Cross-modal prescription
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Tag:** Phase 2 / deferred indefinitely.
+
+**Phase:** Phase 2 (post-launch).
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: prescription that draws across modalities (oral + writing). Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-266 — Phase 2 detectors
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Tag:** Phase 2 / deferred indefinitely.
+
+**Phase:** Phase 2 (post-launch).
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: detectors specific to Phase 2 modalities. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## Frontend-only curriculum tickets (P-222, P-230..P-237, P-261, P-267..P-269)
+
+See `lemethodic-frontend/BACKLOG.md` for full roster. No backend scope.
+
+---
+
+## Phase 2 expansion (renumbered from P-200..P-203)
+
+Renumbered 2026-05-01 to free P-200..P-269 for Phase 1 Architecture Rework. See `lemethodic-frontend/LEMETHODIC-CURRICULUM.md` v0.2 §10.
+
+---
+
+## P-300 — Writing pedagogy build
+
+**Filed:** 2026-04-30 (renumbered from P-200 on 2026-05-01).
+**Status:** Queued.
+**Tag:** Phase 2 / deferred indefinitely.
+
+**Priority:** High (Phase 2, post-launch).
+
+Analysis prompts + 5-criterion scoring + diagnostic surface for the
+writing track. Stub — spec TBD. Scope overlaps with curriculum P-260 (Writing analysis pipeline) — reconcile when both specs exist.
+
+---
+
+## P-301 — TEF exam support
+
+**Filed:** 2026-04-30 (renumbered from P-201 on 2026-05-01).
+**Status:** Queued.
+**Tag:** Phase 2 / deferred indefinitely.
+
+**Priority:** Medium (Phase 2, post-launch).
+
+Multi-exam routing (F-091) + TEF-specific prompts + TEF scoring
+rubric. Stub — spec TBD.
+
+---
+
+## P-302 — DELF exam support
+
+**Filed:** 2026-04-30 (renumbered from P-202 on 2026-05-01).
+**Status:** Queued.
+**Tag:** Phase 2 / deferred indefinitely.
+
+**Priority:** Medium (Phase 2, post-launch).
+
+Stub — spec TBD.
+
+---
+
+## P-303 — Italian-audience expansion
+
+**Filed:** 2026-04-30 (renumbered from P-203 on 2026-05-01).
+**Status:** Queued.
+**Tag:** Phase 2 / deferred indefinitely.
+
+**Priority:** Low (Phase 2, post-launch).
+
+Per Chadi's noted interest in Italian-speaking French learners.
+Stub — spec TBD.
 
 ---
 
@@ -11,6 +598,8 @@ Post-launch / deferred work. Active sprint tickets live in their own scope; this
 
 **Filed:** F-077 (PostgreSQL local-dev parity), 2026-04-27.
 **Status:** post-launch.
+**Tag:** Phase 2 / deferred indefinitely.
+
 
 The codebase stores JSON-shaped data in `Column(Text)` with `json.dumps()` / `json.loads()` in application code. Approx 8–12 such columns across `Feedback`, `Recording`, `Conversation`, `RemediationModule`, `EcoleQuizQuestion`, `Tache2Scenario`, possibly others. Convert to PostgreSQL `JSONB` for native indexing, querying, and storage efficiency.
 
@@ -30,6 +619,8 @@ The codebase stores JSON-shaped data in `Column(Text)` with `json.dumps()` / `js
 
 **Filed:** F-078 (production deploy + Spaces), 2026-04-28.
 **Status:** post-launch.
+**Tag:** Phase 2 / deferred indefinitely.
+
 
 Replace `boto3` synchronous calls in `app/services/storage.py` with `aioboto3` async equivalents. boto3's `put_object` / `get_object` / `head_object` block the event loop during the round-trip (~50–200 ms per call on Spaces). At soft-beta scale (5–10 concurrent users) this is fine — typical session has 1 upload every 30–60 s. Past ~10 simultaneous uploads it serializes and tail latency starts climbing.
 
@@ -45,10 +636,139 @@ Replace `boto3` synchronous calls in `app/services/storage.py` with `aioboto3` a
 
 ---
 
+## F-111 — Investigate DO Spaces Limited Access key `InvalidArgument`
+
+**Filed:** 2026-04-30.
+**Status:** post-launch.
+**Tag:** Phase 2 / deferred indefinitely.
+
+
+During the launch-week debug of a production 500 on `/api/conversations/{id}/turn`, we found that the rotated DO Spaces key (Limited Access scope) was returning `InvalidArgument` on every operation against the bucket — `PutObject` (audio uploads) and `HeadObject` (F-052 TTS cache lookups) alike. Replacing it with a Full Access key resolved both immediately. No other variable changed (same bucket, region, endpoint, code path).
+
+The Limited Access scope is supposed to grant per-bucket `s3:*` equivalent permissions via DO's IAM-like model. Either (a) the scope was mis-applied at key-creation time, (b) DO's Limited Access does not in fact support the operations we need, or (c) there's a bug in DO's auth layer that returns `InvalidArgument` (with a null `Message`) instead of `AccessDenied` for scope mismatches — which is what we observed and is what made the bug nearly impossible to diagnose from response payloads.
+
+**Risk:** the Full Access key currently in production has broader privileges than the principle of least privilege calls for. It can list/delete other buckets in the account, rotate credentials, etc. If this key leaks, the blast radius is the whole Spaces account, not just our app's bucket.
+
+**Scope:**
+- Re-create a Limited Access key against the same bucket and reproduce the failure with the minimal Python repro we used in DO Console.
+- If reproducible, escalate to DO support with the repro: minimal `boto3.client("s3")` + `put_object` against a bucket-scoped Limited Access key returning `InvalidArgument` with no `Message`.
+- If non-reproducible (i.e. it works now), document as a one-off and re-attempt the rollover to a Limited Access key in production.
+- Regardless of outcome, swap production back to a Limited Access key once the root cause is understood.
+
+**Estimate:** 1–2h for the repro pass; unknown for the DO support cycle.
+
+**Out of scope:** introducing a separate IAM-style policy layer in front of Spaces. The fix is to use DO's own scoping correctly, not to invent our own.
+
+---
+
+## B-103 — Trademark research on "LeMethodic"
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Phase 2 / deferred indefinitely.
+
+**Priority:** Low.
+
+Stub — spec TBD.
+
+---
+
+# Marketing — Choose 1, close 3 (verify with founder)
+
+## M-103 — YouTube channel launch
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Marketing — Choose 1, close 3.
+
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## M-104 — Reddit community engagement
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Marketing — Choose 1, close 3.
+
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## M-105 — LinkedIn long-form content
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Marketing — Choose 1, close 3.
+
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+## M-106 — Blog launch
+
+**Filed:** 2026-04-30.
+**Status:** Queued.
+**Tag:** Marketing — Choose 1, close 3.
+
+**Priority:** Medium.
+
+Stub — spec TBD.
+
+---
+
+# Kill candidates — verification pending
+
+## P-212 — Starter cluster seed
+
+**Filed:** 2026-05-01.
+**Status:** Queued.
+**Tag:** Kill candidate — verification pending.
+
+**Phase:** Phase 1 Architecture Rework.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+
+Backend scope: seed script populating the starter cluster set for soft-beta launch. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-103.2 — Deferred: authenticated candidate-audio serve endpoint
+
+**Filed:** 2026-05-01.
+**Status:** Deferred — build only when a playback feature is specified.
+**Tag:** Kill candidate — verification pending.
+
+**Priority:** Medium (when needed).
+
+Today candidate audio is write-only from the API surface (no GET endpoint exposes user-uploaded recordings; the conversation turn serializer at `conversations.py::_serialize_turn` deliberately filters candidate `audio_url` out of the response). If a future feature requires playback (e.g. recordings list lets users replay their own clips), the design must be:
+
+- Path: `GET /api/recordings/{id}/audio` (or equivalent under conversations).
+- Auth: `Depends(get_current_user)`.
+- Ownership: load the `Recording`, assert `recording.user_id == current_user.id` before serving.
+- Body: either streamed via `storage.stream_response(...)` or a short-TTL presigned URL (5 minutes typical).
+- Tolerate both storage-key shapes: pre-P-103 `uploads/<uuid>.<ext>` and post-P-103 `uploads/<user_id>/<uuid>.<ext>`. The DB-level ownership check is authoritative; do not parse the storage key to determine ownership.
+- Never expose raw `uploads/*` paths via any GET endpoint.
+
+The invariant statement lives in `app/services/storage.py`'s module docstring; honor it when designing this endpoint.
+
+**Estimate:** 2h when the feature is specified.
+
+---
+
+# Pending classification
+
 ## F-079 — Frontend production deploy (Vercel + environment wiring)
 
 **Filed:** 2026-04-28.
 **Status:** pre-launch. Placeholder — will be properly specced before implementation.
+**Tag:** Pending classification.
+
 
 Pre-launch. Deploy `fluentpath-frontend` to Vercel production. Configure `NEXT_PUBLIC_API_URL` pointing at backend production URL (set after F-078 ships). Update backend CORS allowlist (`main.py`) to include the frontend production domain in addition to `localhost`.
 
@@ -57,6 +777,8 @@ Pre-launch. Deploy `fluentpath-frontend` to Vercel production. Configure `NEXT_P
 **Depends on:** F-078 (backend production URL must exist before frontend can point at it).
 
 ---
+
+# Shipped
 
 ## F-110 — Recordings list endpoint
 
@@ -159,39 +881,6 @@ Cleanup of the F-110.1 dual-emission window. Once `fluentpath-frontend/lib/api.t
 
 ---
 
-## F-111 — Investigate DO Spaces Limited Access key `InvalidArgument`
-
-**Filed:** 2026-04-30.
-**Status:** post-launch.
-
-During the launch-week debug of a production 500 on `/api/conversations/{id}/turn`, we found that the rotated DO Spaces key (Limited Access scope) was returning `InvalidArgument` on every operation against the bucket — `PutObject` (audio uploads) and `HeadObject` (F-052 TTS cache lookups) alike. Replacing it with a Full Access key resolved both immediately. No other variable changed (same bucket, region, endpoint, code path).
-
-The Limited Access scope is supposed to grant per-bucket `s3:*` equivalent permissions via DO's IAM-like model. Either (a) the scope was mis-applied at key-creation time, (b) DO's Limited Access does not in fact support the operations we need, or (c) there's a bug in DO's auth layer that returns `InvalidArgument` (with a null `Message`) instead of `AccessDenied` for scope mismatches — which is what we observed and is what made the bug nearly impossible to diagnose from response payloads.
-
-**Risk:** the Full Access key currently in production has broader privileges than the principle of least privilege calls for. It can list/delete other buckets in the account, rotate credentials, etc. If this key leaks, the blast radius is the whole Spaces account, not just our app's bucket.
-
-**Scope:**
-- Re-create a Limited Access key against the same bucket and reproduce the failure with the minimal Python repro we used in DO Console.
-- If reproducible, escalate to DO support with the repro: minimal `boto3.client("s3")` + `put_object` against a bucket-scoped Limited Access key returning `InvalidArgument` with no `Message`.
-- If non-reproducible (i.e. it works now), document as a one-off and re-attempt the rollover to a Limited Access key in production.
-- Regardless of outcome, swap production back to a Limited Access key once the root cause is understood.
-
-**Estimate:** 1–2h for the repro pass; unknown for the DO support cycle.
-
-**Out of scope:** introducing a separate IAM-style policy layer in front of Spaces. The fix is to use DO's own scoping correctly, not to invent our own.
-
----
-
-## P-102 — Visual quality pass
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** Medium (post-launch).
-
-Tailwind UI template, ~$300 budget. Stub — spec TBD.
-
----
-
 ## P-103 — Audio upload security hardening (user_id-prefixed storage keys)
 
 **Filed:** 2026-04-30.
@@ -205,286 +894,6 @@ Originally three sub-items (size cap, user_id ownership, auth-checked serve). Au
 - **Sub-item 3 — auth-checked serve:** no current serve endpoint for candidate audio (audit confirmed — the conversation turn serializer at `conversations.py::_serialize_turn` deliberately filters candidate `audio_url` out of responses, and there is no `/api/recordings/{id}/audio` endpoint). Closed; deferred to **P-103.2** if/when a playback feature is specified.
 
 **Estimate:** delivered.
-
----
-
-## P-103.1 — Optional: tighter audio cap + duration enforcement
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Priority:** Low (post-launch, validate first).
-
-Two possible tightenings to the F-075a size cap:
-
-- Lower `MAX_AUDIO_UPLOAD_BYTES` below 10 MB if real-user data shows nobody legitimately uploads files near the cap.
-- Enforce `MAX_AUDIO_SECONDS = 900` server-side. Currently declared in `app/config.py` but not consumed anywhere — duration is taken on trust from the client's `duration_seconds` form field, which the user can spoof.
-
-Validate with usage data before tightening. Premature tightening risks 413-ing legitimate recordings.
-
-**Estimate:** 30 min if validated.
-
----
-
-## P-103.2 — Deferred: authenticated candidate-audio serve endpoint
-
-**Filed:** 2026-05-01.
-**Status:** Deferred — build only when a playback feature is specified.
-**Priority:** Medium (when needed).
-
-Today candidate audio is write-only from the API surface (no GET endpoint exposes user-uploaded recordings; the conversation turn serializer at `conversations.py::_serialize_turn` deliberately filters candidate `audio_url` out of the response). If a future feature requires playback (e.g. recordings list lets users replay their own clips), the design must be:
-
-- Path: `GET /api/recordings/{id}/audio` (or equivalent under conversations).
-- Auth: `Depends(get_current_user)`.
-- Ownership: load the `Recording`, assert `recording.user_id == current_user.id` before serving.
-- Body: either streamed via `storage.stream_response(...)` or a short-TTL presigned URL (5 minutes typical).
-- Tolerate both storage-key shapes: pre-P-103 `uploads/<uuid>.<ext>` and post-P-103 `uploads/<user_id>/<uuid>.<ext>`. The DB-level ownership check is authoritative; do not parse the storage key to determine ownership.
-- Never expose raw `uploads/*` paths via any GET endpoint.
-
-The invariant statement lives in `app/services/storage.py`'s module docstring; honor it when designing this endpoint.
-
-**Estimate:** 2h when the feature is specified.
-
----
-
-## P-104 — Background tab timer drift fix
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** HIGH (pre-launch blocker).
-
-Recording timer drifts when the browser tab is backgrounded. Stub — spec TBD.
-
----
-
-## P-105 — 7-day free trial logic
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** High (pre-launch).
-
-Stub — spec TBD.
-
----
-
-## P-106 — Stripe integration with dual + geographic pricing
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** High (pre-launch).
-
-Stub — spec TBD.
-
----
-
-## P-107 — Soft satisfaction guarantee copy + refund flow
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** Medium (pre-launch).
-
-Stub — spec TBD.
-
----
-
-## P-108 — Pronunciation feedback (basic)
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** Medium (post-launch).
-
-Stub — spec TBD.
-
----
-
-## P-109 — TCF Canada speaking simulator MVP
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** High (pre-launch).
-
-Stub — spec TBD.
-
----
-
-## P-110 — Onboarding refinement (TCF-specific)
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** Medium (pre-launch).
-
-Stub — spec TBD.
-
----
-
-## M-100 — Past Preply student outreach
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** HIGH (highest leverage, costs zero).
-
-Re-engagement angle, not first contact. Stub — spec TBD.
-
----
-
-## M-101 — Landing page copy in LeMethodic voice
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** High.
-
-Stub — spec TBD.
-
----
-
-## M-102 — Convert Preply reviews to social proof
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** Medium.
-
-Stub — spec TBD.
-
----
-
-## M-103 — YouTube channel launch
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** Medium.
-
-Stub — spec TBD.
-
----
-
-## M-104 — Reddit community engagement
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** Medium.
-
-Stub — spec TBD.
-
----
-
-## M-105 — LinkedIn long-form content
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** Medium.
-
-Stub — spec TBD.
-
----
-
-## M-106 — Blog launch
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** Medium.
-
-Stub — spec TBD.
-
----
-
-## M-107 — Express Entry Discord/Telegram outreach
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** Medium.
-
-Stub — spec TBD.
-
----
-
-## M-108 — Beta user testimonial pipeline
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** High.
-
-Stub — spec TBD.
-
----
-
-## B-100 — Stripe account setup
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** HIGH (pre-launch).
-
-Stub — spec TBD.
-
----
-
-## B-101 — Legal entity decision
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** Medium.
-
-Stub — spec TBD.
-
----
-
-## B-102 — Privacy policy + ToS
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** HIGH (pre-launch).
-
-Stub — spec TBD.
-
----
-
-## B-103 — Trademark research on "LeMethodic"
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** Low.
-
-Stub — spec TBD.
-
----
-
-## B-104 — Email marketing infrastructure
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** Medium.
-
-Stub — spec TBD.
-
----
-
-## B-105 — Analytics setup
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Priority:** Medium.
-
-Stub — spec TBD.
-
----
-
-## P-200 — Diagnostic engine: detector implementation
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
-
-Backend scope: per-couche pattern detector implementation feeding the diagnostic flow. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
-
----
-
-## P-201 — Diagnostic engine: level assignment + confidence
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
-
-Backend scope: level assignment logic and confidence scoring on top of the detectors. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
 
 ---
 
@@ -531,21 +940,6 @@ Idempotent one-shot seed. Cluster slugs follow the 4-segment marker convention (
 
 ---
 
-## P-210.1 — Per-persona path forking
-
-**Filed:** 2026-05-01.
-**Status:** Queued (deferred until validated demand).
-**Priority:** Low.
-**Parent:** P-210.
-
-When a second persona with materially different cluster sequencing emerges (e.g. foundation persona requiring slower B1.1 phase, or job-prep persona requiring different vocabulary themes), fork the `b1_to_b2` path into per-persona variants. Migration: add `b1_to_b2_visa_urgent` / `b1_to_b2_foundation` / `b1_to_b2_general`, or repurpose the existing `b1_to_b2` entry. Decide format (multiple Path rows vs Path-with-variants column) at filing time.
-
-**Trigger:** real demand from beta users in non-visa-urgent personas, or pedagogical decision that the paths must materially differ.
-
-Currently the schema has one `b1_to_b2` path serving the visa-urgent persona (seeded by P-210, `scripts/seed_b1_b2_path.py`). Personalization for other personas happens at runtime via dashboards, prompts, and copy — not via separate paths. Acceptable for Phase 1.
-
----
-
 ## P-211 — Cluster content authoring
 
 **Filed:** 2026-05-01.
@@ -557,258 +951,3 @@ Backend scope: data ingestion infrastructure for authoring cluster content. Pars
 
 ---
 
-## P-211a — Normalize marker_id format in source cluster docs
-
-**Filed:** 2026-05-02.
-**Status:** Queued.
-**Priority:** Low.
-**Parent:** P-211.
-
-The 4-segment canonical format `{level}.{phase_num}.C{cluster_num}.{letter}` is locked backend-side (schema + Pydantic). Two clusters in `lemethodic-frontend/curriculum/clusters/B1.1-clusters-1-and-2.md` (Cluster 1, Cluster 2) use the legacy 3-segment form (`B1.1.a`, `B1.2.a`). The P-211 ingest auto-rewrites them at parse time and emits a loud warning summary, but the source docs should be normalized so authoring drift doesn't accumulate.
-
-**Trigger:** when frontend cluster docs get a v0.2 pass (or any other authoring touch on the B1.1 file).
-
-**Scope:** rewrite 10 marker references inline in `B1.1-clusters-1-and-2.md`. Re-vendor to `docs/clusters/`. Rerun ingest with `--force` to confirm no rewrites surface in the summary banner.
-
----
-
-## P-211b — Render-time student-facing filter for cluster lesson body
-
-**Filed:** 2026-05-02.
-**Status:** Queued.
-**Priority:** Medium.
-**Parent:** P-211.
-
-P-211 ingests cluster `lesson_markdown` verbatim from the authored docs, including author meta-notes that are not student-facing — e.g. `## Why most students fail this in production`, `## Authoring notes (for Chadi, not for the student)`, `## Spiral connection (where this cluster comes back)`. The decision was: keep the source intact in the DB and decide what to render at the UI layer.
-
-**Trigger:** when the cluster detail view (P-234) is implemented.
-
-**Scope:** define the filter contract — either a section-heading denylist applied client-side, or a markdown delimiter pattern (`<!-- author -->`, `<!-- student -->`) that the authoring side starts emitting. Land filter logic in the frontend renderer; backend stays pristine.
-
----
-
-## P-211c — Vocabulary theme assignment pass
-
-**Filed:** 2026-05-02.
-**Status:** Queued.
-**Priority:** Low.
-**Parent:** P-211 (also touches P-210).
-
-P-210 (path seed) and P-211 (content ingest) both leave `cluster.vocabulary_theme_id = NULL` on all 22 B1→B2 clusters. The 27 vocabulary themes are seeded in `vocabulary_themes` by the P-202 migration; the cluster→theme mapping isn't authored yet. Pedagogical decision per cluster: which `vocabulary_themes.slug` contextualizes its grammar topic (e.g. B1.3.C13 "Expression de la cause" → likely `debats_opinions`; B1.2.C7 "Y et EN" → cross-cutting, may legitimately stay NULL).
-
-**Trigger:** post-Phase 1, once theme-driven UX surfaces (theme filters on the recordings list, theme-grouped progress views) are designed and need a real cluster→theme mapping to drive them.
-
-**Scope:** Chadi-led mapping pass producing a `cluster_slug → theme_slug` table (or NULL); short SQL UPDATE batch keyed by slug. No schema change — column is already nullable per the P-202 design call.
-
----
-
-## P-212 — Starter cluster seed
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
-
-Backend scope: seed script populating the starter cluster set for soft-beta launch. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
-
----
-
-## P-220 — Onboarding questionnaire
-
-**Filed:** 2026-05-01.
-**Status:** Backend shipped 2026-05-02 (commits `4c272da` schema + endpoints + smoke; `bb76eb8` `interface_language` follow-up). FE rebuild in flight (separate ticket on the frontend repo).
-**Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10; copy spec at `docs/P-220-onboarding-questionnaire-copy.md`.
-
-Backend scope: schema migration `b3a55c1e0001` (7 new User columns + `UserPathEnrollment.persona` with CHECK constraints), Pydantic schemas, FR + EN question content, routing service (Q1+Q2 → path slug; Q3 → persona; Q3+Q7 → capacity warning; Q11 → UI mode default), and 2 endpoints (`GET /onboarding/questions`, `POST /onboarding/submit`). Legacy `POST /api/users/onboarding` kept accept-and-no-op with a `Deprecation` header for the FE migration window. Q4-Q10 routing deferred to P-220.x. Q12 reminder time deferred to P-220.y.
-
----
-
-## P-220.x — Onboarding routing engine (full)
-
-**Filed:** 2026-05-02.
-**Status:** Queued.
-**Priority:** Medium (post-launch, signal-driven).
-**Parent:** P-220.
-
-P-220 ships the questionnaire schema + endpoints + stub routing logic for Q1+Q2 (path slug) and Q11 (UI mode). Q4-Q10 answers are stored on the user record but do not yet drive any backend behavior — see `# TODO P-220.x` comments in `app/routers/onboarding.py::submit_onboarding`.
-
-This ticket concretizes routing for the remaining 6 effects:
-- Q4 (motivation) → vocabulary theme priority weighting
-- Q5 (strongest skill) → diagnostic emphasis (record vs write first; speaking-first when strong-in-speaking, etc.)
-- Q6 (weakest skill blocker type) → cluster prioritization within path (which clusters surface first on the dashboard)
-- Q8 (topics tested on) → cluster prioritization, theme-filtered diagnostic prompts
-- Q9 (native language) → L1 detector calibration (Phase 2 — no-op until non-English detectors exist)
-- Q10 (prior exam history) → credibility-of-self-assessment signal feeding the diagnostic confidence score
-
-**Trigger:** beta cohort signups produce real distribution of answers + the §7 dashboard work commits to a cluster-prioritization mechanism (re-order vs overlay vs sort).
-
-**Depends on:** P-221 (diagnostic flow), P-234 (cluster detail view).
-
-**Estimate:** 2-3 days once dependencies land.
-
----
-
-## P-220.y — Notification scheduling (Q12 reminder time)
-
-**Filed:** 2026-05-02.
-**Status:** Queued.
-**Priority:** Low (deferred until notification infrastructure exists).
-**Parent:** P-220.
-
-§8.3 originally listed Q12 ("daily reminder time preference") as part of the questionnaire. P-220 omitted it entirely — there's no notification infrastructure to plug a `reminder_time` value into yet (no email/push/SMS sender, no scheduling worker, no quiet-hours logic).
-
-When notifications ship as a feature, this ticket adds:
-- `reminder_time` column on `users` (TIME, nullable)
-- Q12 question + options in `app/services/onboarding_questions.py`
-- `q12_reminder_time` field on `OnboardingSubmitRequest` Pydantic model
-- Wiring into the notification sender
-
-**Trigger:** notification infrastructure exists (separate ticket, currently unfiled).
-
-**Estimate:** 30 min once the sender exists.
-
----
-
-## P-221 — Diagnostic flow integration
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
-
-Backend scope: engine wiring — connect detectors + level assignment + confidence into onboarding and the recordings pipeline. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
-
----
-
-## P-240 — Today's recommended action
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
-
-Backend scope: prescription endpoint returning the next-best action for a user given their diagnostic state. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
-
----
-
-## P-241 — Cluster-level prescription
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
-
-Backend scope: engine logic for cluster-level prescriptions feeding P-240. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
-
----
-
-## P-250 — Threshold calibration
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
-
-Backend scope: calibration tooling for tuning detector / scoring thresholds against real data. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
-
----
-
-## P-251 — Lesson content delivery infrastructure
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
-
-Backend scope: storage + serve endpoints for lesson content. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
-
----
-
-## P-260 — Writing analysis pipeline
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Phase:** Phase 2 (post-launch).
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
-
-Backend scope: writing-track analysis pipeline. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`. Scope overlaps with P-300 (Writing pedagogy build) — reconcile when both specs exist.
-
----
-
-## P-262 — Cross-modal prescription
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Phase:** Phase 2 (post-launch).
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
-
-Backend scope: prescription that draws across modalities (oral + writing). Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
-
----
-
-## P-266 — Phase 2 detectors
-
-**Filed:** 2026-05-01.
-**Status:** Queued.
-**Phase:** Phase 2 (post-launch).
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
-
-Backend scope: detectors specific to Phase 2 modalities. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
-
----
-
-## Frontend-only curriculum tickets (P-222, P-230..P-237, P-261, P-267..P-269)
-
-See `lemethodic-frontend/BACKLOG.md` for full roster. No backend scope.
-
----
-
-## Phase 2 expansion (renumbered from P-200..P-203)
-
-Renumbered 2026-05-01 to free P-200..P-269 for Phase 1 Architecture Rework. See `lemethodic-frontend/LEMETHODIC-CURRICULUM.md` v0.2 §10.
-
----
-
-## P-300 — Writing pedagogy build
-
-**Filed:** 2026-04-30 (renumbered from P-200 on 2026-05-01).
-**Status:** Queued.
-**Priority:** High (Phase 2, post-launch).
-
-Analysis prompts + 5-criterion scoring + diagnostic surface for the
-writing track. Stub — spec TBD. Scope overlaps with curriculum P-260 (Writing analysis pipeline) — reconcile when both specs exist.
-
----
-
-## P-301 — TEF exam support
-
-**Filed:** 2026-04-30 (renumbered from P-201 on 2026-05-01).
-**Status:** Queued.
-**Priority:** Medium (Phase 2, post-launch).
-
-Multi-exam routing (F-091) + TEF-specific prompts + TEF scoring
-rubric. Stub — spec TBD.
-
----
-
-## P-302 — DELF exam support
-
-**Filed:** 2026-04-30 (renumbered from P-202 on 2026-05-01).
-**Status:** Queued.
-**Priority:** Medium (Phase 2, post-launch).
-
-Stub — spec TBD.
-
----
-
-## P-303 — Italian-audience expansion
-
-**Filed:** 2026-04-30 (renumbered from P-203 on 2026-05-01).
-**Status:** Queued.
-**Priority:** Low (Phase 2, post-launch).
-
-Per Chadi's noted interest in Italian-speaking French learners.
-Stub — spec TBD.
-
----
