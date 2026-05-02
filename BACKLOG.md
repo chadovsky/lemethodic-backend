@@ -547,6 +547,51 @@ Backend scope: data ingestion endpoints for authoring cluster content. Stub — 
 
 ---
 
+## P-211a — Normalize marker_id format in source cluster docs
+
+**Filed:** 2026-05-02.
+**Status:** Queued.
+**Priority:** Low.
+**Parent:** P-211.
+
+The 4-segment canonical format `{level}.{phase_num}.C{cluster_num}.{letter}` is locked backend-side (schema + Pydantic). Two clusters in `lemethodic-frontend/curriculum/clusters/B1.1-clusters-1-and-2.md` (Cluster 1, Cluster 2) use the legacy 3-segment form (`B1.1.a`, `B1.2.a`). The P-211 ingest auto-rewrites them at parse time and emits a loud warning summary, but the source docs should be normalized so authoring drift doesn't accumulate.
+
+**Trigger:** when frontend cluster docs get a v0.2 pass (or any other authoring touch on the B1.1 file).
+
+**Scope:** rewrite 10 marker references inline in `B1.1-clusters-1-and-2.md`. Re-vendor to `docs/clusters/`. Rerun ingest with `--force` to confirm no rewrites surface in the summary banner.
+
+---
+
+## P-211b — Render-time student-facing filter for cluster lesson body
+
+**Filed:** 2026-05-02.
+**Status:** Queued.
+**Priority:** Medium.
+**Parent:** P-211.
+
+P-211 ingests cluster `lesson_markdown` verbatim from the authored docs, including author meta-notes that are not student-facing — e.g. `## Why most students fail this in production`, `## Authoring notes (for Chadi, not for the student)`, `## Spiral connection (where this cluster comes back)`. The decision was: keep the source intact in the DB and decide what to render at the UI layer.
+
+**Trigger:** when the cluster detail view (P-234) is implemented.
+
+**Scope:** define the filter contract — either a section-heading denylist applied client-side, or a markdown delimiter pattern (`<!-- author -->`, `<!-- student -->`) that the authoring side starts emitting. Land filter logic in the frontend renderer; backend stays pristine.
+
+---
+
+## P-211c — Vocabulary theme assignment pass
+
+**Filed:** 2026-05-02.
+**Status:** Queued.
+**Priority:** Low.
+**Parent:** P-211 (also touches P-210).
+
+P-210 (path seed) and P-211 (content ingest) both leave `cluster.vocabulary_theme_id = NULL` on all 22 B1→B2 clusters. The 27 vocabulary themes are seeded in `vocabulary_themes` by the P-202 migration; the cluster→theme mapping isn't authored yet. Pedagogical decision per cluster: which `vocabulary_themes.slug` contextualizes its grammar topic (e.g. B1.3.C13 "Expression de la cause" → likely `debats_opinions`; B1.2.C7 "Y et EN" → cross-cutting, may legitimately stay NULL).
+
+**Trigger:** post-Phase 1, once theme-driven UX surfaces (theme filters on the recordings list, theme-grouped progress views) are designed and need a real cluster→theme mapping to drive them.
+
+**Scope:** Chadi-led mapping pass producing a `cluster_slug → theme_slug` table (or NULL); short SQL UPDATE batch keyed by slug. No schema change — column is already nullable per the P-202 design call.
+
+---
+
 ## P-212 — Starter cluster seed
 
 **Filed:** 2026-05-01.
