@@ -491,33 +491,43 @@ Backend scope: level assignment logic and confidence scoring on top of the detec
 ## P-202 — Cluster data model
 
 **Filed:** 2026-05-01.
-**Status:** Queued.
+**Status:** Shipped 2026-05-01 (commit `d5595b3`).
 **Phase:** Phase 1 Architecture Rework.
 **Source:** LEMETHODIC-CURRICULUM v0.2 §10.
 
-Backend scope: SQLAlchemy + Alembic schema for the cluster concept. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+Backend scope: SQLAlchemy + Alembic schema for the cluster concept. Migration `a8f3e2c4b5d1` created `clusters`, `vocabulary_themes` (seeded with 27 §5.1 themes), with JSONB i18n labels and the prose-faithful `DetectionRubric` shape (relaxed in commit `11a175d` for P-211 ingest).
 
 ---
 
 ## P-203 — Path data model
 
 **Filed:** 2026-05-01.
-**Status:** Queued.
+**Status:** Shipped 2026-05-01 (commit `d5595b3`).
 **Phase:** Phase 1 Architecture Rework.
 **Source:** LEMETHODIC-CURRICULUM v0.2 §10.
 
-Backend scope: SQLAlchemy + Alembic schema for the path concept (sequence of clusters). Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+Backend scope: SQLAlchemy + Alembic schema for the path concept (sequence of clusters). Migration `a8f3e2c4b5d1` created `paths`, `phases`, and `path_clusters` (join + ordering, with `is_optional` for persona compression).
 
 ---
 
 ## P-204 — User progress model
 
 **Filed:** 2026-05-01.
-**Status:** Queued.
+**Status:** Shipped 2026-05-01 (commit `d5595b3`).
 **Phase:** Phase 1 Architecture Rework.
 **Source:** LEMETHODIC-CURRICULUM v0.2 §10.
 
-Backend scope: SQLAlchemy + Alembic schema tracking per-user progress through clusters and paths. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+Backend scope: SQLAlchemy + Alembic schema tracking per-user progress through clusters and paths. Migration `a8f3e2c4b5d1` created `user_path_enrollments` (with partial unique index for one-active-enrollment-per-user), `user_cluster_statuses` (snapshot), and `user_cluster_events` (append-only log with `(user_id, created_at)` composite index for Block 7 Mistake Repository).
+
+---
+
+## P-210 — B1→B2 path seed (1 path, 5 phases, 22 cluster slots)
+
+**Filed:** 2026-05-01.
+**Status:** Shipped 2026-05-01 (commit `79cd629`); production seeded same-day via `scripts/seed_b1_b2_path.py` against the prod DB.
+**Phase:** Phase 1 Architecture Rework.
+
+Idempotent one-shot seed. Cluster slugs follow the 4-segment marker convention (`B1.1.C1` .. `B1.5.C22`) so a marker_id like `B1.1.C1.a` maps cleanly back to its cluster. Lesson content, exercise sets, practice prompts, detection rubrics, and vocabulary theme assignments left empty — populated by P-211. See `scripts/seed_b1_b2_path.py`. Per-persona path forking deferred to P-210.1.
 
 ---
 
@@ -539,11 +549,11 @@ Currently the schema has one `b1_to_b2` path serving the visa-urgent persona (se
 ## P-211 — Cluster content authoring
 
 **Filed:** 2026-05-01.
-**Status:** Queued.
+**Status:** Shipped 2026-05-01 (commit `d862794`); production ingested same-day via `scripts/ingest_b1_b2_cluster_content.py` against the prod DB.
 **Phase:** Phase 1 Architecture Rework.
 **Source:** LEMETHODIC-CURRICULUM v0.2 §10.
 
-Backend scope: data ingestion endpoints for authoring cluster content. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+Backend scope: data ingestion infrastructure for authoring cluster content. Parses the 4 vendored cluster docs in `docs/clusters/` (synced from `lemethodic-frontend/curriculum/clusters/`); for each of the 13 authored clusters writes `lesson_markdown`, `practice_prompt`, `detection_rubric` (prose-faithful per the relaxed schema), and updates `tache_application` to match the authored prompt header (7 of 13 flip from the seed default). The 9 placeholder clusters (B1.4 + B1.5) get a placeholder string. Ten markers in 2 clusters (B1.1.C1, B1.1.C2) auto-rewritten from legacy 3-segment to canonical 4-segment, with a loud warning summary — source-doc fix tracked in P-211a.
 
 ---
 
@@ -606,11 +616,11 @@ Backend scope: seed script populating the starter cluster set for soft-beta laun
 ## P-220 — Onboarding questionnaire
 
 **Filed:** 2026-05-01.
-**Status:** Queued.
+**Status:** Backend shipped 2026-05-02 (commits `4c272da` schema + endpoints + smoke; `bb76eb8` `interface_language` follow-up). FE rebuild in flight (separate ticket on the frontend repo).
 **Phase:** Phase 1 Architecture Rework.
-**Source:** LEMETHODIC-CURRICULUM v0.2 §10.
+**Source:** LEMETHODIC-CURRICULUM v0.2 §10; copy spec at `docs/P-220-onboarding-questionnaire-copy.md`.
 
-Backend scope: user profile schema changes to capture onboarding questionnaire responses. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+Backend scope: schema migration `b3a55c1e0001` (7 new User columns + `UserPathEnrollment.persona` with CHECK constraints), Pydantic schemas, FR + EN question content, routing service (Q1+Q2 → path slug; Q3 → persona; Q3+Q7 → capacity warning; Q11 → UI mode default), and 2 endpoints (`GET /onboarding/questions`, `POST /onboarding/submit`). Legacy `POST /api/users/onboarding` kept accept-and-no-op with a `Deprecation` header for the FE migration window. Q4-Q10 routing deferred to P-220.x. Q12 reminder time deferred to P-220.y.
 
 ---
 
