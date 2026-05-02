@@ -58,6 +58,7 @@ from app.services.tache_2 import (
 )
 from app.services.module_library import persist_detected_modules
 from app.services.cluster_status_persistence import persist_detection_result
+from app.services.level_assignment import compute_and_persist_if_threshold
 from app.schemas.detection import empty_payload
 from app.services.tts import synthesize as tts_synthesize
 from app.services.personas.tache_1_examiner import (
@@ -535,6 +536,21 @@ async def _run_conversation_analysis_and_persist(
         db.rollback()
         logger.exception(
             "P-200: persist_detection_result raised on recording_id=%s "
+            "(%s); session finalize continues.",
+            rec.id,
+            exc,
+        )
+
+    # P-201: level assignment — fires when user has >=3 recordings.
+    # Same defensive posture as F-080b/P-200 above.
+    try:
+        compute_and_persist_if_threshold(
+            db, user_id=rec.user_id, recording=rec
+        )
+    except Exception as exc:
+        db.rollback()
+        logger.exception(
+            "P-201: level assignment raised on recording_id=%s "
             "(%s); session finalize continues.",
             rec.id,
             exc,

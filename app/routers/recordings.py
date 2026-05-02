@@ -27,6 +27,7 @@ from app.services.scoring_profiles import (
 from app.services.pattern_catalog import log_unknown_pattern_keys
 from app.services.module_library import persist_detected_modules
 from app.services.cluster_status_persistence import persist_detection_result
+from app.services.level_assignment import compute_and_persist_if_threshold
 from app.schemas.detection import empty_payload
 from app.services.scoring_maps import cefr_from_score, clb_from_cefr
 from app.services.transcript_suggestions import suggest_corrections
@@ -280,6 +281,22 @@ async def _run_analysis_and_persist(
             db.rollback()
             logger.exception(
                 "P-200: persist_detection_result raised on recording_id=%s "
+                "(%s); upload completes regardless.",
+                rec.id,
+                exc,
+            )
+
+        # P-201: level assignment — fires only when user has >=3 recordings;
+        # below threshold returns None. Same defensive posture as P-200
+        # above. Never lets level assignment failures block the response.
+        try:
+            compute_and_persist_if_threshold(
+                db, user_id=rec.user_id, recording=rec
+            )
+        except Exception as exc:
+            db.rollback()
+            logger.exception(
+                "P-201: level assignment raised on recording_id=%s "
                 "(%s); upload completes regardless.",
                 rec.id,
                 exc,

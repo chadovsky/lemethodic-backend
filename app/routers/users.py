@@ -19,8 +19,16 @@ from app.models.models import (
     RemediationModule,
     SessionDetectedModule,
     User,
+    UserLevelAssessment,
+    UserPathEnrollment,
+)
+from app.schemas.level import (
+    AssignedBlock,
+    LevelResponse,
+    SelfReportedBlock,
 )
 from app.services.auth import get_current_user
+from app.services.level_assignment import compute_agreement
 from app.services.user_profile import serialize_user
 
 router = APIRouter(prefix="/api/users", tags=["users"])
@@ -38,6 +46,63 @@ class OnboardingData(BaseModel):
 @router.get("/me")
 def me(user: User = Depends(get_current_user)):
     return serialize_user(user)
+
+
+@router.get("/me/level", response_model=LevelResponse)
+def get_user_level(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> LevelResponse:
+    """P-201 — return the user's level on two independent axes.
+
+    self_reported: from active UserPathEnrollment (P-220 questionnaire).
+    assigned: from latest UserLevelAssessment row (P-201 algorithm).
+    agreement: derived top-level signal — matches | discrepancy |
+               self_only | assigned_only | neither.
+    """
+    # Self-reported (P-220)
+    enrollment = (
+        db.query(UserPathEnrollment)
+        .filter(
+            UserPathEnrollment.user_id == user.id,
+            UserPathEnrollment.is_active.is_(True),
+        )
+        .first()
+    )
+    if enrollment is not None:
+        self_reported = SelfReportedBlock(
+            level=enrollment.enrolled_at_level,
+            confidence=enrollment.enrolled_at_confidence,
+        )
+    else:
+        self_reported = SelfReportedBlock()
+
+    # Assigned (latest UserLevelAssessment).
+    latest = (
+        db.query(UserLevelAssessment)
+        .filter(UserLevelAssessment.user_id == user.id)
+        .order_by(UserLevelAssessment.computed_at.desc())
+        .first()
+    )
+    assigned = (
+        AssignedBlock(
+            level=latest.assigned_level,
+            confidence=latest.assigned_confidence,
+            coverage=latest.coverage,
+            computed_at=latest.computed_at,
+        )
+        if latest
+        else None
+    )
+
+    return LevelResponse(
+        self_reported=self_reported,
+        assigned=assigned,
+        agreement=compute_agreement(
+            self_reported.level,
+            assigned.level if assigned else None,
+        ),
+    )
 
 
 @router.post("/onboarding", deprecated=True)

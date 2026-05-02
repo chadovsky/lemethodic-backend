@@ -818,3 +818,58 @@ class UserClusterEvent(Base):
             "created_at",
         ),
     )
+
+
+class UserLevelAssessment(Base):
+    """P-201 — append-only history of system-assigned CEFR level per user.
+    One row per assessment computation; latest reflects the most recent
+    detection signal. Used by the dashboard Block 8 Confidence
+    Visualizer (level progression over time) and by P-250 calibration.
+
+    Schema mirror of Alembic migration d7e4f3c2b1a9. CHECK constraints
+    + composite index in __table_args__ keep Base.metadata in sync."""
+
+    __tablename__ = "user_level_assessments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+
+    # The assignment.
+    # below_B1 | B1_emerging | B1_solid | above_B1 | insufficient_data
+    assigned_level = Column(String(20), nullable=False)
+    # high | medium | low (matches enrolled_at_confidence enum)
+    assigned_confidence = Column(String(20), nullable=False)
+
+    # Telemetry / debug. Raw floats preserved alongside bucketed
+    # confidence so P-250 calibration has the granular signal.
+    coverage = Column(Float, nullable=False)
+    top_bucket_share = Column(Float, nullable=False)
+    confidence_score = Column(Float, nullable=False)
+    n_clusters_evaluated = Column(Integer, nullable=False)
+    n_clusters_clean = Column(Integer, nullable=False)
+    n_clusters_wobble = Column(Integer, nullable=False)
+    n_clusters_fail = Column(Integer, nullable=False)
+
+    # Optional pointer for replay. NULL if admin/cron-triggered.
+    triggered_by_recording_id = Column(Integer, ForeignKey("recordings.id"), nullable=True)
+    computed_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+    __table_args__ = (
+        CheckConstraint(
+            "assigned_level IN ("
+            "'below_B1', 'B1_emerging', 'B1_solid', 'above_B1', 'insufficient_data'"
+            ")",
+            name="ck_user_level_assessments_assigned_level",
+        ),
+        CheckConstraint(
+            "assigned_confidence IN ('high', 'medium', 'low')",
+            name="ck_user_level_assessments_assigned_confidence",
+        ),
+        # Composite index for "latest assessment for user X" — same
+        # pattern as ix_user_cluster_events_user_created (P-204).
+        Index(
+            "ix_user_level_assessments_user_computed",
+            "user_id",
+            "computed_at",
+        ),
+    )
