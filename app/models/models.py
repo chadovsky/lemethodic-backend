@@ -760,17 +760,32 @@ class UserClusterStatus(Base):
     last_evaluated_recording_id = Column(Integer, ForeignKey("recordings.id"), nullable=True)
     revisit_count = Column(Integer, default=0)
 
+    # P-200 — latest single-recording detection result. Independent axis from
+    # `status` (lifecycle): a cluster can be "in_progress" (lifecycle) AND
+    # "wobble" (latest finding), or "absorbed" (lifecycle) AND "fail" (a
+    # recent regression). CHECK constraint mirrored in Alembic migration
+    # c4f2d1e3a0b5.
+    last_detection_result = Column(String(20), nullable=True)
+
     first_started_at = Column(DateTime, nullable=True)
     last_status_change_at = Column(DateTime, default=datetime.datetime.utcnow)
     absorbed_at = Column(DateTime, nullable=True)
 
     __table_args__ = (
         UniqueConstraint("user_id", "cluster_id", name="uq_user_cluster"),
+        CheckConstraint(
+            "last_detection_result IS NULL "
+            "OR last_detection_result IN ('clean', 'wobble', 'fail', 'not_observed')",
+            name="ck_user_cluster_statuses_last_detection_result",
+        ),
     )
 
 
 class UserClusterEvent(Base):
-    """Append-only history log. One row per status transition."""
+    """Append-only history log. One row per status transition OR per
+    detection event (P-200). When a detection runs without changing
+    lifecycle, from_status == to_status and findings_json carries the
+    payload."""
 
     __tablename__ = "user_cluster_events"
 
@@ -785,6 +800,12 @@ class UserClusterEvent(Base):
     to_status = Column(String(20), nullable=False)
     triggered_by_recording_id = Column(Integer, ForeignKey("recordings.id"), nullable=True)
     rubric_score = Column(Float, nullable=True)
+
+    # P-200 — full detection payload for this event. NULL for pure lifecycle
+    # transitions; populated when the event was triggered by a detection
+    # run. Shape enforced by app.schemas.detection.ClusterFinding (plus the
+    # top-level model/token telemetry from DetectionPayload).
+    findings_json = Column(JSONB, nullable=True)
 
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
