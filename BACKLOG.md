@@ -781,7 +781,7 @@ Stub — full spec TBD when trigger fires.
 ## P-260 — Writing analysis pipeline
 
 **Filed:** 2026-05-01.
-**Status:** Queued.
+**Status:** Deferred — Phase 2 (post-launch).
 **Tag:** Phase 2 / deferred indefinitely.
 
 **Phase:** Phase 2 (post-launch).
@@ -794,7 +794,7 @@ Backend scope: writing-track analysis pipeline. Stub — full spec in `lemethodi
 ## P-261 — Writing dashboard
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
-**Status:** Queued.
+**Status:** Deferred — Phase 2 (post-launch).
 **Tag:** Phase 2 / deferred indefinitely.
 
 **Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.7.
@@ -806,7 +806,7 @@ Stub migrated from FE. Phase 2 dashboard surface for the writing track. Pairs wi
 ## P-262 — Cross-modal prescription
 
 **Filed:** 2026-05-01.
-**Status:** Queued.
+**Status:** Deferred — Phase 2 (post-launch).
 **Tag:** Phase 2 / deferred indefinitely.
 
 **Phase:** Phase 2 (post-launch).
@@ -819,7 +819,7 @@ Backend scope: prescription that draws across modalities (oral + writing). Stub 
 ## P-263 — A2 path full content
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
-**Status:** Queued.
+**Status:** Deferred — Phase 2 (post-launch).
 **Tag:** Phase 2 / deferred indefinitely.
 
 **Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.7.
@@ -831,7 +831,7 @@ Stub migrated from FE. Author the full A2→B1 path content (Phase A2.1 through 
 ## P-264 — B2→C1 path full content
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
-**Status:** Queued.
+**Status:** Deferred — Phase 2 (post-launch).
 **Tag:** Phase 2 / deferred indefinitely.
 
 **Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.7.
@@ -843,7 +843,7 @@ Stub migrated from FE. Author the full B2→C1 path content. Phase 2. Owner: Cha
 ## P-265 — C1→C2 path
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
-**Status:** Queued.
+**Status:** Deferred — Phase 2 (post-launch).
 **Tag:** Phase 2 / deferred indefinitely.
 
 **Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.7.
@@ -855,7 +855,7 @@ Stub migrated from FE. Author the C1→C2 path. Phase 2 — out of scope for the
 ## P-266 — Tense + conjugation + idiomaticity detectors
 
 **Filed:** 2026-05-01.
-**Status:** Queued.
+**Status:** Deferred — Phase 2 (post-launch).
 **Tag:** Phase 2 / deferred indefinitely.
 
 **Phase:** Phase 2 (post-launch).
@@ -880,7 +880,7 @@ Renumbered 2026-05-01 to free P-200..P-269 for Phase 1 Architecture Rework. See 
 ## P-268 — Audio-synced playback for Recording Replay
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
-**Status:** Queued.
+**Status:** Deferred — Phase 2 (post-launch).
 **Tag:** Phase 2 / deferred indefinitely.
 
 **Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.7.
@@ -892,7 +892,7 @@ Stub migrated from FE. Sync audio playback with transcript word-level timing for
 ## P-269 — Streak system
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
-**Status:** Queued.
+**Status:** Deferred — Phase 2 (post-launch).
 **Tag:** Phase 2 / deferred indefinitely.
 
 **Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.7.
