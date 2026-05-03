@@ -363,6 +363,17 @@ def step_7_endpoint() -> None:
     check("response has agreement field",
           body.get("agreement") in {"matches", "discrepancy",
                                      "self_only", "assigned_only", "neither"})
+    # P-201.x — total_clusters_in_path is recovered from the frozen
+    # ratio. For Phase 1 b1_to_b2 the dynamic helper returns 13, so
+    # the round-tripped denominator should also be 13.
+    assigned = body.get("assigned") or {}
+    check("assigned.total_clusters_in_path present",
+          isinstance(assigned.get("total_clusters_in_path"), int),
+          str(assigned.get("total_clusters_in_path")))
+    check("assigned.total_clusters_in_path == 13 (Phase 1 b1_to_b2)",
+          assigned.get("total_clusters_in_path") == 13,
+          f"got {assigned.get('total_clusters_in_path')} "
+          f"(coverage={assigned.get('coverage')}, n_eval={assigned.get('n_clusters_evaluated')})")
 
     # (b) self_reported only — clear the assessment row
     db = SessionLocal()

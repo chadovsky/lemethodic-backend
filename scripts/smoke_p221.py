@@ -58,10 +58,12 @@ def check(name: str, ok: bool, detail: str = "") -> None:
 
 def step_1_schema() -> None:
     print("\nStep 1: schemas import + AssignedBlock has new fields")
-    # AssignedBlock — coverage was already there; n_clusters_evaluated is new.
+    # AssignedBlock — coverage was already there; n_clusters_evaluated is
+    # P-221; total_clusters_in_path is P-201.x (2026-05-03).
     fields = AssignedBlock.model_fields
     check("AssignedBlock has coverage", "coverage" in fields)
     check("AssignedBlock has n_clusters_evaluated", "n_clusters_evaluated" in fields)
+    check("AssignedBlock has total_clusters_in_path", "total_clusters_in_path" in fields)
     check("AssignedBlock has computed_at", "computed_at" in fields)
 
     # DiagnosticStateResponse shape

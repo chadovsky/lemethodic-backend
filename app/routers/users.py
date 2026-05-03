@@ -84,17 +84,28 @@ def get_user_level(
         .order_by(UserLevelAssessment.computed_at.desc())
         .first()
     )
-    assigned = (
-        AssignedBlock(
+    # P-201.x — derive `total_clusters_in_path` from the frozen
+    # ratio. Lossless at the small integer scale we operate at
+    # (n_eval ∈ [0, 50ish], total ∈ [13, 50ish]). Falls back to 0
+    # only on the degenerate coverage=0 case (which by construction
+    # implies n_eval=0 — the trigger early-returns before persisting
+    # such rows in production).
+    if latest is not None:
+        total = (
+            int(round(latest.n_clusters_evaluated / latest.coverage))
+            if latest.coverage > 0
+            else 0
+        )
+        assigned = AssignedBlock(
             level=latest.assigned_level,
             confidence=latest.assigned_confidence,
             coverage=latest.coverage,
             n_clusters_evaluated=latest.n_clusters_evaluated,
+            total_clusters_in_path=total,
             computed_at=latest.computed_at,
         )
-        if latest
-        else None
-    )
+    else:
+        assigned = None
 
     return LevelResponse(
         self_reported=self_reported,

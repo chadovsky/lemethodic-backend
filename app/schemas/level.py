@@ -66,6 +66,15 @@ class AssignedBlock(BaseModel):
     diagnostic-results screen can render coverage telemetry ("we
     detected signal across 8 of 13 areas") without a second endpoint
     call. Both fields are already persisted on UserLevelAssessment.
+
+    P-201.x extension (2026-05-03): adds `total_clusters_in_path` —
+    the denominator the assessment was computed against, recovered
+    from `n_clusters_evaluated / coverage`. Eliminates the FE-side
+    division-and-round dance and removes the divide-by-zero edge
+    case. Frozen-at-assessment-time semantics: a user assessed when
+    the path had 13 clusters keeps `total=13` even if the curriculum
+    later grows; that's correct (their assessment reflects the path
+    state at the moment it was computed).
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -74,6 +83,7 @@ class AssignedBlock(BaseModel):
     confidence: AssignedConfidence
     coverage: float = Field(ge=0.0, le=1.0)
     n_clusters_evaluated: int = Field(ge=0)
+    total_clusters_in_path: int = Field(ge=0)
     computed_at: datetime
 
 
