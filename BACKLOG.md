@@ -1237,11 +1237,12 @@ Backend scope shipped: one Claude call per recording (Q2 decision), filtered to 
 ## P-201 — Diagnostic engine: level assignment + confidence
 
 **Filed:** 2026-05-01.
-**Status:** Shipped 2026-05-02 (BE only — FE consumer is the §7 dashboard work).
+**Status:** Shipped 2026-05-02 (BE only — FE consumer is the §7 dashboard work). **P-201.x follow-up shipped 2026-05-03** (commit `2b13b01`) — adds `total_clusters_in_path` to `AssignedBlock` so the FE can render "8 of 13 areas evaluated" without deriving the denominator from `n_clusters_evaluated / coverage`.
 
-Commits (2-commit set):
+Commits (2-commit set + 1 follow-up):
 - Migration: `247a44e` — `d7e4f3c2b1a9_p201_user_level_assessments.py`. Append-only `user_level_assessments` table with CHECK constraints on `assigned_level` (∈ below_B1 / B1_emerging / B1_solid / above_B1 / insufficient_data) and `assigned_confidence` (∈ high / medium / low). Composite index `(user_id, computed_at)` for the "latest assessment for user X" query.
 - Service + endpoint + integration: `ecf8e21` — `app/services/level_assignment.py` (rule-based algorithm: hybrid coverage × agreement, hardcoded thresholds), `app/schemas/level.py` (Pydantic dual-axis response), `GET /api/users/me/level` endpoint, trigger hooks in `recordings.py` + `conversations.py` (fires when `recording_count >= 3`, F-080b/P-200 failure isolation), `scripts/smoke_p201.py` (8 steps, 49 checks).
+- **P-201.x follow-up: `2b13b01`** — `total_clusters_in_path: int` on `AssignedBlock` (P-230 dashboard prep). Computed in users.py from the frozen ratio: `round(n_eval / coverage)` when coverage > 0; 0 on the degenerate coverage=0 case (which by construction implies n_eval=0 — trigger early-returns before persisting). No alembic migration; the denominator is recoverable from existing persisted fields with float64 precision sufficient for the small-integer regime. Frozen-at-assessment-time semantics: a user assessed when path=13 keeps total=13 even after curriculum growth — assessment reflects the path state at compute time. Smoke updates to smoke_p201.py + smoke_p221.py — both PASS. Production verified: AssignedBlock now exposes `[level, confidence, coverage, n_clusters_evaluated, total_clusters_in_path, computed_at]`.
 
 **Production:** dual-axis level reporting now live. `GET /api/users/me/level` returns `{self_reported, assigned, agreement}` for any authenticated user; `assigned` block populates after the user has 3+ recordings; `agreement` field signals `matches | discrepancy | self_only | assigned_only | neither` so the FE can render at-a-glance.
 
