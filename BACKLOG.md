@@ -23,15 +23,13 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 1 | **P-234** | Cluster detail view |
 | 2 | **P-105** | 7-day free trial logic |
 | 3 | **P-106** | LemonSqueezy integration with subscription + one-time SKU |
-| 4 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
-| 5 | **B-100** | LemonSqueezy account setup |
-| 6 | **M-100** | Past Preply student outreach |
-| 7 | **M-101** | Landing page copy in LeMethodic voice |
-| 8 | **M-103** | YouTube channel launch (scope-reduced) |
-| 9 | **M-104** | Reddit community engagement |
+| 4 | **B-100** | LemonSqueezy account setup |
+| 5 | **M-100** | Past Preply student outreach |
+| 6 | **M-103** | YouTube channel launch (scope-reduced) |
+| 7 | **M-104** | Reddit community engagement |
 
 ---
-# Active — Launch Critical (9 tickets, 60-day target)
+# Active — Launch Critical (7 tickets, 60-day target)
 
 ## P-234 — Cluster detail view
 
@@ -125,33 +123,6 @@ Integrate LemonSqueezy API as the payment + subscription provider:
 
 ---
 
-## P-260.5 — Author 3 TCF Canada mock exams for Sprint product
-
-**Filed:** 2026-05-02.
-**Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
-
-**Priority:** HIGH (pre-launch blocker for Sprint product).
-**Source:** Strategy session — Sprint product scope refinement.
-**Depends on:** none (authoring, no code).
-
-**Scope:** author 3 full TCF Canada mock exams. Each mock contains:
-
-- **Tâche 1 prompt** — structured interview, 2 min, no preparation.
-- **Tâche 2 prompt** — interactive exercise, 5.5 min including 2 min preparation.
-- **Tâche 3 prompt** — point of view, 4.5 min, no preparation.
-- **Scoring rubrics** aligned to TCF Canada CEFR criteria (A1 through C2).
-- **Sample strong responses** at B2 level for each Tâche.
-- **Common error patterns** to flag in evaluation.
-
-**Owner:** Chadi (authoring).
-
-**Estimated effort:** 12–18 hours total (~4–6 hours per mock).
-
-**Trigger:** pre-launch — Sprint product cannot ship without these.
-
----
-
 ## B-100 — LemonSqueezy account setup
 
 **Filed:** 2026-04-30; **renamed 2026-05-03** (Stripe → LemonSqueezy pivot — Stripe inaccessible to Morocco-based merchants).
@@ -185,18 +156,6 @@ Set up the LemonSqueezy merchant account, complete identity verification, config
 **Priority:** HIGH (highest leverage, costs zero).
 
 Re-engagement angle, not first contact. Stub — spec TBD.
-
----
-
-## M-101 — Landing page copy in LeMethodic voice
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
-
-**Priority:** High.
-
-Stub — spec TBD.
 
 ---
 
@@ -446,6 +405,33 @@ Backend scope: calibration tooling for tuning detector / scoring thresholds agai
 **Source:** LEMETHODIC-CURRICULUM v0.2 §10.
 
 Backend scope: storage + serve endpoints for lesson content. Stub — full spec in `lemethodic-frontend/LEMETHODIC-CURRICULUM.md`.
+
+---
+
+## P-260.5 — Author 3 TCF Canada mock exams for Sprint product
+
+**Filed:** 2026-05-02; **deferred 2026-05-03** to month-2 post-soft-beta launch event (Sprint product is not on the soft-beta surface).
+**Status:** Deferred — month 2 launch event, ~12-18h authoring post-soft-beta.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Priority:** HIGH-when-triggered (Sprint product cannot ship without these mocks).
+**Source:** Strategy session — Sprint product scope refinement.
+**Depends on:** none (authoring, no code).
+
+**Scope:** author 3 full TCF Canada mock exams. Each mock contains:
+
+- **Tâche 1 prompt** — structured interview, 2 min, no preparation.
+- **Tâche 2 prompt** — interactive exercise, 5.5 min including 2 min preparation.
+- **Tâche 3 prompt** — point of view, 4.5 min, no preparation.
+- **Scoring rubrics** aligned to TCF Canada CEFR criteria (A1 through C2).
+- **Sample strong responses** at B2 level for each Tâche.
+- **Common error patterns** to flag in evaluation.
+
+**Owner:** Chadi (authoring).
+
+**Estimated effort:** 12–18 hours total (~4–6 hours per mock).
+
+**Trigger:** month-2 post-soft-beta launch event. Soft-beta launches without the Sprint product surface; Sprint goes live alongside the month-2 announcement event. These mocks are the content blocker for that event.
 
 ---
 
@@ -1455,6 +1441,19 @@ No alembic migration. No new table, no new column. `recordings.py` / `conversati
 P-241 (cluster-level prescription / hard navigation gate) imports `_pick_cluster` directly when it ships; same rule chain, different enforcement teeth.
 
 FE follow-up (P-240.fe — file when needed): replace `DailyActionCard` hardcoded content on /ecole's HomeScreen with a fetch-and-render against `/api/users/me/today`. Out of BE scope.
+
+---
+
+## M-101 — Landing page copy in LeMethodic voice
+
+**Filed:** 2026-04-30.
+**Status:** Shipped 2026-05-03 (landing page on `lemethodic.com` renders the LeMethodic-voice copy from the authored doc; M-101a delivered the FE implementation).
+
+**Priority:** High.
+
+Authored copy in LeMethodic voice (Chadi's tutoring tone, 4-couches framing, anglophone-Canadian beachhead positioning) is live at `lemethodic.com` via the M-101a implementation ship. Three pricing cards, Sprint waitlist CTA, footer integration with `/privacy` + `/terms` + `/refund` (B-102). Verified end-to-end on production.
+
+Out of scope (filed elsewhere): hero asset polish + per-section illustrations → **M-101.z** (post-launch P1).
 
 ---
 

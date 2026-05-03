@@ -49,7 +49,9 @@ ACTIVE_LC = [
 
     # Pre-launch product:
     "P-105", "P-106",         # 7-day trial + LemonSqueezy integration
-    "P-260.5",                # Sprint product blocker (3 TCF mocks)
+    # P-260.5 deferred 2026-05-03 to month-2 launch event (post-soft-beta).
+    # Sprint product is not on the soft-beta surface; mocks unblock the
+    # month-2 announcement event. Moved to POST_LAUNCH_P1.
 
     # Pre-launch business:
     # B-102 fully shipped 2026-05-03 FE-side (commit 3216d4d, /privacy +
@@ -57,7 +59,9 @@ ACTIVE_LC = [
     "B-100",                  # LemonSqueezy account setup
 
     # Pre-launch marketing:
-    "M-100", "M-101",         # Preply outreach + landing copy
+    # M-101 fully shipped 2026-05-03 (landing page live with LeMethodic-voice
+    # copy via M-101a implementation) — moved to SHIPPED.
+    "M-100",                  # Past Preply student outreach
     "M-103", "M-104",         # YouTube anchor + Reddit
 ]
 POST_LAUNCH_P1 = [
@@ -69,6 +73,7 @@ POST_LAUNCH_P1 = [
     "P-235", "P-236", "P-237", # FE-migrated: ceiling marker map / mistake repo / time-adaptive UI lean
     "P-240b",                 # P-240 prose layer split — blocked on P-213
     "P-241", "P-250", "P-251",
+    "P-260.5",                # 3 TCF Canada mocks — Sprint product, month-2 launch event
     "B-101", "B-104", "B-105", "B-106",
     "C-100",                  # FE-migrated: prod test-user cleanup
     "F-109",                  # FE-migrated: full-name persistence bug
@@ -106,12 +111,14 @@ DEFERRED = [
 # P-222 fully shipped 2026-05-03 FE-side (commits 59fb2c6 + deff02b + 820d788, BE no-op).
 # B-102 fully shipped 2026-05-03 FE-side (commit 3216d4d — /privacy + /terms + /refund).
 # P-230 fully shipped 2026-05-03 FE-side (3-commit set ending 28bf765, BE no-op).
+# M-101 fully shipped 2026-05-03 (landing page LeMethodic-voice copy live via M-101a).
 SHIPPED = [
     "B-102",
     "F-079", "F-110", "F-110.1", "F-110.2", "P-103", "P-104",
     "P-200", "P-201", "P-202", "P-203", "P-204",
     "P-210", "P-211", "P-212", "P-220", "P-221", "P-222",
     "P-230", "P-240",
+    "M-101",
 ]
 # Decided not to pursue. Keep entry to preserve history.
 CLOSED = ["M-105"]
