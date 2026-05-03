@@ -24,12 +24,11 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 2 | **P-105** | 7-day free trial logic |
 | 3 | **P-106** | LemonSqueezy integration with subscription + one-time SKU |
 | 4 | **B-100** | LemonSqueezy account setup |
-| 5 | **M-100** | Past Preply student outreach |
-| 6 | **M-103** | YouTube channel launch (scope-reduced) |
-| 7 | **M-104** | Reddit community engagement |
+| 5 | **M-103** | YouTube channel launch (scope-reduced) |
+| 6 | **M-104** | Reddit community engagement |
 
 ---
-# Active — Launch Critical (7 tickets, 60-day target)
+# Active — Launch Critical (6 tickets, 60-day target)
 
 ## P-234 — Cluster detail view
 
@@ -144,18 +143,6 @@ Set up the LemonSqueezy merchant account, complete identity verification, config
 **Owner:** Chadi (account / KYC / storefront) → handoff to Engineering for API key + webhook configuration once approved.
 
 **Unblocks:** P-106 (integration), P-105 (trial logic).
-
----
-
-## M-100 — Past Preply student outreach
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
-
-**Priority:** HIGH (highest leverage, costs zero).
-
-Re-engagement angle, not first contact. Stub — spec TBD.
 
 ---
 
@@ -1441,6 +1428,17 @@ No alembic migration. No new table, no new column. `recordings.py` / `conversati
 P-241 (cluster-level prescription / hard navigation gate) imports `_pick_cluster` directly when it ships; same rule chain, different enforcement teeth.
 
 FE follow-up (P-240.fe — file when needed): replace `DailyActionCard` hardcoded content on /ecole's HomeScreen with a fetch-and-render against `/api/users/me/today`. Out of BE scope.
+
+---
+
+## M-100 — Past Preply student outreach
+
+**Filed:** 2026-04-30.
+**Status:** Shipped 2026-05-03 (re-engagement outreach to past Preply students completed by Chadi).
+
+**Priority:** HIGH (highest leverage, costs zero).
+
+Re-engagement angle, not first contact. Outreach delivered.
 
 ---
 

@@ -61,7 +61,8 @@ ACTIVE_LC = [
     # Pre-launch marketing:
     # M-101 fully shipped 2026-05-03 (landing page live with LeMethodic-voice
     # copy via M-101a implementation) — moved to SHIPPED.
-    "M-100",                  # Past Preply student outreach
+    # M-100 fully shipped 2026-05-03 (Past Preply re-engagement outreach
+    # delivered by Chadi) — moved to SHIPPED.
     "M-103", "M-104",         # YouTube anchor + Reddit
 ]
 POST_LAUNCH_P1 = [
@@ -112,13 +113,14 @@ DEFERRED = [
 # B-102 fully shipped 2026-05-03 FE-side (commit 3216d4d — /privacy + /terms + /refund).
 # P-230 fully shipped 2026-05-03 FE-side (3-commit set ending 28bf765, BE no-op).
 # M-101 fully shipped 2026-05-03 (landing page LeMethodic-voice copy live via M-101a).
+# M-100 fully shipped 2026-05-03 (Past Preply re-engagement outreach delivered).
 SHIPPED = [
     "B-102",
     "F-079", "F-110", "F-110.1", "F-110.2", "P-103", "P-104",
     "P-200", "P-201", "P-202", "P-203", "P-204",
     "P-210", "P-211", "P-212", "P-220", "P-221", "P-222",
     "P-230", "P-240",
-    "M-101",
+    "M-100", "M-101",
 ]
 # Decided not to pursue. Keep entry to preserve history.
 CLOSED = ["M-105"]
