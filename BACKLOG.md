@@ -20,45 +20,21 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 
 | # | Ticket | Title |
 |---|---|---|
-| 1 | **F-079** | Custom domain wiring (lemethodic.com → Vercel) |
-| 2 | **P-222** | Waitlist UX for A2 and B2+ paths |
-| 3 | **P-230** | Overall Progress dashboard rebuild |
-| 4 | **P-234** | Cluster detail view |
-| 5 | **P-105** | 7-day free trial logic |
-| 6 | **P-106** | Stripe integration with dual + geographic pricing |
-| 7 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
-| 8 | **B-100** | Stripe account setup |
-| 9 | **B-102** | Privacy policy + ToS |
-| 10 | **M-100** | Past Preply student outreach |
-| 11 | **M-101** | Landing page copy in LeMethodic voice |
-| 12 | **M-103** | YouTube channel launch (scope-reduced) |
-| 13 | **M-104** | Reddit community engagement |
+| 1 | **P-222** | Waitlist UX for A2 and B2+ paths |
+| 2 | **P-230** | Overall Progress dashboard rebuild |
+| 3 | **P-234** | Cluster detail view |
+| 4 | **P-105** | 7-day free trial logic |
+| 5 | **P-106** | Stripe integration with dual + geographic pricing |
+| 6 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
+| 7 | **B-100** | Stripe account setup |
+| 8 | **B-102** | Privacy policy + ToS |
+| 9 | **M-100** | Past Preply student outreach |
+| 10 | **M-101** | Landing page copy in LeMethodic voice |
+| 11 | **M-103** | YouTube channel launch (scope-reduced) |
+| 12 | **M-104** | Reddit community engagement |
 
 ---
-# Active — Launch Critical (13 tickets, 60-day target)
-
-## F-079 — Custom domain wiring (lemethodic.com → Vercel)
-
-**Filed:** 2026-04-28; reframed 2026-05-02 (Vercel deploy already shipped).
-**Status:** Vercel deploy shipped (`lemethodic-frontend.vercel.app`). Custom domain wiring pending.
-**Tag:** Active — Launch Critical (60-day target).
-
-**Priority:** HIGH (pre-launch — without DNS the FE has no canonical production URL).
-
-Remaining work:
-- ✓ Vercel deploy: shipped.
-- ✗ DNS A records (registrar → Vercel) — pending.
-- ✗ Vercel custom domain config (`lemethodic.com` + `www` subdomain) — pending.
-- ✗ Backend CORS allowlist (`main.py`) update to include `https://lemethodic.com` — pending.
-- ✗ Verify HTTPS via Vercel-managed Let's Encrypt cert.
-
-**Estimated effort:** ~1 hour of Chadi's time (DNS + Vercel config + propagation wait). No engineering work beyond the CORS allowlist line.
-
-**Owner:** Chadi (DNS + Vercel) + Engineering (one-line CORS update).
-
-**Depends on:** F-078 (backend production URL must exist before frontend can point at it).
-
----
+# Active — Launch Critical (12 tickets, 60-day target)
 
 ## P-222 — Waitlist UX for A2 and B2+ paths
 
@@ -1057,6 +1033,26 @@ Original priority was Medium. Decided not to pursue per 2026-05-02 marketing tri
 ---
 
 # Shipped
+
+## F-079 — Custom domain wiring (lemethodic.com → Vercel)
+
+**Filed:** 2026-04-28; reframed 2026-05-02 (Vercel deploy already shipped).
+**Status:** Shipped 2026-05-03 (DNS at Namecheap, A record `@` → `216.198.79.1`, Vercel auto-provisioned SSL via Let's Encrypt). Valid configuration verified end-to-end.
+
+**Priority:** HIGH (pre-launch — without DNS the FE has no canonical production URL).
+
+Shipped:
+- ✓ Vercel deploy (pre-2026-05-02).
+- ✓ DNS A record `@` → `216.198.79.1` configured at Namecheap.
+- ✓ Vercel custom domain wired (`lemethodic.com` + `www`).
+- ✓ HTTPS via Vercel-managed Let's Encrypt cert.
+- ✓ Backend CORS allowlist: production origin injected via `FRONTEND_ORIGIN` env var on App Platform (no code change needed — `main.py` already reads this from env at boot).
+
+**Owner shipped:** Chadi (DNS + Vercel) + Engineering (env config — no code commit required).
+
+**Depended on:** F-078 (backend production URL — shipped earlier).
+
+---
 
 ## F-110 — Recordings list endpoint
 

@@ -37,7 +37,8 @@ ACTIVE_LC = [
     # P-240 fully shipped 2026-05-02 (single commit 6b8ee43, action layer
     # only) — moved to SHIPPED. Prose layer split as P-240b (Post-launch
     # P1, blocked on P-213 templates).
-    "F-079",                  # custom domain wiring
+    # F-079 fully shipped 2026-05-03 (DNS + Vercel SSL + CORS via
+    # FRONTEND_ORIGIN env) — moved to SHIPPED. No code commit; ops only.
     "P-222",                  # waitlist UX for A2/B2+ paths (FE-migrated)
     "P-230",                  # overall progress dashboard rebuild (FE-migrated)
     "P-234",                  # cluster detail view (FE-migrated)
@@ -95,8 +96,9 @@ DEFERRED = [
 # P-104 fully shipped FE-side 2026-05-01 (commit fluentpath-frontend@48b61a1, BE no-op).
 # P-240 action layer shipped 2026-05-02 (single commit 6b8ee43); prose layer
 # split as P-240b (Post-launch P1, blocked on P-213).
+# F-079 fully shipped 2026-05-03 (DNS + Vercel SSL + CORS via env, ops only — no code commit).
 SHIPPED = [
-    "F-110", "F-110.1", "F-110.2", "P-103", "P-104",
+    "F-079", "F-110", "F-110.1", "F-110.2", "P-103", "P-104",
     "P-200", "P-201", "P-202", "P-203", "P-204",
     "P-210", "P-211", "P-212", "P-220", "P-221", "P-240",
 ]
