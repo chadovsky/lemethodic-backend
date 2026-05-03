@@ -41,10 +41,21 @@ async def health():
     return {"status": "ok"}
 
 
-# CORS — Next.js dev origins always allowed; production frontend
-# origin is injected via FRONTEND_ORIGIN env var (set by F-079 once
-# the Vercel URL exists). Multiple production origins can be passed
-# as a comma-separated list — useful for staging + prod side by side.
+# CORS — three layers:
+#
+#   1. _default_dev_origins  — Next.js dev servers, always allowed.
+#   2. _default_prod_origins — canonical production hosts, hardcoded so
+#      F-079-class outages can't recur from env-var drift on App
+#      Platform. Code is the source of truth.
+#   3. FRONTEND_ORIGIN env var — overflow slot for Vercel preview
+#      deploys, staging origins, or anything ad-hoc. Comma-separated.
+#      Stays in place because preview URLs are <hash>-keyed and can't
+#      be hardcoded.
+#
+# 2026-05-03 — fix for the F-079 launch-blocker: lemethodic.com requests
+# were rejected because the env var didn't include the new custom
+# domain. Promoted both lemethodic.com (apex) and the www subdomain to
+# the hardcoded list so domain wiring is self-contained in this file.
 import os as _os
 
 _default_dev_origins = [
@@ -52,10 +63,15 @@ _default_dev_origins = [
     "http://127.0.0.1:3000",   # alt localhost form
     "http://localhost:3001",   # alt port for parallel dev runs
 ]
+_default_prod_origins = [
+    "https://lemethodic.com",                    # F-079 — apex (canonical)
+    "https://www.lemethodic.com",                # F-079 — www subdomain
+    "https://lemethodic-frontend.vercel.app",    # Vercel canonical (pre-domain)
+]
 _extra_origins = [
     o.strip() for o in (_os.getenv("FRONTEND_ORIGIN") or "").split(",") if o.strip()
 ]
-_allowed_origins = _default_dev_origins + _extra_origins
+_allowed_origins = _default_dev_origins + _default_prod_origins + _extra_origins
 
 app.add_middleware(
     CORSMiddleware,
