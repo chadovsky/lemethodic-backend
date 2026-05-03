@@ -45,25 +45,52 @@ ACTIVE_LC = [
     # P-230 fully shipped 2026-05-03 FE-side (3-commit set ending 28bf765)
     # — moved to SHIPPED. BE no-op (P-201/P-201.x/P-240/F-080d covered
     # the full data surface).
-    "P-234",                  # cluster detail view (FE-migrated)
+    # ── 2026-05-04 BACKLOG restructure — soft-beta definition lock ──
+    # Process gate (file FIRST so PRs going forward are governed):
+    "F-225",                  # Desktop verification protocol (1440px)
+
+    # Bug + copy hygiene (small but quality-gating):
+    "F-222",                  # Sign Out bug fix
+    "F-223",                  # "Le raccourci" copy bleed cleanup
+
+    # Desktop responsive — every shipped surface broken on desktop:
+    "F-200",                  # Landing page desktop layout
+    "F-201",                  # Onboarding flow desktop layout
+    "F-202",                  # /ecole + L'École intro rebuild
+    "F-203",                  # /progress dashboard desktop layout
+    "P-230.depth",            # /progress real content (paired with F-203)
+    "F-204",                  # /cluster/[slug] desktop layout
+    "F-205",                  # /speaking/* (Tâche surfaces) desktop
+    "F-206",                  # Auxiliary pages desktop
+
+    # Onboarding restructure (brand-layer pivot):
+    "F-220",                  # Onboarding intro framing
+    "F-221",                  # Exam-selector + brand-layer rewrite
+
+    # Writing Dashboard scope decision:
+    "F-224",                  # Build OR hide /writing tab
+
+    # Visual identity at Promova-bench level:
+    "F-210",                  # Icon system
+    "F-211",                  # Loading states overhaul
+    "F-212",                  # Micro-animations + interaction feedback
+    "F-213",                  # Page transitions + motion design
+    "F-214",                  # Visual depth + design system extension
+
+    # ── Existing pre-restructure work ──
+    "P-234",                  # cluster detail view (BE shipped, FE in progress)
 
     # Pre-launch product:
     "P-105", "P-106",         # 7-day trial + LemonSqueezy integration
     # P-260.5 deferred 2026-05-03 to month-2 launch event (post-soft-beta).
-    # Sprint product is not on the soft-beta surface; mocks unblock the
-    # month-2 announcement event. Moved to POST_LAUNCH_P1.
 
     # Pre-launch business:
-    # B-102 fully shipped 2026-05-03 FE-side (commit 3216d4d, /privacy +
-    # /terms + /refund) — moved to SHIPPED.
-    "B-100",                  # LemonSqueezy account setup
+    # B-102 fully shipped 2026-05-03 FE-side.
+    "B-100",                  # MoR provider selection (Path A vs Path B, pending Chadi)
 
     # Pre-launch marketing:
-    # M-101 fully shipped 2026-05-03 (landing page live with LeMethodic-voice
-    # copy via M-101a implementation) — moved to SHIPPED.
-    # M-100 fully shipped 2026-05-03 (Past Preply re-engagement outreach
-    # delivered by Chadi) — moved to SHIPPED.
-    "M-103", "M-104",         # YouTube anchor + Reddit
+    # M-100 + M-101 fully shipped 2026-05-03.
+    "M-103", "M-104",         # YouTube anchor (rescoped) + Reddit (broadened)
 ]
 POST_LAUNCH_P1 = [
     "P-107", "P-108", "P-110",
@@ -99,6 +126,8 @@ DEFERRED = [
     "P-300", "P-301", "P-302", "P-303",
     "F-077.x", "F-078.x", "F-111",
     "B-103",
+    # 2026-05-04 BACKLOG restructure:
+    "B-200",                  # Book-Lab store surface (Phase 2 brand expansion)
 ]
 # 2026-05-02 follow-up triage: P-212 superseded by P-210 + P-211.
 # P-220 fully shipped (BE + FE + production verification) 2026-05-02.

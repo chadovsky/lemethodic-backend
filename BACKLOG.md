@@ -20,15 +20,371 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 
 | # | Ticket | Title |
 |---|---|---|
-| 1 | **P-234** | Cluster detail view |
-| 2 | **P-105** | 7-day free trial logic |
-| 3 | **P-106** | LemonSqueezy integration with subscription + one-time SKU |
-| 4 | **B-100** | LemonSqueezy account setup |
-| 5 | **M-103** | YouTube channel launch (scope-reduced) |
-| 6 | **M-104** | Reddit community engagement |
+| 1 | **F-225** | Desktop verification protocol |
+| 2 | **F-222** | Sign Out bug fix |
+| 3 | **F-223** | "Le raccourci" copy bleed cleanup |
+| 4 | **F-200** | Landing page desktop layout |
+| 5 | **F-201** | Onboarding flow desktop layout |
+| 6 | **F-202** | /ecole + L'École intro rebuild (responsive + content + methodology demo) |
+| 7 | **F-203** | /progress dashboard desktop + responsive layout |
+| 8 | **P-230.depth** | /progress real content for soft beta |
+| 9 | **F-204** | /cluster/[slug] desktop layout |
+| 10 | **F-205** | /speaking/* (Tâche surfaces) desktop layout |
+| 11 | **F-206** | Auxiliary pages desktop (privacy/terms/refund/waitlist/signup) |
+| 12 | **F-220** | Onboarding "intro framing" (Block 3 quiz-pop-up entry moment) |
+| 13 | **F-221** | Exam-selector in onboarding + brand-layer rewrite |
+| 14 | **F-224** | Writing Dashboard: build for soft beta OR hide tab decision |
+| 15 | **F-210** | Icon system + custom LeMethodic icons |
+| 16 | **F-211** | Loading states overhaul |
+| 17 | **F-212** | Micro-animations + interaction feedback |
+| 18 | **F-213** | Page transitions + motion design |
+| 19 | **F-214** | Visual depth + design system extension |
+| 20 | **P-234** | Cluster detail view |
+| 21 | **P-105** | 7-day free trial logic |
+| 22 | **P-106** | LemonSqueezy integration with subscription + one-time SKU |
+| 23 | **B-100** | Merchant of Record provider selection |
+| 24 | **M-103** | YouTube anchor video — French exam prep for English speakers |
+| 25 | **M-104** | Reddit community engagement (broadened subreddit list) |
 
 ---
-# Active — Launch Critical (6 tickets, 60-day target)
+# Active — Launch Critical (25 tickets, 60-day target)
+
+## F-225 — Desktop verification protocol
+
+**Filed:** 2026-05-04.
+**Status:** Queued — **enforced immediately for all FE PRs going forward.**
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH (process — gates all FE PRs).
+
+Process change driven by the soft-beta review surfacing universal mobile-only / desktop-broken state. Going forward:
+
+- Every FE PR must include screenshot evidence at **1440px viewport** before approval.
+- PR template adds a "Desktop verified at 1440px? [Y/N]" checkbox.
+- CI step (Playwright snapshot OR lighthouse-ci) for any `app/**` change captures the affected route at 1440px and posts to the PR.
+- Reviewer checklist includes: "Verified at 1440px? Y/N" — N blocks merge.
+
+No more shipping mobile-only as "ready."
+
+**Owner:** FE lead (PR template + CI wiring).
+
+---
+
+## F-222 — Sign Out bug fix
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** Medium.
+
+Sign Out flow has a bug — investigate + fix. Specifics TBD on triage; likely cookie-clear or redirect-loop issue (auth cookie set via `set_cookie("access_token", ..., httponly=True, samesite="lax")` on the API host; FE sign-out must hit a logout endpoint that clears cookie, then redirect home).
+
+**Owner:** FE (likely; BE may need a `POST /auth/logout` endpoint if not present).
+
+---
+
+## F-223 — "Le raccourci" copy bleed cleanup
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** Medium (consistency).
+
+"Le Raccourci" was the original section name; renamed to "L'École". Stragglers exist in both repos (FE strings, BE seed data, copy docs). Full grep + replace.
+
+**Verification:** zero matches for `raccourci` (case-insensitive) in shipped strings across both repos.
+
+**Owner:** FE + BE.
+
+---
+
+## F-200 — Landing page desktop layout
+
+**Filed:** 2026-05-04 (BACKLOG restructure — soft-beta definition lock).
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH (soft-beta requires platform fully responsive).
+
+Landing page (`/`) currently mobile-only with white rails on desktop. Build the desktop layout: proper grid, full-width hero, multi-column pricing cards, footer that doesn't read as a stretched phone screen.
+
+**Owner:** FE.
+**Verification:** screenshot evidence at 1440px viewport per F-225.
+
+---
+
+## F-201 — Onboarding flow desktop layout
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH.
+
+`/onboarding` (the 11-question flow) is mobile-only. Build the desktop layout: centered card on desktop with breathable margins, question-illustration pairing where applicable, no stretched phone aesthetic.
+
+**Owner:** FE.
+**Verification:** screenshot evidence at 1440px per F-225.
+
+---
+
+## F-202 — /ecole + L'École intro rebuild (responsive + content + methodology demo)
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH (soft-beta requires methodology visible in-product).
+
+Rebuild `/ecole` and the L'École intro screen. Currently empty placeholder; doesn't hit the Promova visual benchmark locked in Block 3.
+
+Required:
+- Real intro content showcasing La Méthode en Couches with concrete examples (annotated transcript snippets, before/after corrections).
+- Demonstrate methodology in-product, not just in marketing copy.
+- Full responsive layout (mobile + desktop both first-class).
+- Visual identity at Promova-bench level.
+
+**Owner:** FE + Chadi (intro copy + example transcripts).
+**Verification:** screenshot evidence at 1440px per F-225.
+
+---
+
+## F-203 — /progress dashboard desktop + responsive layout
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH.
+
+P-230 v1 shipped 2026-05-03 (FE 3-commit set 28bf765) with the structural skeleton but is mobile-only. Build the desktop layout — multi-column dashboard grid, larger Snapshot block, side-by-side Goulet Stack and Recent Activity. Pairs with **P-230.depth** which scopes the content rebuild specifically.
+
+**Owner:** FE.
+**Verification:** screenshot evidence at 1440px per F-225.
+
+---
+
+## P-230.depth — /progress real content for soft beta
+
+**Filed:** 2026-05-04 (split from P-230 v1 ship — depth deemed insufficient for soft-beta).
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH.
+
+P-230 v1 (FE 3-commit set ending 28bf765, 2026-05-03) shipped the structural skeleton: Snapshot, Today's focus, Goulet Stack, Recent activity. Soft-beta review 2026-05-04 flagged content depth as insufficient — sections render but feel placeholder-y.
+
+Depth work needed:
+- **Snapshot:** full Confidence Visualizer (Block 8) — not just CEFR letter, but the actual confidence interval visualization (`assigned.confidence` + `coverage` + `total_clusters_in_path` rendered as a band, not a chip).
+- **Today's focus:** richer reason-code-driven copy until P-240b (Dialogue Box prose) lands. Each `reason_code` gets a per-Tâche-application-specific message variant.
+- **Goulet Stack:** top-3 bottlenecks rendered with detected examples (transcript snippets) + suggested next-action per bottleneck.
+- **Recent activity:** per-recording summaries (Tâche, length, top finding) — not just timestamps.
+
+Pairs with **F-203** (desktop responsive layout for the same surface — different concern, same screen).
+
+**Owner:** FE + Chadi (content authoring for example snippets + bottleneck copy).
+**Depends on:** existing BE endpoints (`/me/level`, `/me/today`, `/me/recurring_modules` — all live).
+
+---
+
+## F-204 — /cluster/[slug] desktop layout
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** Medium-high.
+
+Cluster detail page consumes the BE endpoints shipped in P-234. FE consumer is in progress; ensure the desktop layout is first-class — sidebar (lesson nav?) + content column, lesson markdown rendered with reading-width constraint, exercise pane next to lesson.
+
+**Owner:** FE.
+**Verification:** screenshot evidence at 1440px per F-225.
+
+---
+
+## F-205 — /speaking/* (Tâche surfaces) desktop layout
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH (Tâche surfaces are the core practice flow).
+
+`/speaking/tache-1`, `/speaking/tache-2`, `/speaking/tache-3` and their session sub-routes are mobile-only. Build the desktop layout for each — recording panel + prompt panel side-by-side, transcript review ergonomics on a larger viewport, mic button doesn't stretch oddly.
+
+**Owner:** FE.
+**Verification:** screenshot evidence at 1440px per F-225.
+
+---
+
+## F-206 — Auxiliary pages desktop (privacy/terms/refund/waitlist/signup)
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** Medium.
+
+Smaller-surface pages still mobile-only:
+- `/privacy`, `/terms`, `/refund` (B-102 ship — content correct, layout cramped on desktop).
+- `/onboarding/waitlist` (P-222 ship — desktop layout).
+- `/signup`, `/login` (existing auth surfaces).
+
+Reading-width constraint on policy pages; centered cards on auth pages.
+
+**Owner:** FE.
+**Verification:** screenshot evidence at 1440px per F-225.
+
+---
+
+## F-220 — Onboarding "intro framing" (Block 3 quiz-pop-up entry moment)
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH.
+
+Block 3 strategy lock-in: onboarding should feel like a "seamless quiz pop-up entry moment" not a clinical 11-question form. Add a 1-screen intro framing the questionnaire ("Let's understand where you are. 11 quick questions, ~3 minutes, then a 3-recording diagnostic.") with personality + Chadi voice.
+
+Reduces perceived friction at the threshold; sets expectation for the diagnostic stage immediately after.
+
+**Owner:** FE + Chadi (intro copy in FR + EN).
+
+---
+
+## F-221 — Exam-selector in onboarding + brand-layer rewrite
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** HIGH (positioning pivot).
+
+Brand pivot: "TCF prep" → **"French exam prep for English speakers"** (across exams). Routing rules:
+
+- TCF / TEF B1 / B2 → active path (shared format DNA, content reusable).
+- DELF B1 / B2 → active path (same DNA).
+- DALF C1 / C2, FIDE, AP, DCL → "Coming soon" + email capture (Phase 2 content).
+
+Implementation:
+- Add Q-exam-target question to onboarding (slot before Q1 current_level).
+- Branch waitlist screen — shared with P-222 plumbing, but copy varies by selected exam.
+- Backend: new `target_exam` field on User + UserPathEnrollment (alembic migration); path resolver consumes `target_exam` for Phase 2 exam-specific routing; Phase 1 maps all active exams to b1_to_b2 path.
+
+Marketing layer: TCF/TEF stays as primary entry persona (visa urgency); "all exams covered" sits adjacent in copy.
+
+**Owner:** FE + BE + Chadi (brand copy + exam-route mapping table).
+**Depends on:** F-201 (onboarding desktop layout).
+
+---
+
+## F-224 — Writing Dashboard: build for soft beta OR hide tab decision
+
+**Filed:** 2026-05-04.
+**Status:** Queued — pending Chadi decision.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** Medium.
+
+The `/writing` tab in nav links to a stub dashboard. For soft beta, two options:
+
+- **(a) Build the writing dashboard MVP** — depends on P-260 (writing analysis pipeline, Phase 2). Scope creep risk.
+- **(b) Hide the `/writing` tab** from nav until Phase 2 — clean cut, no scope creep, recovers UX clarity.
+
+Default lean: **(b) hide.** Soft-beta is speaking-only by design; surfacing a writing tab without content creates an "empty room" feeling.
+
+**Owner:** Chadi (decision) → FE (implementation).
+
+---
+
+## F-210 — Icon system + custom LeMethodic icons
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** Medium-high (visual identity).
+
+Custom icon set replacing generics:
+- **Méthode marks** — visual representations of the 4 couches (Le Fond, Les Moules des Idées, Les Moules, Les Réflexes Anglais).
+- **Tâche badges** — T1 / T2 / T3 with distinct visual treatment.
+- **Level chips** — A2 / B1 / B2 / C1 with consistent typography.
+- **Couches indicators** — small inline glyphs for inline reason-code rendering.
+
+**Owner:** FE + designer.
+
+---
+
+## F-211 — Loading states overhaul
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** Medium-high.
+
+Today many flows have silent waits or spinners with no context. Replace with:
+- Animated loaders carrying rotating Chadi-voice messages ("Listening to your French..." / "Spotting Réflexes Anglais..." / "Checking against the moule...").
+- Skeleton states for dashboard sections, `/progress`, `/diagnostic`, `/cluster/[slug]`.
+- Recording analysis progress indicator (analysis takes 30-60s; currently a silent wait — surface estimated time + per-step progress).
+
+**Owner:** FE + Chadi (rotating message copy in FR + EN).
+
+---
+
+## F-212 — Micro-animations + interaction feedback
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** Medium-high.
+
+- Hover/tap states on every interactive element (currently inconsistent).
+- Animated progress bars (couches scoring, recording cap timer, /progress percent-complete).
+- Transition tokens centralized — `lib/motion.ts` already exists from P-115; extend coverage to every surface.
+- `prefers-reduced-motion` respected throughout (audit + fix).
+
+**Owner:** FE.
+
+---
+
+## F-213 — Page transitions + motion design
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** Medium.
+
+- Onboarding question slide transitions (right-to-left as user advances, left-to-right on back).
+- Staggered dashboard section reveal on `/progress` initial load.
+- Celebration moment on diagnostic complete (level revealed) — restrained, methodology-honest, not gamified.
+- Route-level fade between major surfaces (avoid hard cuts).
+
+**Owner:** FE.
+
+---
+
+## F-214 — Visual depth + design system extension
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Active — Launch Critical (60-day target).
+
+**Priority:** Medium.
+
+- Gradients on pastel surfaces — pulled from M-101a landing palette so landing and app share visual DNA.
+- Card elevation tiers (1, 2, 3 shadow levels via design tokens).
+- Typography rhythm — line-height + paragraph-spacing scale codified (currently ad-hoc per component).
+- Empty-state illustrations — custom, not generic stock icons.
+
+**Owner:** FE + designer.
+
+---
 
 ## P-234 — Cluster detail view
 
@@ -122,39 +478,45 @@ Integrate LemonSqueezy API as the payment + subscription provider:
 
 ---
 
-## B-100 — LemonSqueezy account setup
+## B-100 — Merchant of Record provider selection
 
-**Filed:** 2026-04-30; **renamed 2026-05-03** (Stripe → LemonSqueezy pivot — Stripe inaccessible to Morocco-based merchants).
-**Status:** In Progress — Chadi submitted identity verification 2026-05-03; awaiting LemonSqueezy approval.
+**Filed:** 2026-04-30; renamed 2026-05-03 (Stripe → LemonSqueezy pivot — Stripe inaccessible to Morocco-based merchants); **reframed 2026-05-04** (LemonSqueezy approval not landing as expected — pending provider-selection decision).
+**Status:** Pending Chadi decision — Path A (re-apply / push LemonSqueezy approval) vs Path B (switch to alternative MoR).
 **Tag:** Active — Launch Critical (60-day target).
 
 **Priority:** HIGH (pre-launch — blocks P-106 + P-105).
 
-Set up the LemonSqueezy merchant account, complete identity verification, configure the storefront, and provision API keys for the backend integration:
-- ✓ Identity verification submitted 2026-05-03.
-- ✗ Account approval — pending LemonSqueezy review.
-- ✗ Storefront configuration (product naming, branding, terms link).
-- ✗ Two SKUs created: $29/mo subscription + $199 one-time Sprint.
-- ✗ Test-mode + production-mode API keys generated and handed to engineering for env injection.
-- ✗ Webhook secret generated for backend signature verification.
+Pre-launch payment provider for LeMethodic. Constraint: must accept Morocco-based merchants and operate as Merchant of Record (handles tax, EU VAT, US sales tax). Stripe rules out (no Morocco onboarding).
 
-**Why LemonSqueezy:** Stripe does not onboard Morocco-based merchants. LemonSqueezy operates as a Merchant of Record — handles tax (EU VAT, US sales tax) and accepts founders globally. Higher per-transaction fee (~5% + $0.50 vs Stripe's ~2.9% + $0.30) is the cost of operating from Morocco.
+**Path A — Push LemonSqueezy approval:**
+- Re-apply / escalate the verification submission from 2026-05-03.
+- Pros: already started; no integration rework if approved.
+- Cons: opaque approval process; no confirmed timeline; may continue to stall.
 
-**Owner:** Chadi (account / KYC / storefront) → handoff to Engineering for API key + webhook configuration once approved.
+**Path B — Switch to alternative MoR:**
+- Candidates: Paddle (also MoR, accepts Morocco), Gumroad (lower-friction onboarding), or Polar (newer MoR).
+- Pros: known faster paths to live storefront for some.
+- Cons: research + re-evaluation of fee structures, webhook shapes, SDK quality.
 
-**Unblocks:** P-106 (integration), P-105 (trial logic).
+**Decision matrix (Chadi to fill):** approval probability × time-to-approval × fee structure × SDK quality × Morocco-acceptance.
+
+**Once selected:** body resumes the original 6-step KYC + storefront + key-provision checklist.
+
+**Owner:** Chadi (provider selection + account / KYC / storefront) → handoff to Engineering for API key + webhook configuration once approved.
+
+**Unblocks:** P-106 (integration — currently scoped to LemonSqueezy SDK; rescope if Path B), P-105 (trial logic — provider-agnostic in spec, integration-specific in code).
 
 ---
 
-## M-103 — YouTube channel launch (scope-reduced)
+## M-103 — YouTube anchor video — French exam prep for English speakers
 
-**Filed:** 2026-04-30; scope-reduced 2026-05-02.
+**Filed:** 2026-04-30; scope-reduced 2026-05-02; **rescoped 2026-05-04** (TCF-only → all-exams positioning to match brand-layer pivot).
 **Status:** Queued.
 **Tag:** Active — Launch Critical (60-day target).
 
 **Priority:** Medium (pre-launch credibility artifact, not a sustained channel commitment).
 
-**Scope (reduced):** 1 anchor video pre-launch as a credibility artifact — ~5-10 min, exam-prep tactic on a topic with low SEO competition (e.g., "TCF Canada Tâche 3 — what scoring actually rewards"). Single video establishes the channel + serves as a referral asset; cadence is **not** committed pre-launch.
+**Scope (rescoped):** 1 anchor video pre-launch — ~5-10 min, framed around the L1-interference moat ("Why English speakers all make the same French mistakes — and how to actually fix them"). Anchors LeMethodic as a **French exam prep platform for English speakers**, not TCF-only. Examples can pull from any of TCF/TEF/DELF B1/B2 since the format DNA is shared. Establishes the channel + serves as a referral asset; cadence is **not** committed pre-launch.
 
 **Re-evaluate post-launch:** if the anchor video drives meaningful traffic or referral signal within 4-8 weeks, decide whether to commit to a sustained cadence (monthly anchor + occasional shorts) or leave the channel as a one-shot artifact. Default: leave as-is unless signal is clear.
 
@@ -162,15 +524,26 @@ Set up the LemonSqueezy merchant account, complete identity verification, config
 
 ---
 
-## M-104 — Reddit community engagement
+## M-104 — Reddit community engagement (broadened subreddit list)
 
-**Filed:** 2026-04-30.
+**Filed:** 2026-04-30; **rescoped 2026-05-04** (broader subreddit roster to match all-exams brand pivot).
 **Status:** Queued.
 **Tag:** Active — Launch Critical (60-day target).
 
 **Priority:** Medium.
 
-Stub — spec TBD.
+Reddit-as-acquisition: helpful comments on relevant threads with low-key LeMethodic mentions only when contextually appropriate. Subreddit roster post-pivot:
+
+- r/French — general French learning, broad reach.
+- r/TEF, r/DELF — exam-specific (smaller but high-intent).
+- r/learnfrench — beginner-skewed; still a feeder for B1/B2 students post-discovery.
+- r/immigrationcanada — visa-urgency persona (TCF/TEF), highest conversion intent.
+- r/expats, r/IWantOut — adjacent visa/immigration audiences.
+- r/learnlanguages, r/languagelearning — broad-language learners likely to need exam prep.
+
+**Cadence:** light — 2-3 thoughtful comments per week, no link-spamming. Track which subs convert (informally) for post-launch reallocation.
+
+**Owner:** Chadi.
 
 ---
 
@@ -1020,6 +1393,22 @@ Stub — spec TBD.
 
 ---
 
+## B-200 — Book-Lab store surface
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Phase 2 / deferred indefinitely.
+
+**Priority:** Phase 2 (post-launch, post-revenue).
+
+Book-Lab is Chadi's separate French learning publishing venture (shared methodology). Phase 2 surface — `/store` or `/books` on lemethodic.com — to upsell Book-Lab products to LeMethodic users + cross-pollinate audiences.
+
+Out of scope for soft beta. Trigger: Book-Lab product catalogue stabilized **and** LeMethodic has paying users (signal threshold TBD).
+
+**Owner:** Chadi.
+
+---
+
 # Closed
 
 ## M-105 — LinkedIn long-form content
@@ -1379,7 +1768,7 @@ When a user's diagnostic places them on a not-yet-built path (A2→B1, B2→C1, 
 ## P-230 — Overall Progress dashboard rebuild
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
-**Status:** Shipped 2026-05-03 (FE-side, `lemethodic-frontend` 3-commit set ending `28bf765`). Production verified on `lemethodic.com/progress`.
+**Status:** v1 shipped 2026-05-03 (FE-side, `lemethodic-frontend` 3-commit set ending `28bf765`); **deemed insufficient for soft-beta 2026-05-04** — sections render but feel placeholder-y. Real content + depth rebuild filed as **P-230.depth** (Active LC). v1 entry preserved here for ship-history; depth work tracked in the new ticket.
 
 **Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.4 / §7.4.
 
