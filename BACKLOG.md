@@ -20,33 +20,19 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 
 | # | Ticket | Title |
 |---|---|---|
-| 1 | **P-222** | Waitlist UX for A2 and B2+ paths |
-| 2 | **P-230** | Overall Progress dashboard rebuild |
-| 3 | **P-234** | Cluster detail view |
-| 4 | **P-105** | 7-day free trial logic |
-| 5 | **P-106** | LemonSqueezy integration with subscription + one-time SKU |
-| 6 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
-| 7 | **B-100** | LemonSqueezy account setup |
-| 8 | **B-102** | Privacy policy + ToS |
-| 9 | **M-100** | Past Preply student outreach |
-| 10 | **M-101** | Landing page copy in LeMethodic voice |
-| 11 | **M-103** | YouTube channel launch (scope-reduced) |
-| 12 | **M-104** | Reddit community engagement |
+| 1 | **P-230** | Overall Progress dashboard rebuild |
+| 2 | **P-234** | Cluster detail view |
+| 3 | **P-105** | 7-day free trial logic |
+| 4 | **P-106** | LemonSqueezy integration with subscription + one-time SKU |
+| 5 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
+| 6 | **B-100** | LemonSqueezy account setup |
+| 7 | **M-100** | Past Preply student outreach |
+| 8 | **M-101** | Landing page copy in LeMethodic voice |
+| 9 | **M-103** | YouTube channel launch (scope-reduced) |
+| 10 | **M-104** | Reddit community engagement |
 
 ---
-# Active — Launch Critical (12 tickets, 60-day target)
-
-## P-222 — Waitlist UX for A2 and B2+ paths
-
-**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
-**Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
-
-**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §8.4.
-
-Stub migrated from FE. When a user's diagnostic places them on a not-yet-built path (A2→B1, B2→C1, C1→C2), show a waitlist screen with explanation, free interim resources, and optional early-access opt-in. Backend may need a small waitlist-email-capture endpoint depending on the FE wiring choice. Full original body in FE BACKLOG until B-106 consolidation ships.
-
----
+# Active — Launch Critical (10 tickets, 60-day target)
 
 ## P-230 — Overall Progress dashboard rebuild
 
@@ -165,18 +151,6 @@ Set up the LemonSqueezy merchant account, complete identity verification, config
 **Owner:** Chadi (account / KYC / storefront) → handoff to Engineering for API key + webhook configuration once approved.
 
 **Unblocks:** P-106 (integration), P-105 (trial logic).
-
----
-
-## B-102 — Privacy policy + ToS
-
-**Filed:** 2026-04-30.
-**Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
-
-**Priority:** HIGH (pre-launch).
-
-Stub — spec TBD.
 
 ---
 
@@ -1067,6 +1041,24 @@ Original priority was Medium. Decided not to pursue per 2026-05-02 marketing tri
 
 # Shipped
 
+## B-102 — Privacy policy + ToS + Refund
+
+**Filed:** 2026-04-30; **scope expanded 2026-05-03** to include the Refund page (originally just Privacy + ToS).
+**Status:** Shipped 2026-05-03 (FE-side, `lemethodic-frontend` commit `3216d4d`). Three pages live at `/privacy`, `/terms`, `/refund` with footer integration on the landing page.
+
+**Priority:** HIGH (pre-launch — required for paid product launch + LemonSqueezy storefront compliance).
+
+Three legal/policy pages shipped as static FE routes:
+- `/privacy` — privacy policy.
+- `/terms` — terms of service.
+- `/refund` — refund policy (added to scope alongside the LemonSqueezy pivot — Merchant of Record arrangement requires a clear refund stance).
+
+Footer links on the landing page surface all three. Authoring owned by Chadi; rendering owned by Engineering (FE).
+
+**BE role:** none. Pure static content + FE routing.
+
+---
+
 ## F-079 — Custom domain wiring (lemethodic.com → Vercel)
 
 **Filed:** 2026-04-28; reframed 2026-05-02 (Vercel deploy already shipped).
@@ -1368,6 +1360,23 @@ Files: `app/schemas/diagnostic.py` (new), `app/services/diagnostic_state.py` (ne
 Production verified 2026-05-02: 56 paths in `/openapi.json`, 27 schemas, `/api/diagnostic/state` registered, `DiagnosticStateResponse` + `TacheCoverage` schemas present, `AssignedBlock` carries `coverage` + `n_clusters_evaluated`.
 
 FE follow-up (P-221.fe — file when needed): `/ecole` banner consuming `/api/diagnostic/state`, `/diagnostic/results` one-time gate consuming `/api/users/me/level` + `/api/diagnostic/state`. Out of BE scope.
+
+---
+
+## P-222 — Waitlist UX for A2 and B2+ paths
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Shipped 2026-05-03 (FE-side, `lemethodic-frontend` commits `59fb2c6` + `deff02b` + `820d788`). Production verified on `lemethodic.com/onboarding/waitlist`.
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §8.4.
+
+When a user's diagnostic places them on a not-yet-built path (A2→B1, B2→C1, C1→C2), the FE renders a waitlist screen at `/onboarding/waitlist` with explanation copy + optional fallback offer (b1_to_b2 preview when pedagogically plausible) + email capture for early-access notification.
+
+**BE role:** none beyond what already shipped with P-220. The `OnboardingSubmitResponse` already carries `waitlist=true` + `waitlist_reason="path_not_active"` + `fallback_path_offered=<slug | null>` on the relevant level pairs. FE consumes these and renders accordingly.
+
+**Email capture wiring:** FE-side only for now (likely posting to a third-party form / email tool). If a BE endpoint becomes necessary, file as P-222.x — currently not needed since the FE flow is self-contained.
+
+**FE consumer of P-220 contract:** verified end-to-end against production API. Q1=`not_sure` users correctly bypass waitlist into b1_to_b2; A2→B1, B2→C1, C1→C2 users correctly land on the waitlist screen with localized reason copy mapped from the `waitlist_reason` slug.
 
 ---
 

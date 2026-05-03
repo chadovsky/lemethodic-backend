@@ -39,16 +39,20 @@ ACTIVE_LC = [
     # P1, blocked on P-213 templates).
     # F-079 fully shipped 2026-05-03 (DNS + Vercel SSL + CORS via
     # FRONTEND_ORIGIN env) — moved to SHIPPED. No code commit; ops only.
-    "P-222",                  # waitlist UX for A2/B2+ paths (FE-migrated)
+    # P-222 fully shipped 2026-05-03 FE-side (commits 59fb2c6 + deff02b +
+    # 820d788) — moved to SHIPPED. BE no-op (P-220 contract already
+    # carried waitlist signals).
     "P-230",                  # overall progress dashboard rebuild (FE-migrated)
     "P-234",                  # cluster detail view (FE-migrated)
 
     # Pre-launch product:
-    "P-105", "P-106",         # 7-day trial + Stripe integration
+    "P-105", "P-106",         # 7-day trial + LemonSqueezy integration
     "P-260.5",                # Sprint product blocker (3 TCF mocks)
 
     # Pre-launch business:
-    "B-100", "B-102",         # Stripe account + Privacy/ToS
+    # B-102 fully shipped 2026-05-03 FE-side (commit 3216d4d, /privacy +
+    # /terms + /refund) — moved to SHIPPED.
+    "B-100",                  # LemonSqueezy account setup
 
     # Pre-launch marketing:
     "M-100", "M-101",         # Preply outreach + landing copy
@@ -97,10 +101,13 @@ DEFERRED = [
 # P-240 action layer shipped 2026-05-02 (single commit 6b8ee43); prose layer
 # split as P-240b (Post-launch P1, blocked on P-213).
 # F-079 fully shipped 2026-05-03 (DNS + Vercel SSL + CORS via env, ops only — no code commit).
+# P-222 fully shipped 2026-05-03 FE-side (commits 59fb2c6 + deff02b + 820d788, BE no-op).
+# B-102 fully shipped 2026-05-03 FE-side (commit 3216d4d — /privacy + /terms + /refund).
 SHIPPED = [
+    "B-102",
     "F-079", "F-110", "F-110.1", "F-110.2", "P-103", "P-104",
     "P-200", "P-201", "P-202", "P-203", "P-204",
-    "P-210", "P-211", "P-212", "P-220", "P-221", "P-240",
+    "P-210", "P-211", "P-212", "P-220", "P-221", "P-222", "P-240",
 ]
 # Decided not to pursue. Keep entry to preserve history.
 CLOSED = ["M-105"]
