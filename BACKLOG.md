@@ -24,9 +24,9 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 2 | **P-230** | Overall Progress dashboard rebuild |
 | 3 | **P-234** | Cluster detail view |
 | 4 | **P-105** | 7-day free trial logic |
-| 5 | **P-106** | Stripe integration with dual + geographic pricing |
+| 5 | **P-106** | LemonSqueezy integration with subscription + one-time SKU |
 | 6 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
-| 7 | **B-100** | Stripe account setup |
+| 7 | **B-100** | LemonSqueezy account setup |
 | 8 | **B-102** | Privacy policy + ToS |
 | 9 | **M-100** | Past Preply student outreach |
 | 10 | **M-101** | Landing page copy in LeMethodic voice |
@@ -74,25 +74,46 @@ Stub migrated from FE. Per-cluster page with lesson + exercises + practice promp
 
 ## P-105 — 7-day free trial logic
 
-**Filed:** 2026-04-30.
-**Status:** Queued.
+**Filed:** 2026-04-30; **scope clarified 2026-05-03** (post Stripe → LemonSqueezy pivot).
+**Status:** Queued (blocked on P-106 / B-100 — LemonSqueezy account + integration must land first).
 **Tag:** Active — Launch Critical (60-day target).
 
 **Priority:** High (pre-launch).
 
-Stub — spec TBD.
+7-day free trial gating new-user access to the paid feature set. Implementation uses LemonSqueezy's native trial mechanics (subscription created with `trial_ends_at`; webhook fires on trial expiry transitioning the user to active-paid or lapsed).
+
+Backend scope:
+- New entitlement state on User: `trial_started_at`, `trial_ends_at`, `subscription_status` (trialing | active | lapsed | canceled | none) — alembic migration.
+- Trial-start trigger: first authenticated session post-signup auto-creates a LemonSqueezy subscription in trialing state (no card required for trial entry; card collected at trial-end transition).
+- Gating decision lives in a single helper `app/services/entitlement.py::has_active_access(user) -> bool`. Callers: recording upload, conversation start, /api/users/me/today.
+- Lapsed-user UX: read-only access to past recordings + diagnostic; new recordings blocked with paywall redirect.
+
+**Depends on:** P-106 (LemonSqueezy integration), B-100 (LemonSqueezy account approval).
+
+**Owner:** Engineering. Trial copy + paywall wording owned by M-101 / Chadi.
 
 ---
 
-## P-106 — Stripe integration with dual + geographic pricing
+## P-106 — LemonSqueezy integration with subscription + one-time SKU
 
-**Filed:** 2026-04-30.
-**Status:** Queued.
+**Filed:** 2026-04-30; **rescoped 2026-05-03** (Stripe → LemonSqueezy pivot due to Morocco geographic constraint — Stripe inaccessible to merchants based in Morocco).
+**Status:** Queued (blocked on B-100 — LemonSqueezy account approval).
 **Tag:** Active — Launch Critical (60-day target).
 
 **Priority:** High (pre-launch).
 
-Stub — spec TBD.
+Integrate LemonSqueezy API as the payment + subscription provider:
+- **$29/mo subscription** SKU for the recurring product.
+- **$199 one-time** SKU for the Sprint product (3-week TCF crash-prep cohort).
+- Webhook endpoint(s) for subscription lifecycle events (created, updated, canceled, payment_failed) — drives entitlement state on User rows.
+- Customer portal link for self-serve billing management (LemonSqueezy hosts; we just deep-link).
+- Test-mode + production-mode key separation via env (mirror of existing `ANTHROPIC_API_KEY` / `ASSEMBLYAI_API_KEY` pattern).
+
+**Why LemonSqueezy over Stripe:** Stripe does not onboard merchants based in Morocco. LemonSqueezy operates as a Merchant of Record (handles tax, EU VAT, US sales tax) and accepts Morocco-based founders. Trade-offs: ~5% + $0.50 per transaction vs Stripe's ~2.9% + $0.30 — accepted because the geographic constraint is a hard block, not a preference.
+
+**Depends on:** B-100 (LemonSqueezy account approval — Chadi submitted identity verification 2026-05-03, awaiting review).
+
+**Out of scope:** geographic price differentiation (the original "dual + geographic pricing" framing) — LemonSqueezy supports purchase-power-parity adjustments natively but Phase 1 ships with a single global $29/mo + $199 Sprint price. Geographic pricing revisits post-launch if conversion data warrants.
 
 ---
 
@@ -123,15 +144,27 @@ Stub — spec TBD.
 
 ---
 
-## B-100 — Stripe account setup
+## B-100 — LemonSqueezy account setup
 
-**Filed:** 2026-04-30.
-**Status:** Queued.
+**Filed:** 2026-04-30; **renamed 2026-05-03** (Stripe → LemonSqueezy pivot — Stripe inaccessible to Morocco-based merchants).
+**Status:** In Progress — Chadi submitted identity verification 2026-05-03; awaiting LemonSqueezy approval.
 **Tag:** Active — Launch Critical (60-day target).
 
-**Priority:** HIGH (pre-launch).
+**Priority:** HIGH (pre-launch — blocks P-106 + P-105).
 
-Stub — spec TBD.
+Set up the LemonSqueezy merchant account, complete identity verification, configure the storefront, and provision API keys for the backend integration:
+- ✓ Identity verification submitted 2026-05-03.
+- ✗ Account approval — pending LemonSqueezy review.
+- ✗ Storefront configuration (product naming, branding, terms link).
+- ✗ Two SKUs created: $29/mo subscription + $199 one-time Sprint.
+- ✗ Test-mode + production-mode API keys generated and handed to engineering for env injection.
+- ✗ Webhook secret generated for backend signature verification.
+
+**Why LemonSqueezy:** Stripe does not onboard Morocco-based merchants. LemonSqueezy operates as a Merchant of Record — handles tax (EU VAT, US sales tax) and accepts founders globally. Higher per-transaction fee (~5% + $0.50 vs Stripe's ~2.9% + $0.30) is the cost of operating from Morocco.
+
+**Owner:** Chadi (account / KYC / storefront) → handoff to Engineering for API key + webhook configuration once approved.
+
+**Unblocks:** P-106 (integration), P-105 (trial logic).
 
 ---
 
