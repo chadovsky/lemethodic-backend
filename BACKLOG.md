@@ -36,12 +36,47 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 ## P-234 — Cluster detail view
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
-**Status:** Queued.
+**Status:** BE shipped 2026-05-03 (commit `7f54b88`); **FE consumer in progress.** Stays in active queue until FE ships their side.
 **Tag:** Active — Launch Critical (60-day target).
 
 **Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.4 / §7.8.
 
-Stub migrated from FE. Per-cluster page with lesson + exercises + practice prompt + history. Multi-format lesson rendering (markdown / PDF embed / video embed). Depends on P-202 (cluster schema, shipped) + P-211 (content authoring, shipped). Full original body in FE BACKLOG until B-106 consolidation ships.
+Per-cluster page with lesson + exercises + practice prompt + per-user state + recording history. Multi-format lesson rendering (markdown / PDF embed / video embed).
+
+### BE side — shipped 2026-05-03 (commit `7f54b88`)
+
+Two read-only endpoints back the FE detail page:
+
+```
+GET /api/clusters/{slug}              auth required
+  → ClusterDetailResponse: id, slug, labels{i18n}, grammar_topic,
+    vocabulary_theme{slug, labels} | null, tache_application,
+    cefr_level, lesson{format, markdown, asset_url},
+    practice_prompt{}, exercise_set[]
+  404 on unknown slug. detection_rubric NOT exposed (Q1 — internal
+  scoring infrastructure).
+
+GET /api/users/me/clusters/{slug}     auth required
+  → UserClusterStateResponse: cluster_slug, status, last_rubric_score,
+    last_detection_result, revisit_count, first_started_at,
+    last_status_change_at, absorbed_at, recording_history[<=10, newest first]
+  404 on unknown slug. Graceful defaults when user has no
+  UserClusterStatus row (Q3 — "not started" UX, not 404).
+```
+
+Plan-first lock-in (2026-05-03): Q1 detection_rubric hidden, Q2 history last 10 newest-first, Q3 no-UCS defaults, Q4 lesson_markdown FR-only Phase 1 (FE handles language hint), Q5 auth-only no path-enrollment scoping.
+
+Recording history sourced from `UserClusterEvent` rows (Recording has no `cluster_id` FK); `detection_result` read from `findings_json["detection_result"]` per the P-200 persistence helper.
+
+Files: `app/schemas/cluster.py` (new), `app/services/cluster_lookup.py` (new), `app/routers/clusters.py` (new), `main.py` (router registration), `scripts/smoke_p234.py` (new — 43 checks across 4 steps, all PASS).
+
+No alembic migration. No new table, no new column. `recordings.py` / `conversations.py` / `users.py` untouched — purely additive.
+
+### FE side — pending
+
+Consumer of the two endpoints above. FE owns the detail page UI, multi-format lesson rendering (markdown highlight / PDF embed / video player), exercise interaction, practice CTA wiring, history rendering, and the language hint when `interface_language != fr` (lesson_markdown is FR-only Phase 1 per Q4).
+
+When FE ships, this entry flips to fully Shipped and moves to the SHIPPED section.
 
 ---
 
