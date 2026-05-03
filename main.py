@@ -15,6 +15,7 @@ from app.routers import modules
 from app.routers import onboarding
 from app.routers import diagnostic
 from app.routers import today
+from app.routers import clusters
 from app.models.models import User
 from app.services.auth import get_current_user
 from app.services import storage
@@ -121,6 +122,7 @@ app.include_router(modules.router)
 app.include_router(onboarding.router)
 app.include_router(diagnostic.router)
 app.include_router(today.router)
+app.include_router(clusters.router)
 
 # Serve static files
 import os
