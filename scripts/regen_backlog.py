@@ -42,7 +42,9 @@ ACTIVE_LC = [
     # P-222 fully shipped 2026-05-03 FE-side (commits 59fb2c6 + deff02b +
     # 820d788) — moved to SHIPPED. BE no-op (P-220 contract already
     # carried waitlist signals).
-    "P-230",                  # overall progress dashboard rebuild (FE-migrated)
+    # P-230 fully shipped 2026-05-03 FE-side (3-commit set ending 28bf765)
+    # — moved to SHIPPED. BE no-op (P-201/P-201.x/P-240/F-080d covered
+    # the full data surface).
     "P-234",                  # cluster detail view (FE-migrated)
 
     # Pre-launch product:
@@ -103,11 +105,13 @@ DEFERRED = [
 # F-079 fully shipped 2026-05-03 (DNS + Vercel SSL + CORS via env, ops only — no code commit).
 # P-222 fully shipped 2026-05-03 FE-side (commits 59fb2c6 + deff02b + 820d788, BE no-op).
 # B-102 fully shipped 2026-05-03 FE-side (commit 3216d4d — /privacy + /terms + /refund).
+# P-230 fully shipped 2026-05-03 FE-side (3-commit set ending 28bf765, BE no-op).
 SHIPPED = [
     "B-102",
     "F-079", "F-110", "F-110.1", "F-110.2", "P-103", "P-104",
     "P-200", "P-201", "P-202", "P-203", "P-204",
-    "P-210", "P-211", "P-212", "P-220", "P-221", "P-222", "P-240",
+    "P-210", "P-211", "P-212", "P-220", "P-221", "P-222",
+    "P-230", "P-240",
 ]
 # Decided not to pursue. Keep entry to preserve history.
 CLOSED = ["M-105"]

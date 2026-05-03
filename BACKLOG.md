@@ -20,31 +20,18 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 
 | # | Ticket | Title |
 |---|---|---|
-| 1 | **P-230** | Overall Progress dashboard rebuild |
-| 2 | **P-234** | Cluster detail view |
-| 3 | **P-105** | 7-day free trial logic |
-| 4 | **P-106** | LemonSqueezy integration with subscription + one-time SKU |
-| 5 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
-| 6 | **B-100** | LemonSqueezy account setup |
-| 7 | **M-100** | Past Preply student outreach |
-| 8 | **M-101** | Landing page copy in LeMethodic voice |
-| 9 | **M-103** | YouTube channel launch (scope-reduced) |
-| 10 | **M-104** | Reddit community engagement |
+| 1 | **P-234** | Cluster detail view |
+| 2 | **P-105** | 7-day free trial logic |
+| 3 | **P-106** | LemonSqueezy integration with subscription + one-time SKU |
+| 4 | **P-260.5** | Author 3 TCF Canada mock exams for Sprint product |
+| 5 | **B-100** | LemonSqueezy account setup |
+| 6 | **M-100** | Past Preply student outreach |
+| 7 | **M-101** | Landing page copy in LeMethodic voice |
+| 8 | **M-103** | YouTube channel launch (scope-reduced) |
+| 9 | **M-104** | Reddit community engagement |
 
 ---
-# Active — Launch Critical (10 tickets, 60-day target)
-
-## P-230 — Overall Progress dashboard rebuild
-
-**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
-**Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
-
-**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.4 / §7.4.
-
-Stub migrated from FE. Rebuild `/progress` per curriculum doc §7.4 (Block 2 Goulet Stack + Block 5 Dialogue Box + Block 8 Confidence Visualizer). Replaces the original P-100 surface entirely. Calm mode default + method mode opt-in. Depends on P-201 + P-204 (BE-side, level + cluster status). Full original body in FE BACKLOG until B-106 consolidation ships.
-
----
+# Active — Launch Critical (9 tickets, 60-day target)
 
 ## P-234 — Cluster detail view
 
@@ -1378,6 +1365,26 @@ When a user's diagnostic places them on a not-yet-built path (A2→B1, B2→C1, 
 **Email capture wiring:** FE-side only for now (likely posting to a third-party form / email tool). If a BE endpoint becomes necessary, file as P-222.x — currently not needed since the FE flow is self-contained.
 
 **FE consumer of P-220 contract:** verified end-to-end against production API. Q1=`not_sure` users correctly bypass waitlist into b1_to_b2; A2→B1, B2→C1, C1→C2 users correctly land on the waitlist screen with localized reason copy mapped from the `waitlist_reason` slug.
+
+---
+
+## P-230 — Overall Progress dashboard rebuild
+
+**Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
+**Status:** Shipped 2026-05-03 (FE-side, `lemethodic-frontend` 3-commit set ending `28bf765`). Production verified on `lemethodic.com/progress`.
+
+**Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.4 / §7.4.
+
+`/progress` rebuilt per curriculum doc §7.4 — Calm mode (default) layout: Snapshot (Block 8 Confidence Visualizer) + Today's focus (Block 5 Dialogue Box, fallback copy keyed on `reason_code` until P-240b ships) + Goulet Stack (Block 2, top 3 bottlenecks) + Recent activity calendar. Method mode opt-in toggle adds Block 1 Ceiling Marker Map and Block 7 Mistake Repository link. Replaces the original P-100 surface entirely.
+
+**BE consumer surfaces:**
+- `GET /api/users/me/level` — Snapshot block reads `assigned.level / confidence / coverage / n_clusters_evaluated / total_clusters_in_path` (P-201 + P-201.x).
+- `GET /api/users/me/today` — Today's focus reads `action.{kind, cluster_slug, tache_application, practice_prompt, reason_code}` + `context.{current_phase_position, clusters_remaining_in_path, last_recording_at}` (P-240). Renders FE-authored fallback copy keyed on `reason_code`; `dialogue_box` field stays null until P-240b.
+- `GET /api/users/me/recurring_modules` — feeds the Goulet Stack (F-080d, pre-existing).
+
+**BE role this ticket:** none beyond what already shipped. P-201 + P-201.x + P-240 + F-080d covered the full data surface.
+
+**FE follow-up (filed elsewhere):** Block 1 Ceiling Marker Map = P-235; Block 7 Mistake Repository = P-236; Block 6 Time-Adaptive UI = P-237. All Post-launch P1.
 
 ---
 
