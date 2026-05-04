@@ -102,6 +102,7 @@ POST_LAUNCH_P1 = [
     "P-240b",                 # P-240 prose layer split — blocked on P-213
     "P-241", "P-250", "P-251",
     "P-260.5",                # 3 TCF Canada mocks — Sprint product, month-2 launch event
+    "F-226",                  # FR voice audit + full-app tu-form sweep (post-soft-beta)
     "B-101", "B-104", "B-105", "B-106",
     "C-100",                  # FE-migrated: prod test-user cleanup
     "F-109",                  # FE-migrated: full-name persistence bug

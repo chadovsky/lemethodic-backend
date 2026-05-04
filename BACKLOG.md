@@ -795,6 +795,41 @@ Backend scope: storage + serve endpoints for lesson content. Stub — full spec 
 
 ---
 
+## F-226 — FR voice audit + full-app sweep (tu-form vs vous-form)
+
+**Filed:** 2026-05-04.
+**Status:** Queued.
+**Tag:** Post-launch P1 (2-4 weeks after launch).
+
+**Priority:** Medium-high (Phase 1 voice consistency — post-soft-beta).
+
+FE flagged a Block 3 drift during the 2026-05-04 founder check-in: the locked spec is **tu-form** (informal, Chadi-tutor voice), but production is rendering **vous-form** across `/onboarding` + `EcoleReveal` + likely other surfaces.
+
+**Scope:** full-app sweep of FR copy strings to enforce tu-form per the locked Block 3 voice spec.
+
+Surfaces to audit:
+- Onboarding (11 questions + helper copy + intro screen + waitlist).
+- EcoleReveal post-onboarding screen.
+- /ecole + L'École intro (will re-author under F-202 — coordinate).
+- /progress dashboard copy (Snapshot, Today's focus reason-code variants, Goulet Stack, recent activity).
+- /diagnostic feedback page copy.
+- /speaking/* Tâche briefings + recording prompts + transcript review copy.
+- /cluster/[slug] lesson body, exercise prompts, practice CTA copy.
+- Auxiliary pages: /privacy, /terms, /refund, /signup, /login, error states, paywall copy.
+- BE-side: any FR string in seeds, Tâche prompts, Tâche 1 opening lines, scoring rubric prose, detection rubric labels (`Cluster.labels` JSONB), exercise set prompts (`Cluster.exercise_set` JSONB), VocabularyTheme labels.
+
+**Method:**
+1. Grep FR-language source files (FE strings, BE seeds, JSONB seed loaders) for `vous`, `votre`, `vos`, conjugated `vous` verb endings (`-ez` second-person plural).
+2. Manual review — many `-ez` endings are also imperative which is independent of formality.
+3. Replace with `tu`, `ton`, `ta`, `tes`, second-person singular conjugations.
+4. EcoleReveal verified flip end-to-end as the smoke case.
+
+**Trigger:** Post-soft-beta. Soft-beta can ship with vous-form drift (functional, just off-voice); pre-public-launch must be tu-form throughout.
+
+**Owner:** FE + BE (seed audit) + Chadi (FR review on edge cases — some second-person plural is genuinely contextual, e.g., when addressing a hypothetical interlocutor in a Tâche 2 scenario).
+
+---
+
 ## B-101 — Legal entity decision
 
 **Filed:** 2026-04-30.
