@@ -33,7 +33,7 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 11 | **F-206** | Auxiliary pages desktop (privacy/terms/refund/waitlist/signup) |
 | 12 | **F-220** | Onboarding "intro framing" (Block 3 quiz-pop-up entry moment) |
 | 13 | **F-221** | Exam-selector in onboarding + brand-layer rewrite |
-| 14 | **F-224** | Writing Dashboard: build for soft beta OR hide tab decision |
+| 14 | **F-224** | Writing Dashboard build (BE schema + endpoints first, then FE surface) |
 | 15 | **F-210** | Icon system + custom LeMethodic icons |
 | 16 | **F-211** | Loading states overhaul |
 | 17 | **F-212** | Micro-animations + interaction feedback |
@@ -41,8 +41,8 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 19 | **F-214** | Visual depth + design system extension |
 | 20 | **P-234** | Cluster detail view |
 | 21 | **P-105** | 7-day free trial logic |
-| 22 | **P-106** | LemonSqueezy integration with subscription + one-time SKU |
-| 23 | **B-100** | Merchant of Record provider selection |
+| 22 | **P-106** | Paddle integration with subscription + one-time SKU |
+| 23 | **B-100** | Paddle account setup |
 | 24 | **M-103** | YouTube anchor video — French exam prep for English speakers |
 | 25 | **M-104** | Reddit community engagement (broadened subreddit list) |
 
@@ -52,7 +52,7 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 ## F-225 — Desktop verification protocol
 
 **Filed:** 2026-05-04.
-**Status:** Queued — **enforced immediately for all FE PRs going forward.**
+**Status:** Awaiting Verification (FE-side process gate landed 2026-05-04; protocol now enforced — first FE PRs going forward will exercise the 1440px + 375px screenshot requirement). Pattern (a) per Chadi 2026-05-04: the gate governs the **Awaiting Verification → Shipped** transition, not the push.
 **Tag:** Active — Launch Critical (60-day target).
 
 **Priority:** HIGH (process — gates all FE PRs).
@@ -73,7 +73,7 @@ No more shipping mobile-only as "ready."
 ## F-222 — Sign Out bug fix
 
 **Filed:** 2026-05-04.
-**Status:** Queued.
+**Status:** Awaiting Verification (FE-side fix delivered 2026-05-04; 1440px + 375px screenshots + interactive trace pending per F-225).
 **Tag:** Active — Launch Critical (60-day target).
 
 **Priority:** Medium.
@@ -87,7 +87,7 @@ Sign Out flow has a bug — investigate + fix. Specifics TBD on triage; likely c
 ## F-223 — "Le raccourci" copy bleed cleanup
 
 **Filed:** 2026-05-04.
-**Status:** Queued.
+**Status:** Split — **FE-side Awaiting Verification** (delete in `lemethodic-frontend` landed 2026-05-04). **BE-side blocked** on DO App Platform Insights pull for `GET /` + `GET /admin` + `GET /writing` over 30d — if zero real-user traffic, BE proceeds with delete-PR (Path 2: remove `app/templates/index.html` + `admin.html` + `writing.html` + `@app.get` handlers in main.py + orphan imports). Cron 690444ce + phone reminder set for 24h follow-up if logs haven't been pasted by 02:33 local 2026-05-05.
 **Tag:** Active — Launch Critical (60-day target).
 
 **Priority:** Medium (consistency).
@@ -281,22 +281,24 @@ Marketing layer: TCF/TEF stays as primary entry persona (visa urgency); "all exa
 
 ---
 
-## F-224 — Writing Dashboard: build for soft beta OR hide tab decision
+## F-224 — Writing Dashboard build (BE schema + endpoints first, then FE surface)
 
 **Filed:** 2026-05-04.
-**Status:** Queued — pending Chadi decision.
+**Status:** Locked 2026-05-04 — **BUILD** (real surface, not hidden tab). BE schema + endpoints first, then FE Writing surface.
 **Tag:** Active — Launch Critical (60-day target).
 
 **Priority:** Medium.
 
-The `/writing` tab in nav links to a stub dashboard. For soft beta, two options:
+Build the writing track surface as a first-class part of the platform. Decision history: original framing was "build OR hide" with default-lean (b) hide; Chadi 2026-05-04 escalated to (a) BUILD — writing is part of the LeMethodic moat (L1-interference applies to written French too) and gating it behind Phase 2 contradicts the all-exams brand pivot (TEF/DELF have writing components).
 
-- **(a) Build the writing dashboard MVP** — depends on P-260 (writing analysis pipeline, Phase 2). Scope creep risk.
-- **(b) Hide the `/writing` tab** from nav until Phase 2 — clean cut, no scope creep, recovers UX clarity.
+**Phase split (BE-first per lock-in):**
 
-Default lean: **(b) hide.** Soft-beta is speaking-only by design; surfacing a writing tab without content creates an "empty room" feeling.
+- **BE side (this scope):** WritingSubmission schema + minimum endpoint set (POST submit, GET history, GET detail). No analysis pipeline yet — P-260 stays Phase 2 deferred. Dashboard renders submissions + "Analysis coming Phase 2" placeholder until P-260 lands.
+- **FE side (separate prompt after BE ships):** `/writing` dashboard surface consuming the new endpoints; replaces the current stub.
 
-**Owner:** Chadi (decision) → FE (implementation).
+**Open strategic question (Chadi):** confirm Phase 1 dashboard renders (a) submitted writing + auto-graded analysis (requires P-260 — promote out of Phase 2), (b) submitted writing + Chadi-manually-graded feedback (requires Chadi review surface — separate ticket), or **(c) submitted writing + placeholder "Analysis coming in Phase 2" copy** (recommended — MVP scope, validates writing-task UX without P-260 dependency).
+
+**Owner:** BE (schema + endpoints) → FE (dashboard surface).
 
 ---
 
@@ -435,76 +437,74 @@ When FE ships, this entry flips to fully Shipped and moves to the SHIPPED sectio
 
 ## P-105 — 7-day free trial logic
 
-**Filed:** 2026-04-30; **scope clarified 2026-05-03** (post Stripe → LemonSqueezy pivot).
-**Status:** Queued (blocked on P-106 / B-100 — LemonSqueezy account + integration must land first).
+**Filed:** 2026-04-30; **scope clarified 2026-05-03** (post Stripe → LemonSqueezy pivot); **rescoped 2026-05-04** (LemonSqueezy → Paddle per B-100 Path B decision).
+**Status:** Queued (blocked on P-106 / B-100 — Paddle account + integration must land first).
 **Tag:** Active — Launch Critical (60-day target).
 
 **Priority:** High (pre-launch).
 
-7-day free trial gating new-user access to the paid feature set. Implementation uses LemonSqueezy's native trial mechanics (subscription created with `trial_ends_at`; webhook fires on trial expiry transitioning the user to active-paid or lapsed).
+7-day free trial gating new-user access to the paid feature set. Implementation uses Paddle's native trial mechanics (subscription created with `trial_ends_at`; webhook fires on trial expiry transitioning the user to active-paid or lapsed).
 
 Backend scope:
 - New entitlement state on User: `trial_started_at`, `trial_ends_at`, `subscription_status` (trialing | active | lapsed | canceled | none) — alembic migration.
-- Trial-start trigger: first authenticated session post-signup auto-creates a LemonSqueezy subscription in trialing state (no card required for trial entry; card collected at trial-end transition).
+- Trial-start trigger: first authenticated session post-signup auto-creates a Paddle subscription in trialing state (no card required for trial entry; card collected at trial-end transition).
 - Gating decision lives in a single helper `app/services/entitlement.py::has_active_access(user) -> bool`. Callers: recording upload, conversation start, /api/users/me/today.
 - Lapsed-user UX: read-only access to past recordings + diagnostic; new recordings blocked with paywall redirect.
 
-**Depends on:** P-106 (LemonSqueezy integration), B-100 (LemonSqueezy account approval).
+**Depends on:** P-106 (Paddle integration), B-100 (Paddle account approval).
 
 **Owner:** Engineering. Trial copy + paywall wording owned by M-101 / Chadi.
 
 ---
 
-## P-106 — LemonSqueezy integration with subscription + one-time SKU
+## P-106 — Paddle integration with subscription + one-time SKU
 
-**Filed:** 2026-04-30; **rescoped 2026-05-03** (Stripe → LemonSqueezy pivot due to Morocco geographic constraint — Stripe inaccessible to merchants based in Morocco).
-**Status:** Queued (blocked on B-100 — LemonSqueezy account approval).
+**Filed:** 2026-04-30; rescoped 2026-05-03 (Stripe → LemonSqueezy — Morocco constraint); **rescoped 2026-05-04 (LemonSqueezy → Paddle, per B-100 Path B decision).**
+**Status:** Queued (blocked on B-100 — Paddle account approval).
 **Tag:** Active — Launch Critical (60-day target).
 
 **Priority:** High (pre-launch).
 
-Integrate LemonSqueezy API as the payment + subscription provider:
+Integrate Paddle API as the payment + subscription provider:
 - **$29/mo subscription** SKU for the recurring product.
 - **$199 one-time** SKU for the Sprint product (3-week TCF crash-prep cohort).
 - Webhook endpoint(s) for subscription lifecycle events (created, updated, canceled, payment_failed) — drives entitlement state on User rows.
-- Customer portal link for self-serve billing management (LemonSqueezy hosts; we just deep-link).
+- Customer portal link for self-serve billing management (Paddle hosts; we just deep-link).
 - Test-mode + production-mode key separation via env (mirror of existing `ANTHROPIC_API_KEY` / `ASSEMBLYAI_API_KEY` pattern).
 
-**Why LemonSqueezy over Stripe:** Stripe does not onboard merchants based in Morocco. LemonSqueezy operates as a Merchant of Record (handles tax, EU VAT, US sales tax) and accepts Morocco-based founders. Trade-offs: ~5% + $0.50 per transaction vs Stripe's ~2.9% + $0.30 — accepted because the geographic constraint is a hard block, not a preference.
+**Why Paddle (post-LemonSqueezy):** Stripe doesn't onboard Morocco-based merchants. LemonSqueezy attempted (KYC submitted 2026-05-03); approval stalled with no confirmed timeline. Paddle is also MoR (handles tax, EU VAT, US sales tax) and accepts Morocco; selected 2026-05-04 per B-100 Path B for the more transparent / faster approval process. Fee structure ~5% + $0.50 (similar to LemonSqueezy; Stripe-equivalent rates not available given geographic constraint).
 
-**Depends on:** B-100 (LemonSqueezy account approval — Chadi submitted identity verification 2026-05-03, awaiting review).
+**Depends on:** B-100 (Paddle account approval — application pending Chadi 2026-05-04+).
 
 **Out of scope:** geographic price differentiation (the original "dual + geographic pricing" framing) — LemonSqueezy supports purchase-power-parity adjustments natively but Phase 1 ships with a single global $29/mo + $199 Sprint price. Geographic pricing revisits post-launch if conversion data warrants.
 
 ---
 
-## B-100 — Merchant of Record provider selection
+## B-100 — Paddle account setup
 
-**Filed:** 2026-04-30; renamed 2026-05-03 (Stripe → LemonSqueezy pivot — Stripe inaccessible to Morocco-based merchants); **reframed 2026-05-04** (LemonSqueezy approval not landing as expected — pending provider-selection decision).
-**Status:** Pending Chadi decision — Path A (re-apply / push LemonSqueezy approval) vs Path B (switch to alternative MoR).
+**Filed:** 2026-04-30; renamed 2026-05-03 Stripe → LemonSqueezy (Morocco constraint); reframed 2026-05-04 to MoR provider selection (LemonSqueezy approval stalled); **decided 2026-05-04: Path B — Paddle.** Active scope = Paddle account setup + integration prep.
+**Status:** In Progress — Chadi to apply for Paddle merchant account (Path B locked).
 **Tag:** Active — Launch Critical (60-day target).
 
 **Priority:** HIGH (pre-launch — blocks P-106 + P-105).
 
-Pre-launch payment provider for LeMethodic. Constraint: must accept Morocco-based merchants and operate as Merchant of Record (handles tax, EU VAT, US sales tax). Stripe rules out (no Morocco onboarding).
+Set up the Paddle merchant account (MoR — handles tax, EU VAT, US sales tax — accepts Morocco-based founders), configure storefront, provision API keys for backend integration:
 
-**Path A — Push LemonSqueezy approval:**
-- Re-apply / escalate the verification submission from 2026-05-03.
-- Pros: already started; no integration rework if approved.
-- Cons: opaque approval process; no confirmed timeline; may continue to stall.
+- ✗ Paddle merchant account application (Chadi).
+- ✗ Identity verification + KYC submission.
+- ✗ Account approval — pending Paddle review.
+- ✗ Storefront configuration (product naming, branding, terms link to `/terms`).
+- ✗ Two SKUs: $29/mo subscription + $199 one-time Sprint.
+- ✗ Sandbox + production API keys generated and handed to engineering for env injection.
+- ✗ Webhook secret generated for backend signature verification.
 
-**Path B — Switch to alternative MoR:**
-- Candidates: Paddle (also MoR, accepts Morocco), Gumroad (lower-friction onboarding), or Polar (newer MoR).
-- Pros: known faster paths to live storefront for some.
-- Cons: research + re-evaluation of fee structures, webhook shapes, SDK quality.
+**Decision history:** Stripe blocked (no Morocco merchants). LemonSqueezy attempted 2026-05-03; approval stalled with no confirmed timeline. Path B selected 2026-05-04 — Paddle is also MoR, accepts Morocco, has a more transparent / faster approval process per industry signal.
 
-**Decision matrix (Chadi to fill):** approval probability × time-to-approval × fee structure × SDK quality × Morocco-acceptance.
+**Fee structure expectation:** ~5% + $0.50 per transaction (similar to LemonSqueezy; Stripe-equivalent rates not available given the geographic constraint).
 
-**Once selected:** body resumes the original 6-step KYC + storefront + key-provision checklist.
+**Owner:** Chadi (account / KYC / storefront) → handoff to Engineering for API key + webhook configuration once approved.
 
-**Owner:** Chadi (provider selection + account / KYC / storefront) → handoff to Engineering for API key + webhook configuration once approved.
-
-**Unblocks:** P-106 (integration — currently scoped to LemonSqueezy SDK; rescope if Path B), P-105 (trial logic — provider-agnostic in spec, integration-specific in code).
+**Unblocks:** P-106 (integration — rescope to Paddle SDK), P-105 (trial logic — provider-agnostic in spec; integration-specific in code).
 
 ---
 
