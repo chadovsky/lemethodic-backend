@@ -70,6 +70,14 @@ ACTIVE_LC = [
     # Writing Dashboard scope decision:
     "F-224",                  # Build OR hide /writing tab
 
+    # V-series — verification-found refinement (filed 2026-05-05).
+    # V-005 ships first (foundation; V-003/V-004 inherit typography).
+    "V-005",                  # Font system upgrade (Switzer + Fraunces)
+    "V-001",                  # Hero H1 + rotating kicker sizing
+    "V-002",                  # Em-dash strip across FE copy
+    "V-003",                  # Hero atmospheric typographic animation
+    "V-004",                  # Differentiation cards rebuild (Codersera-grade)
+
     # Visual identity at Promova-bench level:
     "F-210",                  # Icon system
     "F-211",                  # Loading states overhaul

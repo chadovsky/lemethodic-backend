@@ -34,20 +34,25 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 12 | **F-220** | Onboarding "intro framing" (Block 3 quiz-pop-up entry moment) |
 | 13 | **F-221** | Exam-selector in onboarding + brand-layer rewrite |
 | 14 | **F-224** | Writing Dashboard build (FE consumer + prompt seed) |
-| 15 | **F-210** | Icon system + custom LeMethodic icons |
-| 16 | **F-211** | Loading states overhaul |
-| 17 | **F-212** | Micro-animations + interaction feedback |
-| 18 | **F-213** | Page transitions + motion design |
-| 19 | **F-214** | Visual depth + design system extension |
-| 20 | **P-234** | Cluster detail view |
-| 21 | **P-105** | 7-day free trial logic |
-| 22 | **P-106** | Paddle integration with subscription + one-time SKU |
-| 23 | **B-100** | Paddle account setup |
-| 24 | **M-103** | YouTube anchor video — French exam prep for English speakers |
-| 25 | **M-104** | Reddit community engagement (broadened subreddit list) |
+| 15 | **V-005** | Font system upgrade |
+| 16 | **V-001** | Hero H1 + rotating kicker sizing |
+| 17 | **V-002** | Em-dash strip across FE copy |
+| 18 | **V-003** | Hero atmospheric typographic animation |
+| 19 | **V-004** | Differentiation cards rebuild (Codersera-grade) |
+| 20 | **F-210** | Icon system + custom LeMethodic icons |
+| 21 | **F-211** | Loading states overhaul |
+| 22 | **F-212** | Micro-animations + interaction feedback |
+| 23 | **F-213** | Page transitions + motion design |
+| 24 | **F-214** | Visual depth + design system extension |
+| 25 | **P-234** | Cluster detail view |
+| 26 | **P-105** | 7-day free trial logic |
+| 27 | **P-106** | Paddle integration with subscription + one-time SKU |
+| 28 | **B-100** | Paddle account setup |
+| 29 | **M-103** | YouTube anchor video — French exam prep for English speakers |
+| 30 | **M-104** | Reddit community engagement (broadened subreddit list) |
 
 ---
-# Active — Launch Critical (25 tickets, before soft beta launches)
+# Active — Launch Critical (30 tickets, before soft beta launches)
 
 ## F-225 — Desktop verification protocol
 
@@ -322,6 +327,121 @@ Build the `/writing` dashboard consuming existing BE endpoints. Decisions to sur
 - Visual identity per locked direction (EMDL + fluentpath.ai + Neuralink).
 
 **Owner:** BE (seed relocation, this round — Awaiting Verification) → FE (dashboard consumer, next round).
+
+---
+
+## V-005 — Font system upgrade
+
+**Status:** Active LC
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Filed:** 2026-05-05
+**Type:** FE foundation
+**Priority:** Ship before V-003 and V-004 (cascades into both)
+
+**Problem:**
+Current pair (Geist sans + Source Serif 4) reads as "safe modern" — common, lacks personality. Not Codersera/Neuralink-tier creative voice.
+
+**Fix:**
+Replace Geist + Source Serif 4 with:
+- **Switzer** (Fontshare, free including commercial use) — replaces Geist for sans/UI/body. 9 weights available. More character than Geist while staying clean.
+- **Fraunces** (Google Fonts via Fontshare, free including commercial use) — replaces Source Serif 4 for display + serif accents. Variable font with opsz, wght, SOFT (terminal softness), WONK (italic expressiveness) axes. Used in real editorial publications.
+
+Affects:
+- next/font configuration
+- Tailwind config (font-family tokens)
+- globals.css (font CSS variables)
+- All references to Geist or Source Serif 4 in components
+
+Fraunces variable axes give expressive range — use opsz appropriately (optical sizing for headlines vs body), explore SOFT axis for editorial warmth where it earns its place.
+
+Sequencing: Ship V-005 first. V-003 and V-004 inherit the new typographic system.
+
+---
+
+## V-001 — Hero H1 + rotating kicker sizing
+
+**Status:** Active LC
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Filed:** 2026-05-05
+**Type:** FE bug fix
+
+**Problem:**
+Hero H1 ("The French speaking exam doesn't reward what you know...") overflows viewport on both desktop and mobile. Rotating kicker (TCF/TEF/DELF/DALF cycle) renders too small to read at distance.
+
+**Fix:**
+- Tighten H1 clamp on small viewports — current ceiling probably 96px, lower to ~72px on mobile, keep desktop max
+- Bump rotating kicker from current size to ~20-24px (was ~14-16px)
+- Verify on 375px mobile and 1440px desktop
+
+---
+
+## V-002 — Em-dash strip across FE copy
+
+**Status:** Active LC
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Filed:** 2026-05-05
+**Type:** FE copy hygiene
+
+**Problem:**
+Em-dashes ("—") overused across landing copy, methodology copy (F-202, F-227), and various surfaces. Reads as AI-authored signature pattern.
+
+**Fix:**
+Audit all FE copy strings for em-dash usage. Replace with:
+- Period (when separating two complete thoughts)
+- Comma (when introducing supporting clause)
+- Semicolon (when joining related independent clauses)
+- Sentence restructure (when none of the above work)
+
+Plan-first should surface replacements per-instance before pushing — judgment call required, not mechanical find-replace.
+
+Affects: components/landing/copy.ts (heavy), components/ecole/intro/EcoleIntro.tsx (heavy), components/onboarding/EcoleReveal.tsx (light), other FE copy files where em-dashes appear.
+
+---
+
+## V-003 — Hero atmospheric typographic animation
+
+**Status:** Active LC
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Filed:** 2026-05-05
+**Type:** FE visual depth
+
+**Problem:**
+Hero is too quiet. F-200 editorial restraint went too far — doesn't read Codersera/Neuralink-tier premium without atmospheric depth.
+
+**Fix:**
+Add SVG-based animated background layer to hero section:
+- Massive French accent marks (é, à, ç, ô, î, ù) at 600-800px scale
+- Very low opacity (4-6% on ed-bg)
+- Slow drift animation (60s+ cycles, multiple marks staggered)
+- Subtle parallax on scroll (transform translateY at scroll-progress * 0.2)
+- One mark per region of hero, never overlapping
+- Respects prefers-reduced-motion (static end-state shown)
+- CSS + SVG only, no video, no JS animation library beyond what F-212 already has
+
+Brand-aligned (French language = accent marks). Editorial (not playful). Premium without video assets.
+
+---
+
+## V-004 — Differentiation cards rebuild (Codersera-grade)
+
+**Status:** Active LC
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Filed:** 2026-05-05
+**Type:** FE visual depth
+
+**Problem:**
+Three current differentiation cards under "Built specifically for the B1 → B2 wall" are identical text-only templates. Reads as quiet/generic. Not Codersera-tier.
+
+**Fix:**
+Rebuild each of the three cards with:
+- Visual variation per card (no identical templates)
+- A typographic callout per card (oversized accent — could be a couche number, a Greek-letter-style mark, a typographic ornament)
+- Headline + body retained
+- A small in-card visual element that reinforces the specific claim (e.g., for "Diagnostic-driven, not curriculum-driven" — a small SVG of the 5-couche stack with one layer illuminated)
+- Hover state that reveals additional detail or shifts the visual element
+- Cards should be visually distinct from each other, not three slots of the same template
+
+Reference: Codersera's "Why Codersera" 6-card grid uses different micro-imagery per card, layered information, hover lifts. Adapt that pattern to LeMethodic's 3-card differentiation context.
 
 ---
 
