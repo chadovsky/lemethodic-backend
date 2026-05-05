@@ -258,7 +258,7 @@ Reduces perceived friction at the threshold; sets expectation for the diagnostic
 ## F-221 — Exam-selector in onboarding + brand-layer rewrite
 
 **Filed:** 2026-05-04.
-**Status:** Queued.
+**Status:** **BE-side Awaiting Verification** (commit `1dda6e9`, alembic `e1f2a3b4c5d6`) — schema + routing + handler + smoke shipped 2026-05-04. Production verification pending deploy + alembic migration run. **FE plan-first prompt drafted 2026-05-04**, awaiting FE-Claude reply on Q1/Q5 (UX placement + visual treatment).
 **Tag:** Active — Launch Critical (60-day target).
 
 **Priority:** HIGH (positioning pivot).
