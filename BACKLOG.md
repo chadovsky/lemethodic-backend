@@ -258,7 +258,7 @@ Reduces perceived friction at the threshold; sets expectation for the diagnostic
 ## F-221 — Exam-selector in onboarding + brand-layer rewrite
 
 **Filed:** 2026-05-04.
-**Status:** **BE-side Awaiting Verification** — v2 commit `39954b2` (alembic `f3a4b5c6d7e8`) realigns to FE-locked 5-slug domain (commit 21a7edc). Supersedes v1 (`1dda6e9`, alembic `e1f2a3b4c5d6`). Production v2 deploy + alembic migration land pending. Behavioral verification (real onboarding submissions exercising each routing branch) pending Chadi's batch verification pass. **FE 21a7edc shipped**, awaiting BE v2 deploy land for E2E exercise.
+**Status:** **BE-side Awaiting Verification** — v2 commit `39954b2` (alembic `f3a4b5c6d7e8`) realigns to FE-locked 5-slug domain (commit 21a7edc). Supersedes v1 (`1dda6e9`, alembic `e1f2a3b4c5d6`). **Production v2 deploy + alembic migration landed 2026-05-05**: `q0_target_exam` required with exact 5-slug enum live; old `target_exam` API field cleanly renamed; `/onboarding/questions` returns 12 questions with q0 leading and q2 carrying `helpers_by_target_exam` (3 variants); q8 copy updated. **FE 21a7edc + BE v2 ready for E2E.** Behavioral verification (real onboarding submissions exercising each routing branch) pending Chadi's batch verification pass.
 **Tag:** Active — Launch Critical (60-day target).
 
 **Priority:** HIGH (positioning pivot).
