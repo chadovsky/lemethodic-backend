@@ -62,18 +62,23 @@ def is_path_active(path_slug: str) -> bool:
     return path_slug in ACTIVE_PATH_SLUGS
 
 
-# F-221 — exam-level routing layer (sits in front of q1/q2 path
-# resolution). The active-exam set covers TCF/TEF/DELF since the
-# B1/B2 format DNA is shared (same b1_to_b2 path serves all three);
-# DALF/FIDE/AP/DCL are Phase 2 content with their own waitlist copy.
-ACTIVE_EXAM_SLUGS = frozenset({"tcf", "tef", "delf"})
+# F-221 v2 — exam-level routing (FE-locked 5-slug domain, commit
+# 21a7edc). All active-exam values map to b1_to_b2 in Phase 1 since
+# the format DNA is shared (TCF/TEF/DELF B1+B2 + the "not_sure"
+# default). 'another_exam' is the single waitlist signal — Phase 2
+# adds slugs back as content lands (DALF C1/C2, FIDE, AP, DCL all
+# bucket under 'another_exam' for now per FE-locked spec).
+ACTIVE_EXAM_SLUGS = frozenset(
+    {"tcf_canada", "tef_canada", "delf_b1_b2", "not_sure"}
+)
 
 
 def is_exam_active(target_exam: Optional[str]) -> bool:
     """True iff the user's target exam has shippable content in Phase 1.
 
-    A None ``target_exam`` is backward-compat (pre-F-221 onboarding flows
-    that didn't carry the field) and is treated as active — resolver
+    A None ``target_exam`` is backward-compat for legacy users whose
+    DB row predates F-221 (the API field is required, so live
+    submissions never produce None). Treated as active — resolver
     falls through to q1/q2-only routing for those users.
     """
     if target_exam is None:

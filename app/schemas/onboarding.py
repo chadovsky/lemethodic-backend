@@ -86,6 +86,11 @@ class OnboardingQuestion(BaseModel):
     helper: I18n
     # None for date_input. Otherwise non-empty.
     options: Optional[List[OnboardingQuestionOption]] = None
+    # F-221 v2 — per-target-exam helper text variants. Populated only
+    # on q2_target_level today (renders dynamic CLB/NCLC framing once
+    # FE knows q0_target_exam). Map shape: {target_exam_slug: I18n}.
+    # None on questions that don't need exam-conditional framing.
+    helpers_by_target_exam: Optional[dict[str, I18n]] = None
 
 
 class OnboardingQuestionsResponse(BaseModel):
@@ -128,17 +133,17 @@ class OnboardingSubmitRequest(BaseModel):
     # ui_language as-is".
     interface_language: Optional[Literal["en", "fr"]] = None
 
-    # F-221 — target exam slug for the brand-layer pivot (TCF prep →
-    # French exam prep across exams). Optional so FE can ship the
-    # exam-selector at its own pace without breaking the contract;
-    # legacy clients omitting the field keep working unchanged.
+    # F-221 v2 — target exam slug. FE-locked 5-slug domain (commit
+    # 21a7edc). Required: every new submission must carry it.
+    # Q-prefix `q0_` matches the FE convention (q0 lands first in
+    # the flow, before q1 current_level). The DB column it writes to
+    # is `users.target_exam` (no q-prefix at storage layer).
     # Phase 1 routing (resolver-side):
-    #   {tcf, tef, delf} → q1/q2-driven path resolution (active)
-    #   {dalf, fide, ap, dcl} → waitlist with reason "exam_not_active"
-    #   None → fall through to q1/q2-only routing (backward compat)
-    target_exam: Optional[
-        Literal["tcf", "tef", "delf", "dalf", "fide", "ap", "dcl"]
-    ] = None
+    #   {tcf_canada, tef_canada, delf_b1_b2, not_sure} → b1_to_b2
+    #   {another_exam} → waitlist with reason "exam_not_active"
+    q0_target_exam: Literal[
+        "tcf_canada", "tef_canada", "delf_b1_b2", "another_exam", "not_sure"
+    ]
 
     @model_validator(mode="after")
     def _exam_date_xor_no_exam(self) -> "OnboardingSubmitRequest":

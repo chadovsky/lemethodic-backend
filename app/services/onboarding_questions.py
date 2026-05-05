@@ -23,8 +23,44 @@ def _opt(value: str, en: str, fr: str) -> OnboardingQuestionOption:
 
 
 def build_questions() -> List[OnboardingQuestion]:
-    """Return the 11 questions in canonical order. Pure (no I/O)."""
+    """Return the 12 questions in canonical order (q0 + q1..q11). Pure
+    (no I/O). F-221 v2 added q0_target_exam at the head of the flow."""
     return [
+        # ── Q0 — Target exam (F-221 v2 — leads the flow) ─────────
+        OnboardingQuestion(
+            id="q0_target_exam",
+            order=0,
+            type="single_select",
+            required=True,
+            heading=I18n(
+                en="Which exam are you preparing for?",
+                fr="Pour quel examen vous préparez-vous ?",
+            ),
+            helper=I18n(
+                en="The TCF, TEF, and DELF B1/B2 exams share the same format DNA — "
+                "we cover all three with the same path. Pick your target exam; "
+                "if you're not sure yet, we default to TCF Canada.",
+                fr="Le TCF, le TEF et le DELF B1/B2 partagent le même ADN de format — "
+                "nous couvrons les trois avec le même parcours. Choisissez votre "
+                "examen cible ; si vous hésitez, nous prenons le TCF Canada par défaut.",
+            ),
+            options=[
+                _opt("tcf_canada",
+                     "TCF Canada — for permanent residency or citizenship",
+                     "TCF Canada — pour la résidence permanente ou la citoyenneté"),
+                _opt("tef_canada",
+                     "TEF Canada — for permanent residency",
+                     "TEF Canada — pour la résidence permanente"),
+                _opt("delf_b1_b2",
+                     "DELF B1/B2 — for academic or general certification",
+                     "DELF B1/B2 — pour une certification académique ou générale"),
+                _opt("another_exam",
+                     "Another exam (DALF, FIDE, AP, DCL, …)",
+                     "Un autre examen (DALF, FIDE, AP, DCL, …)"),
+                _opt("not_sure", "Not sure yet", "Je ne sais pas encore"),
+            ],
+        ),
+
         # ── Q1 — Current French level ────────────────────────────
         OnboardingQuestion(
             id="q1_current_level",
@@ -75,6 +111,25 @@ def build_questions() -> List[OnboardingQuestion]:
                 fr="Pour la plupart des demandes d'immigration et d'admission, B2 est "
                 "le seuil. Choisissez le niveau requis par votre objectif.",
             ),
+            # F-221 v2 — per-exam helper variants. FE selects based on
+            # q0_target_exam value at render time. DELF B1/B2 omitted —
+            # CEFR is the native framework so the base helper above is
+            # already correct; FE renders no override for that exam.
+            # 'not_sure' falls back to TCF Canada's framing (PR default).
+            helpers_by_target_exam={
+                "tcf_canada": I18n(
+                    en="≈ CLB 7-8 for Canadian PR.",
+                    fr="≈ NCLC 7-8 pour la RP au Canada.",
+                ),
+                "tef_canada": I18n(
+                    en="≈ NCLC 7-8 for Canadian PR.",
+                    fr="≈ NCLC 7-8 pour la RP au Canada.",
+                ),
+                "not_sure": I18n(
+                    en="≈ CLB 7-8 for Canadian PR (default — TCF Canada framing).",
+                    fr="≈ NCLC 7-8 pour la RP au Canada (par défaut — cadre TCF Canada).",
+                ),
+            },
             options=[
                 _opt("b1",
                      "B1 — Required for some work permits and basic certifications",
@@ -271,8 +326,8 @@ def build_questions() -> List[OnboardingQuestion]:
             required=False,
             skip_condition={"skip_when": "q3_no_exam_scheduled"},
             heading=I18n(
-                en="Which topics does your exam cover?",
-                fr="Quels sujets votre examen couvre-t-il ?",
+                en="Which topics do you want to focus on?",
+                fr="Sur quels sujets voulez-vous vous concentrer ?",
             ),
             helper=I18n(
                 en="Most exams test these eight standard themes. Pick all that apply, "

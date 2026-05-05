@@ -196,6 +196,7 @@ def step_2_check_rejections() -> None:
 def step_3_pydantic() -> None:
     print("\nStep 3: Pydantic OnboardingSubmitRequest validators")
     valid = {
+        "q0_target_exam": "tcf_canada",   # F-221 v2 — required
         "q1_current_level": "b1",
         "q2_target_level": "b2",
         "q3_exam_date": (date.today() + timedelta(days=60)).isoformat(),
@@ -271,13 +272,14 @@ def step_4_routing() -> None:
     check("b1_to_b2 is active", is_path_active("b1_to_b2"))
     check("a2_to_b1 NOT active", not is_path_active("a2_to_b1"))
 
-    # F-221 — is_exam_active coverage
+    # F-221 v2 — is_exam_active on FE-locked 5-slug domain
     from app.services.onboarding_router import is_exam_active
-    for active in ("tcf", "tef", "delf"):
+    for active in ("tcf_canada", "tef_canada", "delf_b1_b2", "not_sure"):
         check(f"is_exam_active('{active}') True", is_exam_active(active))
-    for waitlist in ("dalf", "fide", "ap", "dcl"):
-        check(f"is_exam_active('{waitlist}') False", not is_exam_active(waitlist))
-    check("is_exam_active(None) True (backward-compat)", is_exam_active(None))
+    check("is_exam_active('another_exam') False (the only waitlist signal)",
+          not is_exam_active("another_exam"))
+    check("is_exam_active(None) True (legacy-row backward-compat)",
+          is_exam_active(None))
 
     # derive_persona buckets
     today = date.today()
@@ -323,12 +325,30 @@ def step_5_endpoints() -> None:
     r = client.get("/onboarding/questions")
     check("GET /onboarding/questions 200", r.status_code == 200, str(r.status_code))
     body = r.json()
-    check("returns 11 questions", len(body["questions"]) == 11,
+    # F-221 v2 — q0_target_exam added at head of flow, total = 12
+    check("returns 12 questions", len(body["questions"]) == 12,
           str(len(body["questions"])))
-    q1 = body["questions"][0]
-    check("q1 slug correct", q1["id"] == "q1_current_level", q1["id"])
-    check("q1 has FR + EN heading",
-          "fr" in q1["heading"] and "en" in q1["heading"])
+    q0 = body["questions"][0]
+    check("q0 slug correct (q0_target_exam leads)",
+          q0["id"] == "q0_target_exam", q0["id"])
+    check("q0 has FR + EN heading",
+          "fr" in q0["heading"] and "en" in q0["heading"])
+    q1 = body["questions"][1]
+    check("q1 slug correct (q1_current_level)",
+          q1["id"] == "q1_current_level", q1["id"])
+    # F-221 v2 — q2 carries helpers_by_target_exam map for FE rendering
+    q2 = body["questions"][2]
+    check("q2 slug = q2_target_level", q2["id"] == "q2_target_level")
+    check("q2 helpers_by_target_exam present (3 variants)",
+          isinstance(q2.get("helpers_by_target_exam"), dict)
+          and {"tcf_canada", "tef_canada", "not_sure"}.issubset(
+              set((q2.get("helpers_by_target_exam") or {}).keys())),
+          str(list((q2.get("helpers_by_target_exam") or {}).keys())))
+    # q8 prompt copy updated to "Which topics do you want to focus on?"
+    q8 = next(q for q in body["questions"] if q["id"] == "q8_topics_tested_on")
+    check("q8 prompt copy updated (focus on)",
+          "focus" in q8["heading"]["en"].lower(),
+          q8["heading"]["en"])
 
     # Mint a JWT for a test user. The "sub" claim is the user's email
     # (see app/services/auth.py:get_current_user line 49).
@@ -342,6 +362,7 @@ def step_5_endpoints() -> None:
 
     # POST /onboarding/submit — valid payload, b1_to_b2 active path
     payload_b1b2 = {
+        "q0_target_exam": "tcf_canada",   # F-221 v2 — required
         "q1_current_level": "b1",
         "q2_target_level": "b2",
         "q3_exam_date": (date.today() + timedelta(days=60)).isoformat(),
@@ -393,17 +414,22 @@ def step_5_endpoints() -> None:
               enrollment.persona)
     db.close()
 
-    # POST /onboarding/submit — waitlist (B2 -> C1 path, not active)
-    payload_waitlist = dict(payload_b1b2,
-                            q1_current_level="b2", q2_target_level="c1")
-    r = client.post("/onboarding/submit", json=payload_waitlist, headers=auth_headers)
-    check("waitlist POST 200", r.status_code == 200, str(r.status_code))
+    # F-221 v2 — path_not_active branch is now effectively unreachable
+    # for active exams (all four active-exam slugs route to b1_to_b2
+    # regardless of q1/q2). Replaced previous "B2 -> C1 path waitlist"
+    # case with the active-exam-overrides-q1/q2 verification: TCF Canada
+    # user with q1=b2/q2=c1 still enrolls in b1_to_b2 (diagnostic +
+    # P-201 handles level placement honestly).
+    payload_active_override = dict(payload_b1b2,
+                                   q1_current_level="b2", q2_target_level="c1")
+    r = client.post("/onboarding/submit", json=payload_active_override,
+                    headers=auth_headers)
+    check("F-221 v2 active exam + b2/c1 -> 200", r.status_code == 200,
+          str(r.status_code))
     body = r.json()
-    check("waitlist=true", body["waitlist"] is True)
-    check("waitlist path_slug=null", body["path_slug"] is None)
-    check("waitlist persona=null", body["persona"] is None)
-    check("waitlist_reason=path_not_active",
-          body.get("waitlist_reason") == "path_not_active")
+    check("F-221 v2 active exam routes to b1_to_b2 even on b2/c1",
+          body["waitlist"] is False and body["path_slug"] == "b1_to_b2",
+          f"waitlist={body['waitlist']} path={body.get('path_slug')}")
 
     # POST /onboarding/submit — capacity warning (3-week exam + low hours)
     payload_warn = dict(payload_b1b2,
@@ -451,73 +477,91 @@ def step_5_endpoints() -> None:
     check("interface_language=es returns 422", r.status_code == 422,
           str(r.status_code))
 
-    # F-221 — target_exam routing
-    # Active exam (tef) + active path (b1_to_b2) -> enroll, target_exam stored
-    payload_tef = dict(payload_b1b2, target_exam="tef")
+    # F-221 v2 — q0_target_exam routing
+    # Active exam (tef_canada) + b1_to_b2 -> enroll, target_exam stored
+    payload_tef = dict(payload_b1b2, q0_target_exam="tef_canada")
     r = client.post("/onboarding/submit", json=payload_tef, headers=auth_headers)
-    check("F-221 tef + b1_to_b2 -> 200", r.status_code == 200,
+    check("F-221 v2 tef_canada -> 200", r.status_code == 200,
           f"{r.status_code} {r.text[:200]}")
     body = r.json()
-    check("F-221 tef + b1_to_b2 -> enrolled (waitlist=false)",
+    check("F-221 v2 tef_canada -> enrolled (waitlist=false)",
           body["waitlist"] is False)
-    check("F-221 tef + b1_to_b2 -> path_slug=b1_to_b2",
+    check("F-221 v2 tef_canada -> path_slug=b1_to_b2",
           body["path_slug"] == "b1_to_b2")
     db = SessionLocal()
     u = db.query(User).filter_by(id=user_id).first()
-    check("F-221 User.target_exam persisted = tef", u.target_exam == "tef",
-          str(u.target_exam))
+    check("F-221 v2 User.target_exam persisted = tef_canada",
+          u.target_exam == "tef_canada", str(u.target_exam))
     en = (
         db.query(UserPathEnrollment)
         .filter(UserPathEnrollment.user_id == user_id,
                 UserPathEnrollment.is_active.is_(True))
         .first()
     )
-    check("F-221 UserPathEnrollment.target_exam = tef",
-          en.target_exam == "tef" if en else False, str(en.target_exam if en else None))
+    check("F-221 v2 UserPathEnrollment.target_exam = tef_canada",
+          en.target_exam == "tef_canada" if en else False,
+          str(en.target_exam if en else None))
     db.close()
 
-    # Inactive exam (dalf) -> waitlist with reason exam_not_active, even
-    # though q1/q2 imply b1_to_b2 (DALF is Phase 2 content).
-    payload_dalf = dict(payload_b1b2, target_exam="dalf")
-    r = client.post("/onboarding/submit", json=payload_dalf, headers=auth_headers)
-    check("F-221 dalf -> 200", r.status_code == 200, str(r.status_code))
+    # delf_b1_b2 active path
+    payload_delf = dict(payload_b1b2, q0_target_exam="delf_b1_b2")
+    r = client.post("/onboarding/submit", json=payload_delf, headers=auth_headers)
+    check("F-221 v2 delf_b1_b2 -> 200", r.status_code == 200, str(r.status_code))
     body = r.json()
-    check("F-221 dalf -> waitlist=true", body["waitlist"] is True)
-    check("F-221 dalf -> waitlist_reason=exam_not_active",
+    check("F-221 v2 delf_b1_b2 -> enrolled", body["waitlist"] is False)
+    check("F-221 v2 delf_b1_b2 -> path_slug=b1_to_b2",
+          body["path_slug"] == "b1_to_b2")
+
+    # not_sure defaults to TCF Canada path (b1_to_b2)
+    payload_unsure = dict(payload_b1b2, q0_target_exam="not_sure")
+    r = client.post("/onboarding/submit", json=payload_unsure, headers=auth_headers)
+    check("F-221 v2 not_sure -> 200", r.status_code == 200, str(r.status_code))
+    body = r.json()
+    check("F-221 v2 not_sure -> enrolled (TCF Canada default)",
+          body["waitlist"] is False)
+    check("F-221 v2 not_sure -> path_slug=b1_to_b2",
+          body["path_slug"] == "b1_to_b2")
+
+    # another_exam -> waitlist with exam_not_active reason. q1/q2 imply
+    # b1_to_b2, so b1_to_b2 fallback is offered.
+    payload_another = dict(payload_b1b2, q0_target_exam="another_exam")
+    r = client.post("/onboarding/submit", json=payload_another, headers=auth_headers)
+    check("F-221 v2 another_exam -> 200", r.status_code == 200, str(r.status_code))
+    body = r.json()
+    check("F-221 v2 another_exam -> waitlist=true", body["waitlist"] is True)
+    check("F-221 v2 another_exam -> waitlist_reason=exam_not_active",
           body.get("waitlist_reason") == "exam_not_active",
           body.get("waitlist_reason"))
-    check("F-221 dalf -> fallback_path_offered=b1_to_b2 (q1/q2 imply b1_to_b2)",
+    check("F-221 v2 another_exam -> fallback_path_offered=b1_to_b2",
           body.get("fallback_path_offered") == "b1_to_b2",
           body.get("fallback_path_offered"))
 
-    # FIDE + non-b1_to_b2 q1/q2 -> waitlist, no fallback offered
-    payload_fide = dict(payload_b1b2, target_exam="fide",
-                       q1_current_level="c1", q2_target_level="c2")
-    r = client.post("/onboarding/submit", json=payload_fide, headers=auth_headers)
-    check("F-221 fide + c1/c2 -> 200", r.status_code == 200, str(r.status_code))
+    # another_exam + c1/c2 -> waitlist, no fallback offered (q1/q2 don't
+    # imply b1_to_b2 — should_offer_b1_to_b2_fallback returns False).
+    payload_another_c1c2 = dict(payload_b1b2, q0_target_exam="another_exam",
+                                q1_current_level="c1", q2_target_level="c2")
+    r = client.post("/onboarding/submit", json=payload_another_c1c2,
+                    headers=auth_headers)
+    check("F-221 v2 another_exam + c1/c2 -> 200", r.status_code == 200,
+          str(r.status_code))
     body = r.json()
-    check("F-221 fide -> waitlist=true", body["waitlist"] is True)
-    check("F-221 fide -> waitlist_reason=exam_not_active",
-          body.get("waitlist_reason") == "exam_not_active")
-    check("F-221 fide + c1/c2 -> no fallback offered",
+    check("F-221 v2 another_exam + c1/c2 -> no fallback offered",
           body.get("fallback_path_offered") is None,
           body.get("fallback_path_offered"))
 
-    # Backward-compat: target_exam absent -> fall through to q1/q2 routing
-    payload_no_exam_field = dict(payload_b1b2)  # no target_exam key
+    # Required field: omitting q0_target_exam returns 422 (post-v2 contract)
+    payload_no_exam_field = {k: v for k, v in payload_b1b2.items()
+                              if k != "q0_target_exam"}
     r = client.post("/onboarding/submit", json=payload_no_exam_field,
                     headers=auth_headers)
-    check("F-221 absent target_exam still routes (backward-compat)",
-          r.status_code == 200, str(r.status_code))
-    body = r.json()
-    check("F-221 absent target_exam -> not waitlisted",
-          body["waitlist"] is False)
+    check("F-221 v2 missing q0_target_exam -> 422 (required)",
+          r.status_code == 422, str(r.status_code))
 
-    # Invalid target_exam -> 422
-    payload_bad_exam = dict(payload_b1b2, target_exam="toefl")
+    # Invalid q0_target_exam slug -> 422
+    payload_bad_exam = dict(payload_b1b2, q0_target_exam="tcf")  # old v1 slug
     r = client.post("/onboarding/submit", json=payload_bad_exam, headers=auth_headers)
-    check("F-221 invalid target_exam returns 422", r.status_code == 422,
-          str(r.status_code))
+    check("F-221 v2 invalid q0_target_exam slug returns 422",
+          r.status_code == 422, str(r.status_code))
 
     # Old endpoint still works + emits deprecation header
     legacy_payload = {
