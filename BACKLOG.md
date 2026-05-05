@@ -14,7 +14,7 @@ constants there and regenerate.
 
 ---
 
-## Active Queue — Launch Critical (60-day target)
+## Active Queue — Launch Critical (before soft beta launches)
 
 In stated priority order. Full ticket bodies live below in the "Active — Launch Critical" section.
 
@@ -33,7 +33,7 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 11 | **F-206** | Auxiliary pages desktop (privacy/terms/refund/waitlist/signup) |
 | 12 | **F-220** | Onboarding "intro framing" (Block 3 quiz-pop-up entry moment) |
 | 13 | **F-221** | Exam-selector in onboarding + brand-layer rewrite |
-| 14 | **F-224** | Writing Dashboard build (BE schema + endpoints first, then FE surface) |
+| 14 | **F-224** | Writing Dashboard build (FE consumer + prompt seed) |
 | 15 | **F-210** | Icon system + custom LeMethodic icons |
 | 16 | **F-211** | Loading states overhaul |
 | 17 | **F-212** | Micro-animations + interaction feedback |
@@ -47,13 +47,13 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 25 | **M-104** | Reddit community engagement (broadened subreddit list) |
 
 ---
-# Active — Launch Critical (25 tickets, 60-day target)
+# Active — Launch Critical (25 tickets, before soft beta launches)
 
 ## F-225 — Desktop verification protocol
 
 **Filed:** 2026-05-04.
 **Status:** Awaiting Verification (FE-side process gate landed 2026-05-04; protocol now enforced — first FE PRs going forward will exercise the 1440px + 375px screenshot requirement). Pattern (a) per Chadi 2026-05-04: the gate governs the **Awaiting Verification → Shipped** transition, not the push.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** HIGH (process — gates all FE PRs).
 
@@ -74,7 +74,7 @@ No more shipping mobile-only as "ready."
 
 **Filed:** 2026-05-04.
 **Status:** Awaiting Verification (FE-side fix delivered 2026-05-04; 1440px + 375px screenshots + interactive trace pending per F-225).
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** Medium.
 
@@ -88,7 +88,7 @@ Sign Out flow has a bug — investigate + fix. Specifics TBD on triage; likely c
 
 **Filed:** 2026-05-04.
 **Status:** Split — **FE-side Awaiting Verification** (delete in `lemethodic-frontend` landed 2026-05-04). **BE-side blocked** on DO App Platform Insights pull for `GET /` + `GET /admin` + `GET /writing` over 30d — if zero real-user traffic, BE proceeds with delete-PR (Path 2: remove `app/templates/index.html` + `admin.html` + `writing.html` + `@app.get` handlers in main.py + orphan imports). Cron 690444ce + phone reminder set for 24h follow-up if logs haven't been pasted by 02:33 local 2026-05-05.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** Medium (consistency).
 
@@ -104,7 +104,7 @@ Sign Out flow has a bug — investigate + fix. Specifics TBD on triage; likely c
 
 **Filed:** 2026-05-04 (BACKLOG restructure — soft-beta definition lock).
 **Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** HIGH (soft-beta requires platform fully responsive).
 
@@ -119,7 +119,7 @@ Landing page (`/`) currently mobile-only with white rails on desktop. Build the 
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** HIGH.
 
@@ -134,7 +134,7 @@ Landing page (`/`) currently mobile-only with white rails on desktop. Build the 
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** HIGH (soft-beta requires methodology visible in-product).
 
@@ -155,7 +155,7 @@ Required:
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** HIGH.
 
@@ -170,7 +170,7 @@ P-230 v1 shipped 2026-05-03 (FE 3-commit set 28bf765) with the structural skelet
 
 **Filed:** 2026-05-04 (split from P-230 v1 ship — depth deemed insufficient for soft-beta).
 **Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** HIGH.
 
@@ -193,7 +193,7 @@ Pairs with **F-203** (desktop responsive layout for the same surface — differe
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** Medium-high.
 
@@ -208,7 +208,7 @@ Cluster detail page consumes the BE endpoints shipped in P-234. FE consumer is i
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** HIGH (Tâche surfaces are the core practice flow).
 
@@ -223,7 +223,7 @@ Cluster detail page consumes the BE endpoints shipped in P-234. FE consumer is i
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** Medium.
 
@@ -243,7 +243,7 @@ Reading-width constraint on policy pages; centered cards on auth pages.
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** HIGH.
 
@@ -259,7 +259,7 @@ Reduces perceived friction at the threshold; sets expectation for the diagnostic
 
 **Filed:** 2026-05-04.
 **Status:** **BE-side Awaiting Verification** — v2 commit `39954b2` (alembic `f3a4b5c6d7e8`) realigns to FE-locked 5-slug domain (commit 21a7edc). Supersedes v1 (`1dda6e9`, alembic `e1f2a3b4c5d6`). **Production v2 deploy + alembic migration landed 2026-05-05**: `q0_target_exam` required with exact 5-slug enum live; old `target_exam` API field cleanly renamed; `/onboarding/questions` returns 12 questions with q0 leading and q2 carrying `helpers_by_target_exam` (3 variants); q8 copy updated. **FE 21a7edc + BE v2 ready for E2E.** Behavioral verification (real onboarding submissions exercising each routing branch) pending Chadi's batch verification pass.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** HIGH (positioning pivot).
 
@@ -285,7 +285,7 @@ Marketing layer: TCF/TEF stays as primary entry persona (visa urgency); "all exa
 
 **Filed:** 2026-05-04.
 **Status:** **BE-side Awaiting Verification** (commit `3ac274c`) — discovery 2026-05-04: BE writing infrastructure already shipped pre-rebrand. Seed script relocated + content-cleaned 2026-05-04. Production seed run pending Chadi (`python -m scripts.seed_writing_prompts` against prod DB). FE consumer scope is the next leg — drafted as next FE prompt after F-221 reply resolves.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** Medium.
 
@@ -329,7 +329,7 @@ Build the `/writing` dashboard consuming existing BE endpoints. Decisions to sur
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** Medium-high (visual identity).
 
@@ -347,7 +347,7 @@ Custom icon set replacing generics:
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** Medium-high.
 
@@ -364,7 +364,7 @@ Today many flows have silent waits or spinners with no context. Replace with:
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** Medium-high.
 
@@ -381,7 +381,7 @@ Today many flows have silent waits or spinners with no context. Replace with:
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** Medium.
 
@@ -398,7 +398,7 @@ Today many flows have silent waits or spinners with no context. Replace with:
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** Medium.
 
@@ -415,7 +415,7 @@ Today many flows have silent waits or spinners with no context. Replace with:
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** BE shipped 2026-05-03 (commit `7f54b88`); **FE consumer in progress.** Stays in active queue until FE ships their side.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Source:** FE BACKLOG (lemethodic-frontend) pre-2026-05-02 reconciliation. Curriculum doc §10.4 / §7.8.
 
@@ -462,7 +462,7 @@ When FE ships, this entry flips to fully Shipped and moves to the SHIPPED sectio
 
 **Filed:** 2026-04-30; **scope clarified 2026-05-03** (post Stripe → LemonSqueezy pivot); **rescoped 2026-05-04** (LemonSqueezy → Paddle per B-100 Path B decision).
 **Status:** Queued (blocked on P-106 / B-100 — Paddle account + integration must land first).
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** High (pre-launch).
 
@@ -484,7 +484,7 @@ Backend scope:
 
 **Filed:** 2026-04-30; rescoped 2026-05-03 (Stripe → LemonSqueezy — Morocco constraint); **rescoped 2026-05-04 (LemonSqueezy → Paddle, per B-100 Path B decision).**
 **Status:** Queued (blocked on B-100 — Paddle account approval).
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** High (pre-launch).
 
@@ -507,7 +507,7 @@ Integrate Paddle API as the payment + subscription provider:
 
 **Filed:** 2026-04-30; renamed 2026-05-03 Stripe → LemonSqueezy (Morocco constraint); reframed 2026-05-04 to MoR provider selection (LemonSqueezy approval stalled); **decided 2026-05-04: Path B — Paddle.** Active scope = Paddle account setup + integration prep.
 **Status:** In Progress — Chadi to apply for Paddle merchant account (Path B locked).
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** HIGH (pre-launch — blocks P-106 + P-105).
 
@@ -535,7 +535,7 @@ Set up the Paddle merchant account (MoR — handles tax, EU VAT, US sales tax �
 
 **Filed:** 2026-04-30; scope-reduced 2026-05-02; **rescoped 2026-05-04** (TCF-only → all-exams positioning to match brand-layer pivot).
 **Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** Medium (pre-launch credibility artifact, not a sustained channel commitment).
 
@@ -551,7 +551,7 @@ Set up the Paddle merchant account (MoR — handles tax, EU VAT, US sales tax �
 
 **Filed:** 2026-04-30; **rescoped 2026-05-04** (broader subreddit roster to match all-exams brand pivot).
 **Status:** Queued.
-**Tag:** Active — Launch Critical (60-day target).
+**Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** Medium.
 

@@ -158,7 +158,7 @@ CLOSED = ["M-105"]
 
 # Tag value injected as **Tag:** line per ticket body.
 TAG_TEXT = {
-    "active_lc":  "Active — Launch Critical (60-day target)",
+    "active_lc":  "Active — Launch Critical (before soft beta launches)",
     "p1":         "Post-launch P1 (2-4 weeks after launch)",
     "p2":         "Post-launch P2 — signal-driven (defer until real signal)",
     "deferred":   "Phase 2 / deferred indefinitely",
@@ -168,7 +168,7 @@ TAG_TEXT = {
 
 # Section ordering in the regenerated file.
 SECTIONS = [
-    ("active_lc",  f"Active — Launch Critical ({len(ACTIVE_LC)} tickets, 60-day target)",  ACTIVE_LC),
+    ("active_lc",  f"Active — Launch Critical ({len(ACTIVE_LC)} tickets, before soft beta launches)",  ACTIVE_LC),
     ("p1",         "Post-launch P1 (2-4 weeks after launch)",                              POST_LAUNCH_P1),
     ("p2",         "Post-launch P2 — signal-driven",                                       POST_LAUNCH_P2),
     ("deferred",   "Phase 2 / deferred indefinitely",                                      DEFERRED),
@@ -277,7 +277,7 @@ def title_of(body: str) -> str:
 
 def build_active_queue(bodies: dict[str, str]) -> str:
     out: list[str] = []
-    out.append("## Active Queue — Launch Critical (60-day target)")
+    out.append("## Active Queue — Launch Critical (before soft beta launches)")
     out.append("")
     out.append("In stated priority order. Full ticket bodies live below in the "
                '"Active — Launch Critical" section.')
