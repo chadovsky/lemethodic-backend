@@ -128,6 +128,18 @@ class OnboardingSubmitRequest(BaseModel):
     # ui_language as-is".
     interface_language: Optional[Literal["en", "fr"]] = None
 
+    # F-221 — target exam slug for the brand-layer pivot (TCF prep →
+    # French exam prep across exams). Optional so FE can ship the
+    # exam-selector at its own pace without breaking the contract;
+    # legacy clients omitting the field keep working unchanged.
+    # Phase 1 routing (resolver-side):
+    #   {tcf, tef, delf} → q1/q2-driven path resolution (active)
+    #   {dalf, fide, ap, dcl} → waitlist with reason "exam_not_active"
+    #   None → fall through to q1/q2-only routing (backward compat)
+    target_exam: Optional[
+        Literal["tcf", "tef", "delf", "dalf", "fide", "ap", "dcl"]
+    ] = None
+
     @model_validator(mode="after")
     def _exam_date_xor_no_exam(self) -> "OnboardingSubmitRequest":
         if not self.q3_no_exam_scheduled and self.q3_exam_date is None:

@@ -33,6 +33,7 @@ from app.services.onboarding_questions import build_questions
 from app.services.onboarding_router import (
     derive_capacity_warning,
     derive_persona,
+    is_exam_active,
     is_path_active,
     resolve_path_slug,
     should_offer_b1_to_b2_fallback,
@@ -82,12 +83,44 @@ def submit_onboarding(
     if payload.interface_language is not None:
         user.ui_language = payload.interface_language
 
+    # F-221 — target_exam captured on User. Optional in the request;
+    # write-through only when present so legacy clients that omit it
+    # don't clobber an existing value.
+    if payload.target_exam is not None:
+        user.target_exam = payload.target_exam
+
     # Q4-Q10 are stored but not yet routed-on. P-220.x picks up routing.
     # TODO P-220.x: motivation -> theme priority weighting
     # TODO P-220.x: strongest/weakest skill -> diagnostic emphasis
     # TODO P-220.x: weakest_skill + topics_tested_on -> cluster prioritization
     # TODO P-220.x: native_language -> detector calibration (Phase 2)
     # TODO P-220.x: prior_french_exam -> credibility-of-self-assessment
+
+    # ── F-221 — exam-level waitlist branch (sits in front of path resolution) ──
+    # DALF/FIDE/AP/DCL users go to waitlist regardless of q1/q2 since
+    # those exams are Phase 2 content. The b1_to_b2 fallback offer is
+    # still computed when q1/q2 imply b1_to_b2 — gives DALF C1/C2 users
+    # a "preview the b1_to_b2 path while you wait" path forward, and
+    # FIDE/AP/DCL users a clean opt-out (no q1/q2 → no fallback).
+    if not is_exam_active(payload.target_exam):
+        db.flush()
+        db.commit()
+        fallback = (
+            "b1_to_b2"
+            if should_offer_b1_to_b2_fallback(
+                payload.q1_current_level, payload.q2_target_level
+            )
+            else None
+        )
+        return OnboardingSubmitResponse(
+            path_slug=None,
+            persona=None,
+            redirect_to_diagnostic=False,
+            waitlist=True,
+            waitlist_reason="exam_not_active",
+            fallback_path_offered=fallback,
+            user_path_enrollment_id=None,
+        )
 
     # ── Resolve path slug + persona ─────────────────────────────
     path_slug = resolve_path_slug(payload.q1_current_level, payload.q2_target_level)
@@ -156,11 +189,19 @@ def submit_onboarding(
             enrolled_at_confidence=None,   # P-221 fills after diagnostic
             is_active=True,
             persona=persona,
+            # F-221 — snapshot target_exam at enrollment time. Mirrors
+            # the persona pattern: per-enrollment, not back-mutated when
+            # the user's User.target_exam later changes.
+            target_exam=payload.target_exam,
         )
         db.add(enrollment)
     else:
         enrollment.is_active = True
         enrollment.persona = persona
+        # Re-snapshot target_exam on re-onboarding (user may have
+        # switched exams between enrollments). Same write-through
+        # discipline as persona above.
+        enrollment.target_exam = payload.target_exam
 
     db.commit()
     db.refresh(enrollment)

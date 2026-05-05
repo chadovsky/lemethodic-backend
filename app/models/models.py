@@ -53,6 +53,13 @@ class User(Base):
     prior_french_exam = Column(String(20), nullable=True)
     feedback_mode_preference = Column(String(10), nullable=True)
 
+    # F-221 — target exam for the brand-layer pivot (TCF prep → French
+    # exam prep across exams). CHECK constraint mirrored in Alembic
+    # migration e1f2a3b4c5d6. Nullable for backward-compat with users
+    # who completed onboarding pre-F-221; resolver treats NULL as
+    # exam-unspecified and falls through to q1/q2-only routing.
+    target_exam = Column(String(10), nullable=True)
+
     __table_args__ = (
         CheckConstraint(
             "strongest_skill IS NULL "
@@ -92,6 +99,12 @@ class User(Base):
             """"loisirs_voyages","sante","environnement","culture_medias"]'::jsonb""" \
             ")",
             name="ck_users_topics_tested_on",
+        ),
+        # F-221 — mirror of Alembic migration e1f2a3b4c5d6.
+        CheckConstraint(
+            "target_exam IS NULL "
+            "OR target_exam IN ('tcf', 'tef', 'delf', 'dalf', 'fide', 'ap', 'dcl')",
+            name="ck_users_target_exam",
         ),
     )
 
@@ -726,6 +739,14 @@ class UserPathEnrollment(Base):
     # re-derived persona; previous enrollment retains the original.
     persona = Column(String(20), nullable=True)
 
+    # F-221 — target exam at enrollment time. Snapshot of User.target_exam
+    # captured when the enrollment was created. Per-enrollment so a user
+    # who switches exams later gets a fresh row with the new target_exam;
+    # the previous enrollment retains its original (mirrors persona's
+    # per-enrollment lifecycle). CHECK constraint mirrored in Alembic
+    # migration e1f2a3b4c5d6.
+    target_exam = Column(String(10), nullable=True)
+
     __table_args__ = (
         UniqueConstraint("user_id", "path_id", name="uq_enrollment_user_path"),
         # Partial unique index — at most one ACTIVE enrollment per user.
@@ -741,6 +762,11 @@ class UserPathEnrollment(Base):
             "persona IS NULL "
             "OR persona IN ('foundation', 'acceleration', 'cram')",
             name="ck_user_path_enrollments_persona",
+        ),
+        CheckConstraint(
+            "target_exam IS NULL "
+            "OR target_exam IN ('tcf', 'tef', 'delf', 'dalf', 'fide', 'ap', 'dcl')",
+            name="ck_user_path_enrollments_target_exam",
         ),
     )
 

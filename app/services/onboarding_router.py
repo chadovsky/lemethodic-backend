@@ -62,6 +62,25 @@ def is_path_active(path_slug: str) -> bool:
     return path_slug in ACTIVE_PATH_SLUGS
 
 
+# F-221 — exam-level routing layer (sits in front of q1/q2 path
+# resolution). The active-exam set covers TCF/TEF/DELF since the
+# B1/B2 format DNA is shared (same b1_to_b2 path serves all three);
+# DALF/FIDE/AP/DCL are Phase 2 content with their own waitlist copy.
+ACTIVE_EXAM_SLUGS = frozenset({"tcf", "tef", "delf"})
+
+
+def is_exam_active(target_exam: Optional[str]) -> bool:
+    """True iff the user's target exam has shippable content in Phase 1.
+
+    A None ``target_exam`` is backward-compat (pre-F-221 onboarding flows
+    that didn't carry the field) and is treated as active — resolver
+    falls through to q1/q2-only routing for those users.
+    """
+    if target_exam is None:
+        return True
+    return target_exam in ACTIVE_EXAM_SLUGS
+
+
 def should_offer_b1_to_b2_fallback(current_level: str, target_level: str) -> bool:
     """Waitlist screen offers b1_to_b2 fallback only when it's pedagogically
     plausible — start_level is B1 OR target_level is B2 (per copy doc)."""
