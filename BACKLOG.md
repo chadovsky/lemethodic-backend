@@ -1793,7 +1793,7 @@ Cleanup of the F-110.1 dual-emission window. Once `fluentpath-frontend/lib/api.t
 ## F-224 — Writing Dashboard build (FE consumer + prompt seed)
 
 **Filed:** 2026-05-04.
-**Status:** **BE-side Awaiting Verification** (commit `3ac274c`) — discovery 2026-05-04: BE writing infrastructure already shipped pre-rebrand. Seed script relocated + content-cleaned 2026-05-04. Production seed run pending Chadi (`python -m scripts.seed_writing_prompts` against prod DB). FE consumer scope is the next leg — drafted as next FE prompt after F-221 reply resolves.
+**Status:** **Shipped 2026-05-06** — v1 pack landed end-to-end with **real Claude-based 4-layer analysis** (not placeholder). BE schema migration `f4d5e6c7b8a9` (commit `ae785a4`) added 5 canonical columns + 2 CHECK constraints; legacy columns retained with auto-backfill. 14 v1 prompts seeded to prod DB by Chadi 2026-05-06; distribution verified `(1,B1)=6 / (2,B1)=4 / (2,B2)=1 / (3,B2)=3`. API-side independent confirmation 2026-05-06: `/api/writing/prompts` returns 14 rows with all 13 fields (8 legacy + 5 canonical). FE consumer is the next leg — strategic Claude drafts the FE prompt under the reverted protocol.
 
 **Priority:** Medium.
 
