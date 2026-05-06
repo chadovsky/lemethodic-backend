@@ -35,26 +35,27 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 13 | **V-009** | CouchesDiagnostic radar: 5-axis + brand labels |
 | 14 | **V-010** | /ecole phase structure correction |
 | 15 | **V-013** | Pre-launch surface completeness |
-| 16 | **V-005** | Font system upgrade |
-| 17 | **V-001** | Hero H1 + rotating kicker sizing |
-| 18 | **V-002** | Em-dash strip across FE copy |
-| 19 | **V-003** | Hero atmospheric typographic animation |
-| 20 | **V-004** | Differentiation cards rebuild (Codersera-grade) |
-| 21 | **V-011** | FinalCTA centering + color refresh |
-| 22 | **F-210** | Icon system + custom LeMethodic icons |
-| 23 | **F-211** | Loading states overhaul |
-| 24 | **F-212** | Micro-animations + interaction feedback |
-| 25 | **F-213** | Page transitions + motion design |
-| 26 | **F-214** | Visual depth + design system extension |
-| 27 | **P-234** | Cluster detail view |
-| 28 | **P-105** | 7-day free trial logic |
-| 29 | **P-106** | Paddle integration with subscription + one-time SKU |
-| 30 | **B-100** | Paddle account setup |
-| 31 | **M-103** | YouTube anchor video — French exam prep for English speakers |
-| 32 | **M-104** | Reddit community engagement (broadened subreddit list) |
+| 16 | **V-015** | Post-V-013 critical fixes + desktop redesign |
+| 17 | **V-005** | Font system upgrade |
+| 18 | **V-001** | Hero H1 + rotating kicker sizing |
+| 19 | **V-002** | Em-dash strip across FE copy |
+| 20 | **V-003** | Hero atmospheric typographic animation |
+| 21 | **V-004** | Differentiation cards rebuild (Codersera-grade) |
+| 22 | **V-011** | FinalCTA centering + color refresh |
+| 23 | **F-210** | Icon system + custom LeMethodic icons |
+| 24 | **F-211** | Loading states overhaul |
+| 25 | **F-212** | Micro-animations + interaction feedback |
+| 26 | **F-213** | Page transitions + motion design |
+| 27 | **F-214** | Visual depth + design system extension |
+| 28 | **P-234** | Cluster detail view |
+| 29 | **P-105** | 7-day free trial logic |
+| 30 | **P-106** | Paddle integration with subscription + one-time SKU |
+| 31 | **B-100** | Paddle account setup |
+| 32 | **M-103** | YouTube anchor video — French exam prep for English speakers |
+| 33 | **M-104** | Reddit community engagement (broadened subreddit list) |
 
 ---
-# Active — Launch Critical (32 tickets, before soft beta launches)
+# Active — Launch Critical (33 tickets, before soft beta launches)
 
 ## F-225 — Desktop verification protocol
 
@@ -384,6 +385,47 @@ These are credibility hits for any first-time visitor.
   - Active state: subtle underline or warm accent
 - TopNav appears on in-product surfaces only (not landing `/`, `/fr`)
 - Marketing landing nav stays as-is (LeMethodic wordmark + EN/FR toggle)
+
+---
+
+## V-015 — Post-V-013 critical fixes + desktop redesign
+
+**Status:** Active LC
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Filed:** 2026-05-06
+**Type:** FE pre-launch blocker + redesign
+
+Four sub-tickets, all FE-only. Surfaced after V-013 first-pass shipped — two correctness bugs (V-015a/b) + two desktop redesigns (V-015c/d) at the Apple-product-website tier.
+
+---
+
+### V-015a — Writing submit 422 fix (FE payload field rename)
+
+- BE expects `body.student_text`, FE sends `body.text` → 422 on submit
+- One-line fix in `api.writing.submit()` payload — rename `text` → `student_text`
+- Reference: `app/routers/writing.py::submit_writing` consumes `SubmitWritingRequest.student_text`
+
+### V-015b — Writing submit gate removal
+
+- Currently submit button disabled below `min_words`
+- Chadi feedback: word count is a guideline, not a hard gate
+- Allow submit at any word count; show "below recommended" warning if under min, but don't disable the button
+- BE accepts any non-empty `student_text` (only validates emptiness, not min/max — confirmed in `submit_writing`)
+
+### V-015c — /speaking desktop redesign (full product treatment)
+
+- Current state: 3 centered pastel cards (Tâche 1/2/3), narrow mobile-style column
+- Chadi feedback: *"rethink this page from A to Z, it's a desktop website, there has to be tabs, useful options, think from a website product point of view"*
+- Apple-product-website level layout — full desktop width, tabs/panels, structured content
+- Plan-first with 2-3 layout proposals before implementation
+
+### V-015d — /progress desktop redesign
+
+- Current state: narrow centered column with Snapshot / Today's Focus / Recent Activity
+- Same desktop product treatment needed as V-015c
+- Multi-column dashboard, diagnostic progress prominently visible, per-couche scores, activity chart
+- Plan-first with 2-3 layout proposals
+- BE data already shipped (P-201, P-201.x, P-240, F-080d) — nothing new to wire from BE side
 
 ---
 

@@ -80,6 +80,7 @@ ACTIVE_LC = [
     "V-009",                  # CouchesDiagnostic radar: 5-axis + brand labels
     "V-010",                  # /ecole phase structure (3 → 2 phases)
     "V-013",                  # Pre-launch surface completeness (a/b/c sub-tickets)
+    "V-015",                  # Post-V-013 fixes + desktop redesign (a/b/c/d sub-tickets)
     "V-005",                  # Font system upgrade (Switzer + Fraunces)
     "V-001",                  # Hero H1 + rotating kicker sizing
     "V-002",                  # Em-dash strip across FE copy
