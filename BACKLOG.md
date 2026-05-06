@@ -36,26 +36,28 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 14 | **V-010** | /ecole phase structure correction |
 | 15 | **V-013** | Pre-launch surface completeness |
 | 16 | **V-015** | Post-V-013 critical fixes + desktop redesign |
-| 17 | **V-005** | Font system upgrade |
-| 18 | **V-001** | Hero H1 + rotating kicker sizing |
-| 19 | **V-002** | Em-dash strip across FE copy |
-| 20 | **V-003** | Hero atmospheric typographic animation |
-| 21 | **V-004** | Differentiation cards rebuild (Codersera-grade) |
-| 22 | **V-011** | FinalCTA centering + color refresh |
-| 23 | **F-210** | Icon system + custom LeMethodic icons |
-| 24 | **F-211** | Loading states overhaul |
-| 25 | **F-212** | Micro-animations + interaction feedback |
-| 26 | **F-213** | Page transitions + motion design |
-| 27 | **F-214** | Visual depth + design system extension |
-| 28 | **P-234** | Cluster detail view |
-| 29 | **P-105** | 7-day free trial logic |
-| 30 | **P-106** | Paddle integration with subscription + one-time SKU |
-| 31 | **B-100** | Paddle account setup |
-| 32 | **M-103** | YouTube anchor video — French exam prep for English speakers |
-| 33 | **M-104** | Reddit community engagement (broadened subreddit list) |
+| 17 | **V-016** | Post-V-015 fixes (6 sub-tickets) |
+| 18 | **F-300** | Platform repositioning + Store |
+| 19 | **V-005** | Font system upgrade |
+| 20 | **V-001** | Hero H1 + rotating kicker sizing |
+| 21 | **V-002** | Em-dash strip across FE copy |
+| 22 | **V-003** | Hero atmospheric typographic animation |
+| 23 | **V-004** | Differentiation cards rebuild (Codersera-grade) |
+| 24 | **V-011** | FinalCTA centering + color refresh |
+| 25 | **F-210** | Icon system + custom LeMethodic icons |
+| 26 | **F-211** | Loading states overhaul |
+| 27 | **F-212** | Micro-animations + interaction feedback |
+| 28 | **F-213** | Page transitions + motion design |
+| 29 | **F-214** | Visual depth + design system extension |
+| 30 | **P-234** | Cluster detail view |
+| 31 | **P-105** | 7-day free trial logic |
+| 32 | **P-106** | Paddle integration with subscription + one-time SKU |
+| 33 | **B-100** | Paddle account setup |
+| 34 | **M-103** | YouTube anchor video — French exam prep for English speakers |
+| 35 | **M-104** | Reddit community engagement (broadened subreddit list) |
 
 ---
-# Active — Launch Critical (33 tickets, before soft beta launches)
+# Active — Launch Critical (35 tickets, before soft beta launches)
 
 ## F-225 — Desktop verification protocol
 
@@ -426,6 +428,109 @@ Four sub-tickets, all FE-only. Surfaced after V-013 first-pass shipped — two c
 - Multi-column dashboard, diagnostic progress prominently visible, per-couche scores, activity chart
 - Plan-first with 2-3 layout proposals
 - BE data already shipped (P-201, P-201.x, P-240, F-080d) — nothing new to wire from BE side
+
+---
+
+## V-016 — Post-V-015 fixes (6 sub-tickets)
+
+**Status:** Active LC
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Filed:** 2026-05-06
+**Type:** Mixed (V-016a is BE-urgent; V-016b–f are FE)
+
+Surfaced after V-015 first-pass shipped. V-016a is a production failure (writing submit timing out at 30s) — under investigation, plan-first reply pending. V-016b–f are FE-side polish.
+
+---
+
+### V-016a — Writing submit timeout (BE — URGENT, under investigation)
+
+**Symptom:** user submits writing → 30s wait → Edge "This page couldn't load." V-015a fixed the 422 field name; production still fails downstream.
+
+**Hypotheses (under plan-first investigation 2026-05-06):**
+- `writing_analysis.py` Claude API call exceeding DO worker timeout
+- Synchronous Claude calls without timeout protection
+- Large 4-layer prompt overhead from current methodology
+- Async/await chain leaking back to sync
+
+**Fix paths to evaluate (plan-first surfaces choice):**
+- Reduce analysis time (smaller prompt, cheaper model first pass, parallel layer analysis)
+- Increase DO worker timeout
+- Async background job pattern (return job_id immediately, FE polls)
+
+Plan-first reply will surface root cause + recommended fix before any push.
+
+### V-016b — La Méthode en Couches copy revision (FE)
+
+Value-statement copy per couche needs revision. FE-side rewrite.
+
+### V-016c — /ecole desktop redesign (FE — full product treatment, not mobile column)
+
+Apple-product-website tier layout. Same treatment as V-015c/d for /speaking + /progress.
+
+### V-016d — Hero kicker amendment (FE)
+
+- Bigger size
+- Exam name in `--ed-warm-peach-deep`
+- Continuous cycle 8-10× or infinite (not stop after 3)
+
+### V-016e — Landing font fix (FE)
+
+Switzer not loading on landing `/` — may be V-005 regression. FE investigation + fix.
+
+### V-016f — Differentiation card 1 bars rework (FE)
+
+Current 5-bar visualization reads meaningless without labels. Add labels OR replace with alternative typography callout per V-004's spec.
+
+---
+
+## F-300 — Platform repositioning + Store
+
+**Status:** Active LC
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Filed:** 2026-05-06
+**Type:** Strategic reframe + new product surfaces
+
+**Strategic frame:**
+Reframes LeMethodic from "TCF speaking exam prep" to "French learning **platform**" with multiple products. Current landing positions LeMethodic as a single service; the platform frame supports a product-shaped offering (LemonSqueezy approval was reportedly easier to land for product businesses than service businesses) and creates room for the Book-Lab catalog.
+
+**Note (BE side flag):** the strategic justification cites LemonSqueezy approval. Per B-100 (decided 2026-05-04 — Path B Paddle), the active MoR is Paddle, not LemonSqueezy. F-300 may need to reconcile its strategic-frame paragraph with B-100's Paddle decision OR reopen the LemonSqueezy track. Surfacing for Chadi triage; not blocking the F-300 build itself.
+
+**Restructure:**
+- Current `/` landing (TCF-prep-positioned) → moves to `/exam-prep` sub-page
+- New `/` landing = platform-level with Exam Prep + Library as primary product cards
+- New `/library` = book + free resources store (LemonSqueezy/Paddle fulfillment per B-100 outcome)
+
+**Confidence:** HIGH on F-300a/b/c structure. MEDIUM on F-300d–g until plan-first surfaces e-commerce details. Strategic Claude drafts F-300a/b prompts next turn.
+
+---
+
+### F-300a — New `/` landing (platform-level: hero + product cards)
+
+Hero + 2-card product grid (Exam Prep / Library). Plan-first per strategic Claude.
+
+### F-300b — Current landing → `/exam-prep` sub-page
+
+Migrate the existing TCF-prep-positioned landing content to `/exam-prep`. Preserve all existing copy + layout + components — just relocate the route. Adjust internal links accordingly.
+
+### F-300c — `/library` store surface (grid, filters, search)
+
+New product catalog surface. Plan-first required: grid layout, filter taxonomy (book / free resource / pre-order; topic / level / format), search behavior.
+
+### F-300d — Product detail pages `/library/[slug]`
+
+Per-product detail surface. Plan-first required: layout (hero + description + price + CTA + related), pricing display, format options.
+
+### F-300e — Cart + LemonSqueezy checkout
+
+Cart UX + LemonSqueezy/Paddle checkout integration. **BE side:** depends on B-100 outcome; if Paddle, integration uses Paddle SDK per P-106. New BE work TBD: cart persistence (server-side or LS-only?), order webhook handling.
+
+### F-300f — Free resources flow ($0 items, direct download)
+
+Free download surface. **BE side:** decide auth gate (any logged-in user? signup-required?) + download tracking + asset hosting (DO Spaces? Vercel Edge?). Plan-first required.
+
+### F-300g — Pre-order / waitlist for upcoming books
+
+Email-capture pre-order flow for books not yet published. **BE side:** waitlist storage (new table or reuse existing email-capture from P-222 waitlist?), notification flow at launch.
 
 ---
 

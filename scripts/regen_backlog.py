@@ -81,6 +81,8 @@ ACTIVE_LC = [
     "V-010",                  # /ecole phase structure (3 → 2 phases)
     "V-013",                  # Pre-launch surface completeness (a/b/c sub-tickets)
     "V-015",                  # Post-V-013 fixes + desktop redesign (a/b/c/d sub-tickets)
+    "V-016",                  # Post-V-015 fixes (a urgent BE timeout, b–f FE)
+    "F-300",                  # Platform repositioning + Store (7 sub-tickets a–g)
     "V-005",                  # Font system upgrade (Switzer + Fraunces)
     "V-001",                  # Hero H1 + rotating kicker sizing
     "V-002",                  # Em-dash strip across FE copy
