@@ -1,28 +1,37 @@
 """F-224 — seed writing prompts for the /writing track.
 
-Re-runnable. Idempotent (matches on prompt_text — re-runs don't duplicate).
-Run once after Alembic migrations have created `writing_prompts`:
+v2 (2026-05-06): retired the 18-prompt hardcoded content per Chadi's
+"retire all 18 without review" lock-in. Imports the v1 pack from
+`scripts/seed_data/writing_prompts_seed.py` (14 prompts authored fresh
+to TCF Canada Tâche 1/2/3 specs, FR/EN parallel rendering).
+
+Re-runnable. Idempotent: matches existing rows by `(tache_level, title_fr)`
+and skips duplicates.
+
+Run locally after `alembic upgrade head`:
 
     docker-compose up -d
     alembic upgrade head
     python -m scripts.seed_writing_prompts
 
-Production seeding: run the same command against the prod DB once
-F-224 BE ships and Chadi has confirmed the prompt set. Same pattern
-as scripts/seed_b1_b2_path.py + scripts/ingest_b1_b2_cluster_content.py.
+Production seeding: Chadi runs the same command against the prod DB
+(same pattern as `seed_b1_b2_path.py` + `ingest_b1_b2_cluster_content.py`).
 
-History: superseded the root-level `seed_writing_prompts.py` from
-the pre-rebrand era (Base.metadata.create_all + ASCII-stripped
-French). This file restores correct accents, drops the schema-create
-(Alembic owns it post-F-077), and lives under `scripts/` per the
-post-rebrand convention.
-
-Phase 1 inventory: 7 B1 + 7 B2 + 4 C1 = 18 prompts across argumentative
-/ essay / formal_letter / opinion_essay types.
+History:
+  - v1 (pre-rebrand): root-level `seed_writing_prompts.py`, ASCII-stripped
+    French. Removed 2026-05-04 (commit 3ac274c).
+  - v1.5 (2026-05-04): relocated to `scripts/seed_writing_prompts.py`,
+    18 hardcoded prompts (7 B1 + 7 B2 + 4 C1), accents normalized.
+  - v2 (this file, 2026-05-06): imports `WRITING_PROMPTS_SEED` from
+    `scripts/seed_data/writing_prompts_seed.py`. The 18 hardcoded
+    prompts are retired wholesale per F-224 v1-pack lock-in. Migration
+    `f4d5e6c7b8a9` TRUNCATEs the table before adding the new columns.
 """
 from __future__ import annotations
 
 import sys
+
+from sqlalchemy import text
 
 from app.database import SessionLocal
 # Import models.User first so SQLAlchemy can resolve WritingSubmission's
@@ -31,208 +40,135 @@ from app.database import SessionLocal
 # in the declarative base.
 from app.models.models import User as _User  # noqa: F401
 from app.models.writing import WritingPrompt
+from scripts.seed_data.writing_prompts_seed import WRITING_PROMPTS_SEED
 
 
-PROMPTS: list[dict] = [
-    # ── B1 (7 prompts) ────────────────────────────────────────────
-    {
-        "level": "B1",
-        "theme": "Vie quotidienne",
-        "prompt_type": "formal_letter",
-        "prompt_text": "Vous avez commandé un produit en ligne mais vous avez reçu le mauvais article. Écrivez une lettre au service client pour expliquer le problème et demander un échange ou un remboursement. (160-180 mots)",
-        "min_words": 160,
-        "max_words": 180,
-        "time_limit_minutes": 30,
-    },
-    {
-        "level": "B1",
-        "theme": "Éducation",
-        "prompt_type": "essay",
-        "prompt_text": "Un magazine pour jeunes vous demande d'écrire un article sur les avantages et les inconvénients des cours en ligne. Donnez votre opinion avec des exemples concrets. (160-180 mots)",
-        "min_words": 160,
-        "max_words": 180,
-        "time_limit_minutes": 30,
-    },
-    {
-        "level": "B1",
-        "theme": "Société",
-        "prompt_type": "argumentative",
-        "prompt_text": "Pensez-vous que les transports en commun devraient être gratuits pour tout le monde ? Justifiez votre point de vue avec des arguments et des exemples. (160-180 mots)",
-        "min_words": 160,
-        "max_words": 180,
-        "time_limit_minutes": 30,
-    },
-    {
-        "level": "B1",
-        "theme": "Travail",
-        "prompt_type": "formal_letter",
-        "prompt_text": "Vous souhaitez faire un stage dans une entreprise francophone. Écrivez une lettre de motivation dans laquelle vous vous présentez, expliquez vos compétences et votre motivation. (160-180 mots)",
-        "min_words": 160,
-        "max_words": 180,
-        "time_limit_minutes": 30,
-    },
-    {
-        "level": "B1",
-        "theme": "Société",
-        "prompt_type": "opinion_essay",
-        "prompt_text": "L'argent fait-il le bonheur ? Qu'en pensez-vous ?",
-        "min_words": 150,
-        "max_words": 200,
-        "time_limit_minutes": 30,
-    },
-    {
-        "level": "B1",
-        "theme": "Technologie",
-        "prompt_type": "argumentative",
-        "prompt_text": "Les enfants passent-ils trop de temps devant les écrans ?",
-        "min_words": 150,
-        "max_words": 200,
-        "time_limit_minutes": 30,
-    },
-    {
-        "level": "B1",
-        "theme": "Santé",
-        "prompt_type": "argumentative",
-        "prompt_text": "Comment inciter les gens à faire davantage de sport ?",
-        "min_words": 150,
-        "max_words": 200,
-        "time_limit_minutes": 30,
-    },
+# ── Auto-backfill mappings for legacy columns ──────────────────────
 
-    # ── B2 (7 prompts) ────────────────────────────────────────────
-    {
-        "level": "B2",
-        "theme": "Technologie",
-        "prompt_type": "argumentative",
-        "prompt_text": "L'intelligence artificielle représente-t-elle une menace ou une opportunité pour le marché du travail ? Présentez les deux points de vue et donnez votre opinion personnelle argumentée. (250-300 mots)",
-        "min_words": 250,
-        "max_words": 300,
-        "time_limit_minutes": 45,
-    },
-    {
-        "level": "B2",
-        "theme": "Environnement",
-        "prompt_type": "formal_letter",
-        "prompt_text": "En tant que résident de votre quartier, écrivez une lettre au maire pour proposer des mesures concrètes afin de réduire la pollution et améliorer la qualité de vie. Structurez votre lettre de manière formelle. (250-300 mots)",
-        "min_words": 250,
-        "max_words": 300,
-        "time_limit_minutes": 45,
-    },
-    {
-        "level": "B2",
-        "theme": "Culture",
-        "prompt_type": "essay",
-        "prompt_text": "Les réseaux sociaux ont-ils transformé notre rapport à la culture et à l'art ? Analysez les effets positifs et négatifs de cette évolution en vous appuyant sur des exemples précis. (250-300 mots)",
-        "min_words": 250,
-        "max_words": 300,
-        "time_limit_minutes": 45,
-    },
-    {
-        "level": "B2",
-        "theme": "Société",
-        "prompt_type": "argumentative",
-        "prompt_text": "Le télétravail devrait-il devenir la norme dans les entreprises ? Discutez les avantages et les limites de ce mode de travail en prenant position de manière argumentée. (250-300 mots)",
-        "min_words": 250,
-        "max_words": 300,
-        "time_limit_minutes": 45,
-    },
-    {
-        "level": "B2",
-        "theme": "Technologie",
-        "prompt_type": "argumentative",
-        "prompt_text": "Les réseaux sociaux rendent-ils les gens solitaires, ou permettent-ils de créer des liens ?",
-        "min_words": 200,
-        "max_words": 250,
-        "time_limit_minutes": 45,
-    },
-    {
-        "level": "B2",
-        "theme": "Société",
-        "prompt_type": "argumentative",
-        "prompt_text": "Vivre en ville est plus stressant qu'à la campagne. Êtes-vous d'accord ?",
-        "min_words": 200,
-        "max_words": 250,
-        "time_limit_minutes": 45,
-    },
-    {
-        "level": "B2",
-        "theme": "Technologie",
-        "prompt_type": "argumentative",
-        "prompt_text": "Peut-on vivre sans technologie ?",
-        "min_words": 200,
-        "max_words": 250,
-        "time_limit_minutes": 45,
-    },
 
-    # ── C1 (4 prompts) ────────────────────────────────────────────
-    {
-        "level": "C1",
-        "theme": "Société",
-        "prompt_type": "argumentative",
-        "prompt_text": "Dans quelle mesure la liberté d'expression doit-elle être limitée dans une démocratie ? Appuyez votre réflexion sur des exemples précis et proposez une synthèse nuancée de la question. (350-400 mots)",
-        "min_words": 350,
-        "max_words": 400,
-        "time_limit_minutes": 60,
-    },
-    {
-        "level": "C1",
-        "theme": "Éducation",
-        "prompt_type": "essay",
-        "prompt_text": "Le système éducatif actuel prépare-t-il adéquatement les jeunes aux défis du XXIe siècle ? Analysez les forces et les faiblesses du modèle éducatif et proposez des pistes de réforme argumentées. (350-400 mots)",
-        "min_words": 350,
-        "max_words": 400,
-        "time_limit_minutes": 60,
-    },
-    {
-        "level": "C1",
-        "theme": "Environnement",
-        "prompt_type": "formal_letter",
-        "prompt_text": "En tant que représentant d'une association écologiste, rédigez une lettre ouverte à la presse dans laquelle vous dénoncez l'inaction des gouvernements face au changement climatique et proposez un programme d'action concret. (350-400 mots)",
-        "min_words": 350,
-        "max_words": 400,
-        "time_limit_minutes": 60,
-    },
-    {
-        "level": "C1",
-        "theme": "Technologie",
-        "prompt_type": "essay",
-        "prompt_text": "La surveillance numérique est-elle compatible avec les valeurs démocratiques ? À travers une analyse des enjeux éthiques, politiques et sociaux, développez une argumentation structurée sur cette question. (350-400 mots)",
-        "min_words": 350,
-        "max_words": 400,
-        "time_limit_minutes": 60,
-    },
-]
+# topic_tag (canonical, lowercase EN slug) → theme (legacy column,
+# FR-capitalized human label). Existing endpoints + any FE consumer
+# of `theme` keeps reading the FR label unchanged.
+_TOPIC_TO_THEME: dict[str, str] = {
+    "travel":      "Voyages",
+    "work":        "Travail",
+    "family":      "Famille",
+    "education":   "Éducation",
+    "health":      "Santé",
+    "technology":  "Technologie",
+    "environment": "Environnement",
+    "society":     "Société",
+}
+
+# tache_level (1/2/3) → prompt_type (legacy column, classifier slug).
+# Mapping rule:
+#   Tâche 1 = personal message  → "formal_letter"
+#   Tâche 2 = account/article   → "essay"
+#   Tâche 3 = argumentative w/ 2 documents → "argumentative"
+_TACHE_TO_TYPE: dict[int, str] = {
+    1: "formal_letter",
+    2: "essay",
+    3: "argumentative",
+}
+
+
+# ── Seed loader ────────────────────────────────────────────────────
+
+
+def seed_from_data(prompts: list[dict]) -> tuple[int, int]:
+    """Insert WritingPrompt rows from v1-pack dicts. Returns (added, skipped).
+
+    Idempotent: skips when (tache_level, title_fr) tuple already exists.
+    """
+    db = SessionLocal()
+    try:
+        added = 0
+        skipped = 0
+        for p in prompts:
+            existing = (
+                db.query(WritingPrompt)
+                .filter_by(
+                    tache_level=p["tache_level"],
+                    title_fr=p["title_fr"],
+                )
+                .first()
+            )
+            if existing is not None:
+                skipped += 1
+                continue
+            db.add(WritingPrompt(
+                # Canonical v1 pack fields:
+                tache_level = p["tache_level"],
+                title_fr    = p["title_fr"],
+                prompt_fr   = p["prompt_fr"],
+                prompt_en   = p["prompt_en"],
+                topic_tag   = p["topic_tag"],
+                min_words   = p["min_words"],
+                max_words   = p["max_words"],
+
+                # Legacy backfill (auto-derived):
+                level              = p["target_level"],
+                theme              = _TOPIC_TO_THEME[p["topic_tag"]],
+                prompt_text        = p["prompt_fr"],
+                prompt_type        = _TACHE_TO_TYPE[p["tache_level"]],
+                time_limit_minutes = p["time_limit_min"],
+                is_active          = 1,
+            ))
+            added += 1
+        db.commit()
+        return added, skipped
+    finally:
+        db.close()
+
+
+# ── Verification print ─────────────────────────────────────────────
+
+
+def print_verification() -> None:
+    """Run the verification query and print counts.
+
+    Equivalent to:
+      SELECT COUNT(*), tache_level, level
+      FROM writing_prompts
+      GROUP BY tache_level, level
+      ORDER BY tache_level, level;
+
+    Expected output for v1 pack:
+      (1, B1) → 6
+      (2, B1) → 4
+      (2, B2) → 1
+      (3, B2) → 3
+      Total: 14
+    """
+    db = SessionLocal()
+    try:
+        rows = db.execute(text(
+            "SELECT COUNT(*), tache_level, level "
+            "FROM writing_prompts "
+            "GROUP BY tache_level, level "
+            "ORDER BY tache_level, level"
+        )).all()
+        total = db.query(WritingPrompt).count()
+
+        print()
+        print(f"writing_prompts row distribution (total: {total}):")
+        for count, tache, lvl in rows:
+            print(f"  ({tache}, {lvl}) → {count}")
+    finally:
+        db.close()
+
+
+# ── Entrypoint ─────────────────────────────────────────────────────
 
 
 def main() -> int:
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
 
-    db = SessionLocal()
-    try:
-        added = 0
-        skipped = 0
-        for p in PROMPTS:
-            existing = (
-                db.query(WritingPrompt)
-                .filter(WritingPrompt.prompt_text == p["prompt_text"])
-                .first()
-            )
-            if existing is not None:
-                skipped += 1
-                continue
-            db.add(WritingPrompt(**p))
-            added += 1
-        db.commit()
-
-        total = db.query(WritingPrompt).count()
-        print(f"writing prompts: +{added} added, {skipped} unchanged. Total: {total}")
-        for level in ("B1", "B2", "C1"):
-            n = db.query(WritingPrompt).filter(WritingPrompt.level == level).count()
-            print(f"  {level}: {n}")
-        return 0
-    finally:
-        db.close()
+    added, skipped = seed_from_data(WRITING_PROMPTS_SEED)
+    print(f"writing prompts: +{added} added, {skipped} unchanged.")
+    print_verification()
+    return 0
 
 
 if __name__ == "__main__":

@@ -30,15 +30,31 @@ class SubmitWritingRequest(BaseModel):
 @router.get("/prompts")
 def get_prompts(
     level: str = None,
+    tache_level: int = None,
+    topic_tag: str = None,
     db: Session = Depends(get_db),
 ):
-    """Get writing prompts, optionally filtered by level."""
+    """Get writing prompts, optionally filtered by level, tache_level,
+    or topic_tag. Response carries both legacy fields (level, theme,
+    prompt_text, prompt_type, time_limit_minutes — for backward-compat
+    with existing FE consumers) and the F-224 v1 pack canonical fields
+    (tache_level, title_fr, prompt_fr, prompt_en, topic_tag).
+
+    The new fields are additive — existing consumers ignore unknown keys.
+    """
     query = db.query(WritingPrompt).filter(WritingPrompt.is_active == 1)
     if level:
         query = query.filter(WritingPrompt.level == level.upper())
-    prompts = query.order_by(WritingPrompt.level, WritingPrompt.theme).all()
+    if tache_level:
+        query = query.filter(WritingPrompt.tache_level == tache_level)
+    if topic_tag:
+        query = query.filter(WritingPrompt.topic_tag == topic_tag)
+    prompts = query.order_by(
+        WritingPrompt.tache_level, WritingPrompt.level, WritingPrompt.theme
+    ).all()
     return [
         {
+            # Legacy fields (kept for backward-compat).
             "id": p.id,
             "level": p.level,
             "theme": p.theme,
@@ -47,6 +63,12 @@ def get_prompts(
             "min_words": p.min_words,
             "max_words": p.max_words,
             "time_limit_minutes": p.time_limit_minutes,
+            # F-224 v1 pack canonical fields (additive).
+            "tache_level": p.tache_level,
+            "title_fr": p.title_fr,
+            "prompt_fr": p.prompt_fr,
+            "prompt_en": p.prompt_en,
+            "topic_tag": p.topic_tag,
         }
         for p in prompts
     ]
