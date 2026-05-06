@@ -22,39 +22,38 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 |---|---|---|
 | 1 | **F-225** | Desktop verification protocol |
 | 2 | **F-222** | Sign Out bug fix |
-| 3 | **F-223** | "Le raccourci" copy bleed cleanup |
-| 4 | **F-200** | Landing page desktop layout |
-| 5 | **F-201** | Onboarding flow desktop layout |
-| 6 | **F-202** | /ecole + L'École intro rebuild (responsive + content + methodology demo) |
-| 7 | **F-203** | /progress dashboard desktop + responsive layout |
-| 8 | **P-230.depth** | /progress real content for soft beta |
-| 9 | **F-204** | /cluster/[slug] desktop layout |
-| 10 | **F-205** | /speaking/* (Tâche surfaces) desktop layout |
-| 11 | **F-206** | Auxiliary pages desktop (privacy/terms/refund/waitlist/signup) |
-| 12 | **F-220** | Onboarding "intro framing" (Block 3 quiz-pop-up entry moment) |
-| 13 | **F-221** | Exam-selector in onboarding + brand-layer rewrite |
-| 14 | **V-009** | CouchesDiagnostic radar: 5-axis + brand labels |
-| 15 | **V-010** | /ecole phase structure correction |
-| 16 | **V-005** | Font system upgrade |
-| 17 | **V-001** | Hero H1 + rotating kicker sizing |
-| 18 | **V-002** | Em-dash strip across FE copy |
-| 19 | **V-003** | Hero atmospheric typographic animation |
-| 20 | **V-004** | Differentiation cards rebuild (Codersera-grade) |
-| 21 | **V-011** | FinalCTA centering + color refresh |
-| 22 | **F-210** | Icon system + custom LeMethodic icons |
-| 23 | **F-211** | Loading states overhaul |
-| 24 | **F-212** | Micro-animations + interaction feedback |
-| 25 | **F-213** | Page transitions + motion design |
-| 26 | **F-214** | Visual depth + design system extension |
-| 27 | **P-234** | Cluster detail view |
-| 28 | **P-105** | 7-day free trial logic |
-| 29 | **P-106** | Paddle integration with subscription + one-time SKU |
-| 30 | **B-100** | Paddle account setup |
-| 31 | **M-103** | YouTube anchor video — French exam prep for English speakers |
-| 32 | **M-104** | Reddit community engagement (broadened subreddit list) |
+| 3 | **F-200** | Landing page desktop layout |
+| 4 | **F-201** | Onboarding flow desktop layout |
+| 5 | **F-202** | /ecole + L'École intro rebuild (responsive + content + methodology demo) |
+| 6 | **F-203** | /progress dashboard desktop + responsive layout |
+| 7 | **P-230.depth** | /progress real content for soft beta |
+| 8 | **F-204** | /cluster/[slug] desktop layout |
+| 9 | **F-205** | /speaking/* (Tâche surfaces) desktop layout |
+| 10 | **F-206** | Auxiliary pages desktop (privacy/terms/refund/waitlist/signup) |
+| 11 | **F-220** | Onboarding "intro framing" (Block 3 quiz-pop-up entry moment) |
+| 12 | **F-221** | Exam-selector in onboarding + brand-layer rewrite |
+| 13 | **V-009** | CouchesDiagnostic radar: 5-axis + brand labels |
+| 14 | **V-010** | /ecole phase structure correction |
+| 15 | **V-005** | Font system upgrade |
+| 16 | **V-001** | Hero H1 + rotating kicker sizing |
+| 17 | **V-002** | Em-dash strip across FE copy |
+| 18 | **V-003** | Hero atmospheric typographic animation |
+| 19 | **V-004** | Differentiation cards rebuild (Codersera-grade) |
+| 20 | **V-011** | FinalCTA centering + color refresh |
+| 21 | **F-210** | Icon system + custom LeMethodic icons |
+| 22 | **F-211** | Loading states overhaul |
+| 23 | **F-212** | Micro-animations + interaction feedback |
+| 24 | **F-213** | Page transitions + motion design |
+| 25 | **F-214** | Visual depth + design system extension |
+| 26 | **P-234** | Cluster detail view |
+| 27 | **P-105** | 7-day free trial logic |
+| 28 | **P-106** | Paddle integration with subscription + one-time SKU |
+| 29 | **B-100** | Paddle account setup |
+| 30 | **M-103** | YouTube anchor video — French exam prep for English speakers |
+| 31 | **M-104** | Reddit community engagement (broadened subreddit list) |
 
 ---
-# Active — Launch Critical (32 tickets, before soft beta launches)
+# Active — Launch Critical (31 tickets, before soft beta launches)
 
 ## F-225 — Desktop verification protocol
 
@@ -88,22 +87,6 @@ No more shipping mobile-only as "ready."
 Sign Out flow has a bug — investigate + fix. Specifics TBD on triage; likely cookie-clear or redirect-loop issue (auth cookie set via `set_cookie("access_token", ..., httponly=True, samesite="lax")` on the API host; FE sign-out must hit a logout endpoint that clears cookie, then redirect home).
 
 **Owner:** FE (likely; BE may need a `POST /auth/logout` endpoint if not present).
-
----
-
-## F-223 — "Le raccourci" copy bleed cleanup
-
-**Filed:** 2026-05-04.
-**Status:** Split — **FE-side Awaiting Verification** (delete in `lemethodic-frontend` landed 2026-05-04). **BE-side blocked** on DO App Platform Insights pull for `GET /` + `GET /admin` + `GET /writing` over 30d — if zero real-user traffic, BE proceeds with delete-PR (Path 2: remove `app/templates/index.html` + `admin.html` + `writing.html` + `@app.get` handlers in main.py + orphan imports). Cron 690444ce + phone reminder set for 24h follow-up if logs haven't been pasted by 02:33 local 2026-05-05.
-**Tag:** Active — Launch Critical (before soft beta launches).
-
-**Priority:** Medium (consistency).
-
-"Le Raccourci" was the original section name; renamed to "L'École". Stragglers exist in both repos (FE strings, BE seed data, copy docs). Full grep + replace.
-
-**Verification:** zero matches for `raccourci` (case-insensitive) in shipped strings across both repos.
-
-**Owner:** FE + BE.
 
 ---
 
@@ -1787,6 +1770,21 @@ Cleanup of the F-110.1 dual-emission window. Once `fluentpath-frontend/lib/api.t
 **Pre-condition gate:** verify with the frontend team / `fluentpath-frontend` repo that no consumer reads `c.internal_key` anymore. F-110.1 verified the call sites in `lib/api.ts`: `interface RawCouche` (type), `KNOWN_COUCHE_KEYS` filter, `mapDiagnosticBlock` mapper. All three must read `c.key` before this ticket can ship.
 
 **Estimate:** 15 min.
+
+---
+
+## F-223 — "Le raccourci" copy bleed cleanup
+
+**Filed:** 2026-05-04.
+**Status:** **Shipped 2026-05-06** — both FE-side (delete in `lemethodic-frontend` landed 2026-05-04) and BE-side (delete commit `e7d0ea1` 2026-05-06) complete. Per Chadi 2026-05-06: log-pull verification skipped — Jinja templates dead by architecture (Next.js FE on Vercel handles all user-facing pages from `lemethodic.com`; BE FastAPI serves API endpoints only). Production verification 2026-05-06: `GET /` + `GET /admin` + `GET /writing` all return 404 (was 200 with Jinja); `/health` + `/api/writing/prompts` + `/onboarding/questions` + `/api/users/me` all unchanged. 5,358 lines of pre-rebrand HTML retired plus 23 lines of handler code in `main.py` + the unused `HTMLResponse` import.
+
+**Priority:** Medium (consistency).
+
+"Le Raccourci" was the original section name; renamed to "L'École". Stragglers exist in both repos (FE strings, BE seed data, copy docs). Full grep + replace.
+
+**Verification:** zero matches for `raccourci` (case-insensitive) in shipped strings across both repos.
+
+**Owner:** FE + BE.
 
 ---
 

@@ -51,7 +51,8 @@ ACTIVE_LC = [
 
     # Bug + copy hygiene (small but quality-gating):
     "F-222",                  # Sign Out bug fix
-    "F-223",                  # "Le raccourci" copy bleed cleanup
+    # F-223 fully shipped 2026-05-06 (FE delete 2026-05-04 + BE delete
+    # e7d0ea1) — moved to SHIPPED. 5,358 lines of dead Jinja retired.
 
     # Desktop responsive — every shipped surface broken on desktop:
     "F-200",                  # Landing page desktop layout
@@ -161,9 +162,11 @@ DEFERRED = [
 # M-100 fully shipped 2026-05-03 (Past Preply re-engagement outreach delivered).
 # F-224 fully shipped 2026-05-06 (writing surface — real Claude analysis +
 # 14 v1 prompts seeded prod via alembic f4d5e6c7b8a9 + commit ae785a4).
+# F-223 fully shipped 2026-05-06 (FE delete 2026-05-04 + BE delete e7d0ea1
+# — Jinja templates retired without log verification per Chadi).
 SHIPPED = [
     "B-102",
-    "F-079", "F-110", "F-110.1", "F-110.2", "F-224",
+    "F-079", "F-110", "F-110.1", "F-110.2", "F-223", "F-224",
     "P-103", "P-104",
     "P-200", "P-201", "P-202", "P-203", "P-204",
     "P-210", "P-211", "P-212", "P-220", "P-221", "P-222",
