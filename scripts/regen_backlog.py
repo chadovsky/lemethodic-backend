@@ -71,7 +71,12 @@ ACTIVE_LC = [
     "F-224",                  # Build OR hide /writing tab
 
     # V-series — verification-found refinement (filed 2026-05-05).
-    # V-005 ships first (foundation; V-003/V-004 inherit typography).
+    # V-009 + V-010 lead — methodology-content contradictions in shipped
+    # surfaces (radar mislabels + /ecole phase structure stale). "Ship
+    # before any chrome work" per spec.
+    # V-005 ships before V-003/V-004 (foundation; they inherit typography).
+    "V-009",                  # CouchesDiagnostic radar: 5-axis + brand labels
+    "V-010",                  # /ecole phase structure (3 → 2 phases)
     "V-005",                  # Font system upgrade (Switzer + Fraunces)
     "V-001",                  # Hero H1 + rotating kicker sizing
     "V-002",                  # Em-dash strip across FE copy

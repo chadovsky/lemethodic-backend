@@ -34,25 +34,27 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 12 | **F-220** | Onboarding "intro framing" (Block 3 quiz-pop-up entry moment) |
 | 13 | **F-221** | Exam-selector in onboarding + brand-layer rewrite |
 | 14 | **F-224** | Writing Dashboard build (FE consumer + prompt seed) |
-| 15 | **V-005** | Font system upgrade |
-| 16 | **V-001** | Hero H1 + rotating kicker sizing |
-| 17 | **V-002** | Em-dash strip across FE copy |
-| 18 | **V-003** | Hero atmospheric typographic animation |
-| 19 | **V-004** | Differentiation cards rebuild (Codersera-grade) |
-| 20 | **F-210** | Icon system + custom LeMethodic icons |
-| 21 | **F-211** | Loading states overhaul |
-| 22 | **F-212** | Micro-animations + interaction feedback |
-| 23 | **F-213** | Page transitions + motion design |
-| 24 | **F-214** | Visual depth + design system extension |
-| 25 | **P-234** | Cluster detail view |
-| 26 | **P-105** | 7-day free trial logic |
-| 27 | **P-106** | Paddle integration with subscription + one-time SKU |
-| 28 | **B-100** | Paddle account setup |
-| 29 | **M-103** | YouTube anchor video — French exam prep for English speakers |
-| 30 | **M-104** | Reddit community engagement (broadened subreddit list) |
+| 15 | **V-009** | CouchesDiagnostic radar: 5-axis + brand labels |
+| 16 | **V-010** | /ecole phase structure correction |
+| 17 | **V-005** | Font system upgrade |
+| 18 | **V-001** | Hero H1 + rotating kicker sizing |
+| 19 | **V-002** | Em-dash strip across FE copy |
+| 20 | **V-003** | Hero atmospheric typographic animation |
+| 21 | **V-004** | Differentiation cards rebuild (Codersera-grade) |
+| 22 | **F-210** | Icon system + custom LeMethodic icons |
+| 23 | **F-211** | Loading states overhaul |
+| 24 | **F-212** | Micro-animations + interaction feedback |
+| 25 | **F-213** | Page transitions + motion design |
+| 26 | **F-214** | Visual depth + design system extension |
+| 27 | **P-234** | Cluster detail view |
+| 28 | **P-105** | 7-day free trial logic |
+| 29 | **P-106** | Paddle integration with subscription + one-time SKU |
+| 30 | **B-100** | Paddle account setup |
+| 31 | **M-103** | YouTube anchor video — French exam prep for English speakers |
+| 32 | **M-104** | Reddit community engagement (broadened subreddit list) |
 
 ---
-# Active — Launch Critical (30 tickets, before soft beta launches)
+# Active — Launch Critical (32 tickets, before soft beta launches)
 
 ## F-225 — Desktop verification protocol
 
@@ -327,6 +329,65 @@ Build the `/writing` dashboard consuming existing BE endpoints. Decisions to sur
 - Visual identity per locked direction (EMDL + fluentpath.ai + Neuralink).
 
 **Owner:** BE (seed relocation, this round — Awaiting Verification) → FE (dashboard consumer, next round).
+
+---
+
+## V-009 — CouchesDiagnostic radar: 5-axis + brand labels
+
+**Status:** Active LC
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Filed:** 2026-05-05
+**Type:** FE methodology-content fix
+**Priority:** Ship before any chrome work
+
+**Problem:**
+The "Where you stand today" radar chart (CouchesDiagnostic component, surfaces on /diagnostic and likely /paywall) shows 4 axes with generic labels: Content / Structure / Grammar / English Habits.
+
+This contradicts the 5-couche model locked 2026-05-05 (F-202 + F-227 surfaced as moat-made-visible). User journey breaks at this point: onboarding → EcoleReveal → /ecole/intro reads "Five layers compose your French" → CouchesDiagnostic radar shows 4 axes with old generic labels. Methodology contradicts itself in-product.
+
+**Fix:**
+- Add 5th axis to radar: La Voix (Voice)
+- Replace generic labels with user-facing brand labels:
+  - EN: Range / Coherence / Accuracy / Fluency / Voice
+  - FR: Étendue / Cohérence / Correction / Aisance / Voix
+- Preserve current visual chrome (pink-peach fill, dashed outline, rounded card) — chrome migration stays in F-205.deep
+- BE side: ensure the diagnostic feedback API returns 5 couche scores (Le Fond / Les Moules des Idées / Les Moules / Les Réflexes Anglais / La Voix) instead of 4. If BE currently returns 4-axis data, file a parallel BE ticket V-009.be for the API extension. FE side wires up to whatever the BE returns.
+
+**Notes:**
+- Visual chrome (radius, shadow, fill color, outline style) stays untouched. This ticket is methodology-content only.
+- F-205.deep covers the chrome migration of CouchesDiagnostic when prioritized later.
+- If BE doesn't return 5-couche data yet, FE displays the 5th axis as "Voice" with a "Coming soon" or muted state until BE catches up. Surface this in plan-first.
+
+---
+
+## V-010 — /ecole phase structure correction
+
+**Status:** Active LC
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Filed:** 2026-05-05
+**Type:** FE methodology-content fix
+**Priority:** Ship before any chrome work
+
+**Problem:**
+The /ecole home page shows 3 phase buttons: Fondations (Lessons 1-4) / Approfondissement (Lessons 5-16) / L'École Complète (Lessons 17-27).
+
+This contradicts the curriculum structure locked 2026-05-05 and surfaced on /ecole/intro: **2 phases, Fondations 1-16 + Approfondissement 17-27.**
+
+The current 3-phase structure is residue from the old 16-lesson era with milestones at lessons 4/10/16. When the curriculum expanded to 27 lessons, the phase buttons were never migrated.
+
+**Fix:**
+- Replace the 3-button row with 2 buttons:
+  - Fondations / Lessons 1-16
+  - Approfondissement / Lessons 17-27
+- Update the progress bar logic accordingly: "0/27" overall, with phase-level completion fed from the same 27-lesson user state
+- Verify the per-button click behavior still routes correctly (each button likely scrolls to or filters lessons in its range)
+- Preserve current visual chrome (rounded buttons, padding, layout) — chrome migration stays in F-204.deep
+- If milestones at lesson 4/10/16 still exist somewhere as badge triggers, those stay independent — file F-213.celebration (already filed) for the celebration treatment
+
+**Notes:**
+- The 3rd button "L'École Complète" was always confusing nomenclature — its range (17-27) overlapped with Approfondissement. Removing it cleanly.
+- "L'École Complète" as a concept survives as the **completion state** (the user finishes all 27 lessons), not as a separate phase or surface. F-213.celebration handles the visual treatment of completion.
+- F-204.deep covers chrome migration of TodayFocus and other /ecole section internals.
 
 ---
 
