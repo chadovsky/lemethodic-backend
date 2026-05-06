@@ -41,20 +41,21 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 19 | **V-002** | Em-dash strip across FE copy |
 | 20 | **V-003** | Hero atmospheric typographic animation |
 | 21 | **V-004** | Differentiation cards rebuild (Codersera-grade) |
-| 22 | **F-210** | Icon system + custom LeMethodic icons |
-| 23 | **F-211** | Loading states overhaul |
-| 24 | **F-212** | Micro-animations + interaction feedback |
-| 25 | **F-213** | Page transitions + motion design |
-| 26 | **F-214** | Visual depth + design system extension |
-| 27 | **P-234** | Cluster detail view |
-| 28 | **P-105** | 7-day free trial logic |
-| 29 | **P-106** | Paddle integration with subscription + one-time SKU |
-| 30 | **B-100** | Paddle account setup |
-| 31 | **M-103** | YouTube anchor video — French exam prep for English speakers |
-| 32 | **M-104** | Reddit community engagement (broadened subreddit list) |
+| 22 | **V-011** | FinalCTA centering + color refresh |
+| 23 | **F-210** | Icon system + custom LeMethodic icons |
+| 24 | **F-211** | Loading states overhaul |
+| 25 | **F-212** | Micro-animations + interaction feedback |
+| 26 | **F-213** | Page transitions + motion design |
+| 27 | **F-214** | Visual depth + design system extension |
+| 28 | **P-234** | Cluster detail view |
+| 29 | **P-105** | 7-day free trial logic |
+| 30 | **P-106** | Paddle integration with subscription + one-time SKU |
+| 31 | **B-100** | Paddle account setup |
+| 32 | **M-103** | YouTube anchor video — French exam prep for English speakers |
+| 33 | **M-104** | Reddit community engagement (broadened subreddit list) |
 
 ---
-# Active — Launch Critical (32 tickets, before soft beta launches)
+# Active — Launch Critical (33 tickets, before soft beta launches)
 
 ## F-225 — Desktop verification protocol
 
@@ -503,6 +504,37 @@ Rebuild each of the three cards with:
 - Cards should be visually distinct from each other, not three slots of the same template
 
 Reference: Codersera's "Why Codersera" 6-card grid uses different micro-imagery per card, layered information, hover lifts. Adapt that pattern to LeMethodic's 3-card differentiation context.
+
+---
+
+## V-011 — FinalCTA centering + color refresh
+
+**Status:** Active LC
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Filed:** 2026-05-06
+**Type:** FE visual refinement
+
+**Problem (centering):**
+FinalCTA section content reads as visually off-center on production /fr (likely also /en). Headline appears left-aligned or unbalanced; line break "Arrêtez de deviner ce / qui bloque votre B2." has orphan word "ce" at end of line 1.
+
+**Problem (color):**
+Section is monochromatic (ed-bg + ed-fg + ed-accent navy). Chadi feedback: "the colors that were used before in the website were much better." Pre-F-200 era had more color variety. Section reads as flat.
+
+**Fix:**
+Two-stage. Centering fix is mechanical (~15 min, no decision needed). Color refresh requires plan-first with 2-3 concrete options for Chadi to react to.
+
+Centering fix:
+- Audit FinalCTA container alignment (mx-auto + max-width verification)
+- Headline text-align: center
+- Headline line break — text-balance OR non-breaking space OR max-width tuning
+- Verify FR + EN headlines, 1440px desktop + 375px mobile
+
+Color refresh:
+- Plan-first with git history check on FinalCTASection.tsx (pre-F-200 commits) to identify what colors existed before the editorial migration
+- Propose 2-3 treatment options (e.g., accent on "B2" word, warmer trust-line color, section bg flip, button hover character)
+- Chadi picks before push
+
+May ship in stages: centering fix today as quick-win; color refresh as V-011.color subticket pending Chadi sign-off on plan-first proposals.
 
 ---
 

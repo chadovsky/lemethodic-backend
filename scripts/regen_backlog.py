@@ -82,6 +82,7 @@ ACTIVE_LC = [
     "V-002",                  # Em-dash strip across FE copy
     "V-003",                  # Hero atmospheric typographic animation
     "V-004",                  # Differentiation cards rebuild (Codersera-grade)
+    "V-011",                  # FinalCTA centering + color refresh (filed 2026-05-06)
 
     # Visual identity at Promova-bench level:
     "F-210",                  # Icon system
