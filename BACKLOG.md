@@ -487,50 +487,81 @@ Current 5-bar visualization reads meaningless without labels. Add labels OR repl
 
 **Status:** Active LC
 **Tag:** Active — Launch Critical (before soft beta launches).
-**Filed:** 2026-05-06
-**Type:** Strategic reframe + new product surfaces
+**Filed:** 2026-05-06; **detailed spec locked 2026-05-07.**
+**Type:** Strategic surface restructure
 
 **Strategic frame:**
-Reframes LeMethodic from "TCF speaking exam prep" to "French learning **platform**" with multiple products. Current landing positions LeMethodic as a single service; the platform frame supports a product-shaped offering (LemonSqueezy approval was reportedly easier to land for product businesses than service businesses) and creates room for the Book-Lab catalog.
+LeMethodic positions as French learning platform, not exam prep service. New `/` lands platform-level, current landing moves to `/exam-prep`. New `/library` houses books + free resources for LemonSqueezy product approval.
 
-**Note (BE side flag):** the strategic justification cites LemonSqueezy approval. Per B-100 (decided 2026-05-04 — Path B Paddle), the active MoR is Paddle, not LemonSqueezy. F-300 may need to reconcile its strategic-frame paragraph with B-100's Paddle decision OR reopen the LemonSqueezy track. Surfacing for Chadi triage; not blocking the F-300 build itself.
+**Note (BE side flag, unchanged from initial filing):** the strategic justification cites LemonSqueezy approval. Per B-100 (decided 2026-05-04 — Path B Paddle), the active MoR is Paddle, not LemonSqueezy. The 2026-05-07 spec keeps LemonSqueezy framing in F-300e — F-300 may need to reconcile with B-100 (re-flip B-100 to LemonSqueezy with the new product-shaped offering, OR rescope F-300e to Paddle). Surfacing for Chadi triage; not blocking F-300a/b/c/d FE work.
 
-**Restructure:**
-- Current `/` landing (TCF-prep-positioned) → moves to `/exam-prep` sub-page
-- New `/` landing = platform-level with Exam Prep + Library as primary product cards
-- New `/library` = book + free resources store (LemonSqueezy/Paddle fulfillment per B-100 outcome)
+**Tagline locked:**
+- H1: "Stop translating. Start producing French."
+- Subhead: "The method, the exams, the books — built for English speakers."
 
-**Confidence:** HIGH on F-300a/b/c structure. MEDIUM on F-300d–g until plan-first surfaces e-commerce details. Strategic Claude drafts F-300a/b prompts next turn.
+**Sequencing:**
+F-300b ships first (preserves existing UX during transition), then F-300a (new entry surface), then F-300c-g (store) when product catalog ready.
+
+**Confidence:** HIGH on F-300a/b structure. MEDIUM on F-300c-g (e-commerce design needs plan-first). HIGH that this satisfies LemonSqueezy product-approval requirement (modulo the B-100 reconciliation note).
+
+Strategic Claude drives FE prompts. Most BE work is F-300e (checkout), comes later in chain.
 
 ---
 
-### F-300a — New `/` landing (platform-level: hero + product cards)
+### F-300b — Current landing → `/exam-prep` (FE only)
 
-Hero + 2-card product grid (Exam Prep / Library). Plan-first per strategic Claude.
+- Create `/exam-prep` route
+- Copy current `/` page content verbatim to `/exam-prep`
+- Audit internal nav: `/signup`, `/onboarding`, `/paywall` flows still target `/exam-prep` funnel context
+- Existing `/` preserved temporarily during transition
 
-### F-300b — Current landing → `/exam-prep` sub-page
+### F-300a — New `/` platform landing (FE only)
 
-Migrate the existing TCF-prep-positioned landing content to `/exam-prep`. Preserve all existing copy + layout + components — just relocate the route. Adjust internal links accordingly.
+- Hero: locked tagline above ("Stop translating. Start producing French.")
+- Hero CTA: "Start free diagnostic" → `/onboarding` (preserves existing funnel)
+- Product cards section (3 cards):
+  - Exam Prep → `/exam-prep`
+  - Library → `/library`
+  - Free Diagnostic → `/onboarding` (or merge into hero CTA)
+- Compressed methodology section (5-couche names only, link to `/exam-prep` for depth)
+- Final CTA → `/onboarding`
+- Inherit V-012 soft-editorial styling
+- Apple-product-website polish (per V-013c TopNav language)
 
-### F-300c — `/library` store surface (grid, filters, search)
+### F-300c — `/library` store surface (FE)
 
-New product catalog surface. Plan-first required: grid layout, filter taxonomy (book / free resource / pre-order; topic / level / format), search behavior.
+- Grid of product cards (books + free resources mixed)
+- Filters: format (epub / pdf / print), level (A1 / A2 / B1 / B2), topic
+- Search bar
+- $0 items badged "Free" — same flow, different price
+- Empty state: "Catalog launching soon — pre-order to be notified"
 
-### F-300d — Product detail pages `/library/[slug]`
+### F-300d — Product detail pages `/library/[slug]` (FE)
 
-Per-product detail surface. Plan-first required: layout (hero + description + price + CTA + related), pricing display, format options.
+- Cover image, title, author, description
+- Format options + price
+- "Add to cart" or "Download free" CTA per item
+- Related items
 
-### F-300e — Cart + LemonSqueezy checkout
+### F-300e — Cart + LemonSqueezy checkout (FE + BE)
 
-Cart UX + LemonSqueezy/Paddle checkout integration. **BE side:** depends on B-100 outcome; if Paddle, integration uses Paddle SDK per P-106. New BE work TBD: cart persistence (server-side or LS-only?), order webhook handling.
+- Cart state (localStorage + persisted)
+- LemonSqueezy checkout integration
+- Order confirmation flow
+- **BE:** webhook handler for purchase confirmation + entitlement granting
+- **B-100 reconciliation pending** — see flag above; F-300e wiring depends on which MoR is canonical at build time
 
-### F-300f — Free resources flow ($0 items, direct download)
+### F-300f — Free resources flow (FE + BE minor)
 
-Free download surface. **BE side:** decide auth gate (any logged-in user? signup-required?) + download tracking + asset hosting (DO Spaces? Vercel Edge?). Plan-first required.
+- $0 items: skip cart, direct download
+- Email gate optional (capture user for marketing)
+- **BE:** signed download URLs (likely DO Spaces presigned URLs — same pattern as TTS audio cache)
 
-### F-300g — Pre-order / waitlist for upcoming books
+### F-300g — Pre-order / waitlist (FE + BE)
 
-Email-capture pre-order flow for books not yet published. **BE side:** waitlist storage (new table or reuse existing email-capture from P-222 waitlist?), notification flow at launch.
+- Books not ready: "Notify me when available" CTA
+- Email capture, persist to BE
+- **BE:** waitlist table + email send on launch (could reuse P-222 waitlist plumbing — surface in plan-first)
 
 ---
 
