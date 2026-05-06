@@ -1,7 +1,7 @@
 import datetime
 from sqlalchemy import (
-    CheckConstraint, Column, DateTime, Float, ForeignKey, Integer,
-    String, Text,
+    CheckConstraint, Column, DateTime, Float, ForeignKey, Index,
+    Integer, String, Text,
 )
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -67,3 +67,57 @@ class WritingSubmission(Base):
 
     user = relationship("User")
     prompt = relationship("WritingPrompt", back_populates="submissions")
+
+
+class WritingSubmissionJob(Base):
+    """V-016a — async job row backing the POST→poll pattern.
+
+    Lifecycle: pending → running → (completed | failed). The legacy
+    sync POST /api/writing/submit was timing out at ~30s on prod
+    because Claude analysis can take 36s+ and infrastructure (DO
+    Cloudflare layer) cuts long-running requests.
+
+    Job rows are forever-retained per Q3 lock-in 2026-05-07. File
+    P-260c if table grows past noise threshold.
+
+    See:
+      - alembic/versions/g5e6f7d8c9b0_v016a_writing_jobs.py (schema)
+      - app/services/writing_jobs.py (background runner)
+      - app/routers/writing.py (POST /submit + GET /jobs/{id})
+    """
+
+    __tablename__ = "writing_submission_jobs"
+
+    # UUID4 string PK (matches Conversation precedent for opaque
+    # job identifiers; avoids exposing sequential integer counters
+    # in URLs).
+    id = Column(String(36), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    # Populated only when status='completed'.
+    submission_id = Column(
+        Integer, ForeignKey("writing_submissions.id"), nullable=True
+    )
+    status = Column(String(20), nullable=False)
+    created_at = Column(
+        DateTime, nullable=False, default=datetime.datetime.utcnow
+    )
+    completed_at = Column(DateTime, nullable=True)
+    # Serialized WritingSubmissionResult (mirrors legacy sync POST
+    # response shape so FE polling consumer renders identically).
+    result_json = Column(Text, nullable=True)
+    # Sanitized error message; cap at 500 chars at write-time.
+    error_message = Column(Text, nullable=True)
+
+    user = relationship("User")
+    submission = relationship("WritingSubmission")
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'running', 'completed', 'failed')",
+            name="ck_writing_submission_jobs_status",
+        ),
+        Index(
+            "ix_writing_submission_jobs_user_created",
+            "user_id", "created_at",
+        ),
+    )

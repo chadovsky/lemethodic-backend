@@ -42,6 +42,14 @@ services:
     instance_count: 1
     http_port: 8080
 
+    # V-016a stopgap (2026-05-07): bump from DO default (~60-100s) to
+    # 180s. The proper fix is the async-job pattern in
+    # app/services/writing_jobs.py + writing.py POST→poll endpoints —
+    # this is cosmetic insurance for any synchronous endpoint that
+    # might briefly take >60s (e.g., a future Claude-backed sync call
+    # that hasn't been migrated to the job pattern yet).
+    request_timeout: 180
+
     health_check:
       http_path: /health
       # Alembic upgrade can take 5–15 s on first deploy + cold start.

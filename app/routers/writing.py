@@ -1,16 +1,27 @@
-import json, logging
-from fastapi import APIRouter, Depends, HTTPException
+import asyncio
+import json
+import logging
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, status as http_status
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models.models import User
-from app.models.writing import WritingPrompt, WritingSubmission
+from app.models.writing import (
+    WritingPrompt, WritingSubmission, WritingSubmissionJob,
+)
+from app.schemas.writing_jobs import (
+    WritingJobResponse,
+    WritingSubmitResponse,
+)
 from app.services.auth import get_current_user
 from app.services.writing_analysis import analyze_writing
 from app.services.exam_profiles import get_profile
 from app.services.scoring_maps import cefr_from_score, clb_from_cefr
+from app.services.writing_jobs import run_writing_analysis_job
 
 router = APIRouter(prefix="/api/writing", tags=["writing"])
 
@@ -74,24 +85,43 @@ def get_prompts(
     ]
 
 
-@router.post("/submit")
+@router.post(
+    "/submit",
+    status_code=http_status.HTTP_202_ACCEPTED,
+    response_model=WritingSubmitResponse,
+)
 async def submit_writing(
     req: SubmitWritingRequest,
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
-):
-    """Submit writing for AI analysis."""
-    # Validate prompt exists
-    prompt = db.query(WritingPrompt).filter(WritingPrompt.id == req.prompt_id).first()
+) -> WritingSubmitResponse:
+    """V-016a — submit writing for async AI analysis.
+
+    Creates a `writing_submission_jobs` row + spawns a background
+    asyncio task to run the Claude analysis. Returns 202 with the
+    `job_id` immediately. FE polls `GET /api/writing/jobs/{job_id}`
+    until status='completed' or 'failed' (poll cadence locked at
+    3s, abandon after 5 min).
+
+    Pre-V-016a this was a sync endpoint that returned the full
+    analysis after 30-90s of blocking. Cut by infrastructure
+    (Cloudflare/DO request_timeout) on prod. The async pattern is
+    the structural fix; the .do/app.yaml `request_timeout: 180`
+    bump is cosmetic insurance for any sync paths.
+    """
+    # Validate prompt exists (synchronous — fast)
+    prompt = (
+        db.query(WritingPrompt)
+        .filter(WritingPrompt.id == req.prompt_id)
+        .first()
+    )
     if not prompt:
         raise HTTPException(404, "Writing prompt not found")
 
-    # Validate text is not empty
+    # Validate text is not empty (synchronous — fast)
     text = req.student_text.strip()
     if not text:
         raise HTTPException(400, "Text cannot be empty")
-
-    word_count = len(text.split())
 
     # F-044 Spanish fallback: generate content in English until ES is fully
     # supported. UI labels still render in Spanish via frontend i18n.
@@ -103,40 +133,66 @@ async def submit_writing(
         )
         effective_ui_language = "en"
 
-    # Call Claude for analysis
-    try:
-        feedback = await analyze_writing(
-            student_text=text,
-            prompt_text=prompt.prompt_text,
-            prompt_type=prompt.prompt_type,
-            target_level=prompt.level,
-            ui_language=effective_ui_language,
-            exam_profile=get_profile(req.exam_profile),
-        )
-    except Exception as e:
-        raise HTTPException(500, f"Analysis failed: {str(e)}")
+    # Insert job row (status=pending) BEFORE spawning the task — task
+    # opens its own DB session and reads this row by id.
+    job_id = str(uuid.uuid4())
+    db.add(WritingSubmissionJob(
+        id=job_id,
+        user_id=user.id,
+        status="pending",
+    ))
+    db.commit()
 
-    # Save submission
-    submission = WritingSubmission(
+    # Spawn the background task. asyncio.create_task fire-and-forget —
+    # task lifecycle is bound to the uvicorn event loop, NOT this
+    # request. Container restart loses in-flight tasks (acceptable
+    # for soft-beta volume per Q2 lock-in 2026-05-07; user resubmits).
+    asyncio.create_task(run_writing_analysis_job(
+        job_id=job_id,
         user_id=user.id,
         prompt_id=req.prompt_id,
         student_text=text,
-        feedback_json=json.dumps(feedback, ensure_ascii=False),
-        word_count=word_count,
-        overall_score=feedback.get("overall_score", 0),
         time_taken_seconds=req.time_taken_seconds,
-    )
-    db.add(submission)
-    db.commit()
-    db.refresh(submission)
+        ui_language=effective_ui_language,
+        exam_profile=req.exam_profile,
+    ))
 
-    return {
-        "id": submission.id,
-        "word_count": word_count,
-        "time_taken_seconds": req.time_taken_seconds,
-        "feedback": feedback,
-        "submitted_at": submission.submitted_at.isoformat() if submission.submitted_at else "",
-    }
+    return WritingSubmitResponse(job_id=job_id, status="pending")
+
+
+@router.get("/jobs/{job_id}", response_model=WritingJobResponse)
+def get_writing_job(
+    job_id: str,
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+) -> WritingJobResponse:
+    """V-016a — poll a writing-analysis job's state.
+
+    FE consumer polls every 3s (abandon after 5 min). Returns
+    current status + result (when completed) or error (when failed).
+
+    Auth: 403 cross-user (matches /history/{user_id} precedent —
+    auth-leaks job existence to the owner; non-owners get 403 not
+    404).
+    """
+    job = (
+        db.query(WritingSubmissionJob)
+        .filter(WritingSubmissionJob.id == job_id)
+        .first()
+    )
+    if job is None:
+        raise HTTPException(404, "Job not found")
+    if job.user_id != user.id and not user.is_admin:
+        raise HTTPException(403, "Not authorized to view this job")
+
+    return WritingJobResponse(
+        job_id=job.id,
+        status=job.status,
+        result=json.loads(job.result_json) if job.result_json else None,
+        error=job.error_message,
+        created_at=job.created_at,
+        completed_at=job.completed_at,
+    )
 
 
 @router.get("/history/{user_id}")
