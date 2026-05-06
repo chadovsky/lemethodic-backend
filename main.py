@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Request, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from app.routers import auth, recordings, admin
 from app.routers import analytics
 from app.routers import writing
@@ -203,24 +203,3 @@ def serve_tts_audio(
     }.get(ext, "application/octet-stream")
 
     return storage.stream_response(storage_key, content_type=media_type)
-
-
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    template_path = os.path.join(os.path.dirname(__file__), "app", "templates", "index.html")
-    with open(template_path, "r", encoding="utf-8") as f:
-        return f.read()
-
-
-@app.get("/admin", response_class=HTMLResponse)
-async def admin_page():
-    template_path = os.path.join(os.path.dirname(__file__), "app", "templates", "admin.html")
-    with open(template_path, "r", encoding="utf-8") as f:
-        return f.read()
-
-
-@app.get("/writing", response_class=HTMLResponse)
-async def writing_page():
-    template_path = os.path.join(os.path.dirname(__file__), "app", "templates", "writing.html")
-    with open(template_path, "r", encoding="utf-8") as f:
-        return f.read()
