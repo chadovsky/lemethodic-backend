@@ -33,29 +33,28 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 11 | **F-206** | Auxiliary pages desktop (privacy/terms/refund/waitlist/signup) |
 | 12 | **F-220** | Onboarding "intro framing" (Block 3 quiz-pop-up entry moment) |
 | 13 | **F-221** | Exam-selector in onboarding + brand-layer rewrite |
-| 14 | **F-224** | Writing Dashboard build (FE consumer + prompt seed) |
-| 15 | **V-009** | CouchesDiagnostic radar: 5-axis + brand labels |
-| 16 | **V-010** | /ecole phase structure correction |
-| 17 | **V-005** | Font system upgrade |
-| 18 | **V-001** | Hero H1 + rotating kicker sizing |
-| 19 | **V-002** | Em-dash strip across FE copy |
-| 20 | **V-003** | Hero atmospheric typographic animation |
-| 21 | **V-004** | Differentiation cards rebuild (Codersera-grade) |
-| 22 | **V-011** | FinalCTA centering + color refresh |
-| 23 | **F-210** | Icon system + custom LeMethodic icons |
-| 24 | **F-211** | Loading states overhaul |
-| 25 | **F-212** | Micro-animations + interaction feedback |
-| 26 | **F-213** | Page transitions + motion design |
-| 27 | **F-214** | Visual depth + design system extension |
-| 28 | **P-234** | Cluster detail view |
-| 29 | **P-105** | 7-day free trial logic |
-| 30 | **P-106** | Paddle integration with subscription + one-time SKU |
-| 31 | **B-100** | Paddle account setup |
-| 32 | **M-103** | YouTube anchor video — French exam prep for English speakers |
-| 33 | **M-104** | Reddit community engagement (broadened subreddit list) |
+| 14 | **V-009** | CouchesDiagnostic radar: 5-axis + brand labels |
+| 15 | **V-010** | /ecole phase structure correction |
+| 16 | **V-005** | Font system upgrade |
+| 17 | **V-001** | Hero H1 + rotating kicker sizing |
+| 18 | **V-002** | Em-dash strip across FE copy |
+| 19 | **V-003** | Hero atmospheric typographic animation |
+| 20 | **V-004** | Differentiation cards rebuild (Codersera-grade) |
+| 21 | **V-011** | FinalCTA centering + color refresh |
+| 22 | **F-210** | Icon system + custom LeMethodic icons |
+| 23 | **F-211** | Loading states overhaul |
+| 24 | **F-212** | Micro-animations + interaction feedback |
+| 25 | **F-213** | Page transitions + motion design |
+| 26 | **F-214** | Visual depth + design system extension |
+| 27 | **P-234** | Cluster detail view |
+| 28 | **P-105** | 7-day free trial logic |
+| 29 | **P-106** | Paddle integration with subscription + one-time SKU |
+| 30 | **B-100** | Paddle account setup |
+| 31 | **M-103** | YouTube anchor video — French exam prep for English speakers |
+| 32 | **M-104** | Reddit community engagement (broadened subreddit list) |
 
 ---
-# Active — Launch Critical (33 tickets, before soft beta launches)
+# Active — Launch Critical (32 tickets, before soft beta launches)
 
 ## F-225 — Desktop verification protocol
 
@@ -286,50 +285,6 @@ Marketing layer: TCF/TEF stays as primary entry persona (visa urgency); "all exa
 
 **Owner:** FE + BE + Chadi (brand copy + exam-route mapping table).
 **Depends on:** F-201 (onboarding desktop layout).
-
----
-
-## F-224 — Writing Dashboard build (FE consumer + prompt seed)
-
-**Filed:** 2026-05-04.
-**Status:** **BE-side Awaiting Verification** (commit `3ac274c`) — discovery 2026-05-04: BE writing infrastructure already shipped pre-rebrand. Seed script relocated + content-cleaned 2026-05-04. Production seed run pending Chadi (`python -m scripts.seed_writing_prompts` against prod DB). FE consumer scope is the next leg — drafted as next FE prompt after F-221 reply resolves.
-**Tag:** Active — Launch Critical (before soft beta launches).
-
-**Priority:** Medium.
-
-### Discovery (2026-05-04)
-
-The 2026-05-04 plan-first assumed empty BE writing surface. **Reality found during implementation:**
-
-- `app/models/writing.py` — `WritingPrompt` + `WritingSubmission` ORM classes, shipped via `alembic/versions/57c313935953_initial_schema.py`.
-- `app/routers/writing.py` — 4 endpoints, all live in production:
-  - `GET /api/writing/prompts` (filterable by level)
-  - `POST /api/writing/submit` (Claude-backed analysis, async)
-  - `GET /api/writing/history/{user_id}` (auth-gated: own user or admin)
-  - `GET /api/writing/submission/{submission_id}`
-- `app/services/writing_analysis.py` — 405 LoC of Claude-based 4-layer methodology analysis (Sentence Architecture / Grammatical Accuracy / Lexical Appropriateness / L1 Interference). Returns scored feedback per layer + overall score + word count + per-error correction.
-- `app/templates/writing.html` — legacy Jinja template (will be deleted under F-223 path-2 alongside `index.html`/`admin.html` once log pull confirms zero traffic).
-
-**Implication for the (c) lock-in:** the (a) framing — "auto-graded analysis requires P-260 promotion" — is incorrect. The auto-graded analysis pipeline already exists. P-260's "writing analysis pipeline (Phase 2 deferred)" labeling is BACKLOG-codebase desync (observation; not a new ticket — fold cleanup into F-226 voice-audit sweep if needed).
-
-The (c) lock-in remains a defensible product choice (render submissions without surfacing analysis to keep soft-beta expectations conservative), but it's no longer constraint-driven — the FE consumer can choose whether to render the existing analysis or hide it behind a placeholder. Decision deferred to FE plan-first turn for F-224 FE.
-
-### BE-side scope shipped this round (commit `3ac274c`)
-
-- **Seed relocation + cleanup** (`scripts/seed_writing_prompts.py`, replaces root-level `seed_writing_prompts.py`): 18 prompts (7 B1 + 7 B2 + 4 C1) across argumentative / essay / formal_letter / opinion_essay types. Accents normalized (older B1+C1 batches were ASCII-stripped — `commande` → `commandé`, `Ecrivez` → `Écrivez`, etc.). Drops `Base.metadata.create_all()` (Alembic owns schema post-F-077). Idempotent: re-runs skip existing prompts via prompt_text match.
-- **Production seed pending Chadi:** `python -m scripts.seed_writing_prompts` against prod DB (same pattern as `seed_b1_b2_path.py` / `ingest_b1_b2_cluster_content.py`). Local DB seeded + verified — endpoint returns 18 prompts, distribution correct per level.
-
-### FE-side scope (next FE prompt after F-221)
-
-Build the `/writing` dashboard consuming existing BE endpoints. Decisions to surface in the FE plan-first turn:
-
-- Render existing analysis (4-layer feedback) or hide behind a "Analysis coming Phase 2" placeholder per (c) lock-in?
-- Submission UX: prompt picker → composition → submit → feedback view.
-- History list visual treatment (list rows vs grid cards).
-- Empty state when user has zero submissions.
-- Visual identity per locked direction (EMDL + fluentpath.ai + Neuralink).
-
-**Owner:** BE (seed relocation, this round — Awaiting Verification) → FE (dashboard consumer, next round).
 
 ---
 
@@ -1832,6 +1787,49 @@ Cleanup of the F-110.1 dual-emission window. Once `fluentpath-frontend/lib/api.t
 **Pre-condition gate:** verify with the frontend team / `fluentpath-frontend` repo that no consumer reads `c.internal_key` anymore. F-110.1 verified the call sites in `lib/api.ts`: `interface RawCouche` (type), `KNOWN_COUCHE_KEYS` filter, `mapDiagnosticBlock` mapper. All three must read `c.key` before this ticket can ship.
 
 **Estimate:** 15 min.
+
+---
+
+## F-224 — Writing Dashboard build (FE consumer + prompt seed)
+
+**Filed:** 2026-05-04.
+**Status:** **BE-side Awaiting Verification** (commit `3ac274c`) — discovery 2026-05-04: BE writing infrastructure already shipped pre-rebrand. Seed script relocated + content-cleaned 2026-05-04. Production seed run pending Chadi (`python -m scripts.seed_writing_prompts` against prod DB). FE consumer scope is the next leg — drafted as next FE prompt after F-221 reply resolves.
+
+**Priority:** Medium.
+
+### Discovery (2026-05-04)
+
+The 2026-05-04 plan-first assumed empty BE writing surface. **Reality found during implementation:**
+
+- `app/models/writing.py` — `WritingPrompt` + `WritingSubmission` ORM classes, shipped via `alembic/versions/57c313935953_initial_schema.py`.
+- `app/routers/writing.py` — 4 endpoints, all live in production:
+  - `GET /api/writing/prompts` (filterable by level)
+  - `POST /api/writing/submit` (Claude-backed analysis, async)
+  - `GET /api/writing/history/{user_id}` (auth-gated: own user or admin)
+  - `GET /api/writing/submission/{submission_id}`
+- `app/services/writing_analysis.py` — 405 LoC of Claude-based 4-layer methodology analysis (Sentence Architecture / Grammatical Accuracy / Lexical Appropriateness / L1 Interference). Returns scored feedback per layer + overall score + word count + per-error correction.
+- `app/templates/writing.html` — legacy Jinja template (will be deleted under F-223 path-2 alongside `index.html`/`admin.html` once log pull confirms zero traffic).
+
+**Implication for the (c) lock-in:** the (a) framing — "auto-graded analysis requires P-260 promotion" — is incorrect. The auto-graded analysis pipeline already exists. P-260's "writing analysis pipeline (Phase 2 deferred)" labeling is BACKLOG-codebase desync (observation; not a new ticket — fold cleanup into F-226 voice-audit sweep if needed).
+
+The (c) lock-in remains a defensible product choice (render submissions without surfacing analysis to keep soft-beta expectations conservative), but it's no longer constraint-driven — the FE consumer can choose whether to render the existing analysis or hide it behind a placeholder. Decision deferred to FE plan-first turn for F-224 FE.
+
+### BE-side scope shipped this round (commit `3ac274c`)
+
+- **Seed relocation + cleanup** (`scripts/seed_writing_prompts.py`, replaces root-level `seed_writing_prompts.py`): 18 prompts (7 B1 + 7 B2 + 4 C1) across argumentative / essay / formal_letter / opinion_essay types. Accents normalized (older B1+C1 batches were ASCII-stripped — `commande` → `commandé`, `Ecrivez` → `Écrivez`, etc.). Drops `Base.metadata.create_all()` (Alembic owns schema post-F-077). Idempotent: re-runs skip existing prompts via prompt_text match.
+- **Production seed pending Chadi:** `python -m scripts.seed_writing_prompts` against prod DB (same pattern as `seed_b1_b2_path.py` / `ingest_b1_b2_cluster_content.py`). Local DB seeded + verified — endpoint returns 18 prompts, distribution correct per level.
+
+### FE-side scope (next FE prompt after F-221)
+
+Build the `/writing` dashboard consuming existing BE endpoints. Decisions to surface in the FE plan-first turn:
+
+- Render existing analysis (4-layer feedback) or hide behind a "Analysis coming Phase 2" placeholder per (c) lock-in?
+- Submission UX: prompt picker → composition → submit → feedback view.
+- History list visual treatment (list rows vs grid cards).
+- Empty state when user has zero submissions.
+- Visual identity per locked direction (EMDL + fluentpath.ai + Neuralink).
+
+**Owner:** BE (seed relocation, this round — Awaiting Verification) → FE (dashboard consumer, next round).
 
 ---
 

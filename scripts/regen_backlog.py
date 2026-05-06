@@ -67,8 +67,9 @@ ACTIVE_LC = [
     "F-220",                  # Onboarding intro framing
     "F-221",                  # Exam-selector + brand-layer rewrite
 
-    # Writing Dashboard scope decision:
-    "F-224",                  # Build OR hide /writing tab
+    # F-224 fully shipped 2026-05-06 (real Claude analysis + 14 v1
+    # prompts seeded prod via alembic f4d5e6c7b8a9 + commit ae785a4).
+    # Moved to SHIPPED.
 
     # V-series — verification-found refinement (filed 2026-05-05).
     # V-009 + V-010 lead — methodology-content contradictions in shipped
@@ -158,9 +159,12 @@ DEFERRED = [
 # P-230 fully shipped 2026-05-03 FE-side (3-commit set ending 28bf765, BE no-op).
 # M-101 fully shipped 2026-05-03 (landing page LeMethodic-voice copy live via M-101a).
 # M-100 fully shipped 2026-05-03 (Past Preply re-engagement outreach delivered).
+# F-224 fully shipped 2026-05-06 (writing surface — real Claude analysis +
+# 14 v1 prompts seeded prod via alembic f4d5e6c7b8a9 + commit ae785a4).
 SHIPPED = [
     "B-102",
-    "F-079", "F-110", "F-110.1", "F-110.2", "P-103", "P-104",
+    "F-079", "F-110", "F-110.1", "F-110.2", "F-224",
+    "P-103", "P-104",
     "P-200", "P-201", "P-202", "P-203", "P-204",
     "P-210", "P-211", "P-212", "P-220", "P-221", "P-222",
     "P-230", "P-240",
