@@ -34,26 +34,27 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 12 | **F-221** | Exam-selector in onboarding + brand-layer rewrite |
 | 13 | **V-009** | CouchesDiagnostic radar: 5-axis + brand labels |
 | 14 | **V-010** | /ecole phase structure correction |
-| 15 | **V-005** | Font system upgrade |
-| 16 | **V-001** | Hero H1 + rotating kicker sizing |
-| 17 | **V-002** | Em-dash strip across FE copy |
-| 18 | **V-003** | Hero atmospheric typographic animation |
-| 19 | **V-004** | Differentiation cards rebuild (Codersera-grade) |
-| 20 | **V-011** | FinalCTA centering + color refresh |
-| 21 | **F-210** | Icon system + custom LeMethodic icons |
-| 22 | **F-211** | Loading states overhaul |
-| 23 | **F-212** | Micro-animations + interaction feedback |
-| 24 | **F-213** | Page transitions + motion design |
-| 25 | **F-214** | Visual depth + design system extension |
-| 26 | **P-234** | Cluster detail view |
-| 27 | **P-105** | 7-day free trial logic |
-| 28 | **P-106** | Paddle integration with subscription + one-time SKU |
-| 29 | **B-100** | Paddle account setup |
-| 30 | **M-103** | YouTube anchor video — French exam prep for English speakers |
-| 31 | **M-104** | Reddit community engagement (broadened subreddit list) |
+| 15 | **V-013** | Pre-launch surface completeness |
+| 16 | **V-005** | Font system upgrade |
+| 17 | **V-001** | Hero H1 + rotating kicker sizing |
+| 18 | **V-002** | Em-dash strip across FE copy |
+| 19 | **V-003** | Hero atmospheric typographic animation |
+| 20 | **V-004** | Differentiation cards rebuild (Codersera-grade) |
+| 21 | **V-011** | FinalCTA centering + color refresh |
+| 22 | **F-210** | Icon system + custom LeMethodic icons |
+| 23 | **F-211** | Loading states overhaul |
+| 24 | **F-212** | Micro-animations + interaction feedback |
+| 25 | **F-213** | Page transitions + motion design |
+| 26 | **F-214** | Visual depth + design system extension |
+| 27 | **P-234** | Cluster detail view |
+| 28 | **P-105** | 7-day free trial logic |
+| 29 | **P-106** | Paddle integration with subscription + one-time SKU |
+| 30 | **B-100** | Paddle account setup |
+| 31 | **M-103** | YouTube anchor video — French exam prep for English speakers |
+| 32 | **M-104** | Reddit community engagement (broadened subreddit list) |
 
 ---
-# Active — Launch Critical (31 tickets, before soft beta launches)
+# Active — Launch Critical (32 tickets, before soft beta launches)
 
 ## F-225 — Desktop verification protocol
 
@@ -327,6 +328,62 @@ The current 3-phase structure is residue from the old 16-lesson era with milesto
 - The 3rd button "L'École Complète" was always confusing nomenclature — its range (17-27) overlapped with Approfondissement. Removing it cleanly.
 - "L'École Complète" as a concept survives as the **completion state** (the user finishes all 27 lessons), not as a separate phase or surface. F-213.celebration handles the visual treatment of completion.
 - F-204.deep covers chrome migration of TodayFocus and other /ecole section internals.
+
+---
+
+## V-013 — Pre-launch surface completeness
+
+**Status:** Active LC
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Filed:** 2026-05-06
+**Type:** FE pre-launch blocker
+
+**Problem:**
+Production has placeholder/broken surfaces that ship to users:
+- `/writing` shows "Coming soon (F-058)" despite F-224 backend live with 14 prompts seeded
+- `/more` shows "Coming soon (F-058)" — never implemented
+- Bottom nav (École/Speaking/Writing/Progress/More) shows on desktop, leaks mobile UX
+- Desktop has no proper top nav — surfaces feel half-built
+
+These are credibility hits for any first-time visitor.
+
+**Three sub-tickets — all FE-only.** BE work for V-013a is already done (F-224 shipped 2026-05-06; endpoints live with 14 v1 prompts on prod).
+
+**Confidence:** HIGH on V-013c direction. MEDIUM on V-013a/V-013b until plan-first surfaces UX details.
+
+---
+
+### V-013a — Wire /writing frontend to F-224 backend
+
+- Consume `GET /api/writing/prompts` (14 prompts live, queryable by `tache_level` / `level` / `topic_tag` per F-224 endpoint extension)
+- Display prompts library grouped by Tâche level (T1 / T2 / T3 sections; B1 vs B2 within)
+- Click prompt → submission form (textarea, word counter against `min_words` / `max_words`, submit)
+- `POST /api/writing/submit` → display Claude analysis result (4-layer feedback: Sentence Architecture / Grammatical Accuracy / Lexical Appropriateness / L1 Interference; per `writing_analysis.py`)
+- Submission history (basic list view from `GET /api/writing/history/{user_id}`; expand interactions later)
+- Render `prompt_fr` for FR users + `prompt_en` for EN users (i18n parallel rendering — both fields now present in API response per F-224)
+- For Tâche 3 prompts, the `prompt_fr` body contains `**bold**` markers + `\n\n` paragraph breaks; FE rendering needs to handle (markdown render OR strip-and-paragraph)
+
+### V-013b — Build /more page content
+
+- Profile section (avatar, name, exam target from `q0_target_exam`, exam date from `q3_exam_date`)
+- Settings (language toggle, current locale from `User.ui_language`)
+- Account actions (logout, change password if applicable)
+- About (version, support, terms link → `/terms`, privacy link → `/privacy`, refund link → `/refund`)
+- Page exists on both mobile + desktop
+
+### V-013c — Nav system overhaul
+
+- Bottom nav: gate to `<md` breakpoint (mobile-only)
+- Desktop: new `TopNav` component, in-product surfaces
+- TopNav direction: **Apple-product-website level polish**
+  - Left: LeMethodic logo wordmark
+  - Center: École / Speaking / Writing / Progress nav links
+  - Right: language toggle + profile avatar with dropdown
+  - Sticky, subtle backdrop-blur on scroll, ~56px height
+  - Spring hover transitions, ed-warm tint on hover
+  - Active state: subtle underline or warm accent
+- TopNav appears on in-product surfaces only (not landing `/`, `/fr`)
+- Marketing landing nav stays as-is (LeMethodic wordmark + EN/FR toggle)
 
 ---
 
