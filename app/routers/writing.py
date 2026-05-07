@@ -142,12 +142,18 @@ async def submit_writing(
         status="pending",
     ))
     db.commit()
+    logger.info(
+        "V-016a submit JOB_CREATED job_id=%s user_id=%s prompt_id=%s "
+        "word_count=%d ui_language=%s",
+        job_id, user.id, req.prompt_id, len(text.split()),
+        effective_ui_language,
+    )
 
     # Spawn the background task. asyncio.create_task fire-and-forget —
     # task lifecycle is bound to the uvicorn event loop, NOT this
     # request. Container restart loses in-flight tasks (acceptable
     # for soft-beta volume per Q2 lock-in 2026-05-07; user resubmits).
-    asyncio.create_task(run_writing_analysis_job(
+    task = asyncio.create_task(run_writing_analysis_job(
         job_id=job_id,
         user_id=user.id,
         prompt_id=req.prompt_id,
@@ -156,6 +162,12 @@ async def submit_writing(
         ui_language=effective_ui_language,
         exam_profile=req.exam_profile,
     ))
+    # Capture task identity so log readers can correlate runner
+    # entries back to the submit handler. Don't await — fire-and-forget.
+    logger.info(
+        "V-016a submit TASK_SPAWNED job_id=%s task_name=%s",
+        job_id, task.get_name(),
+    )
 
     return WritingSubmitResponse(job_id=job_id, status="pending")
 

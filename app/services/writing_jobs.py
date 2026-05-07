@@ -28,6 +28,7 @@ from __future__ import annotations
 import datetime
 import json
 import logging
+import time
 
 from app.database import SessionLocal
 # Models.User import side-effect — registers User in declarative base
@@ -73,6 +74,18 @@ async def run_writing_analysis_job(
     Args are primitive values; no shared ORM objects with the request
     session.
     """
+    # V-016a diagnostic logging (2026-05-07): structured trace at every
+    # state transition + Claude-call duration. Surfaces stalls in the
+    # async-job pipeline that the AnalyzingPanel symptoms exposed.
+    runner_t0 = time.time()
+    word_count_in = len(student_text.split())
+    logger.info(
+        "V-016a runner ENTRY job_id=%s user_id=%s prompt_id=%s "
+        "word_count=%d ui_language=%s exam_profile=%s",
+        job_id, user_id, prompt_id, word_count_in,
+        ui_language, exam_profile,
+    )
+
     db = SessionLocal()
     try:
         job = (
@@ -82,15 +95,19 @@ async def run_writing_analysis_job(
         )
         if job is None:
             logger.error(
-                "V-016a job runner: job_id=%s not found at start; "
-                "aborting silently",
-                job_id,
+                "V-016a runner ABORT job_id=%s reason=job_row_missing "
+                "elapsed_s=%.2f",
+                job_id, time.time() - runner_t0,
             )
             return
 
         # pending → running
         job.status = "running"
         db.commit()
+        logger.info(
+            "V-016a runner STATUS=running job_id=%s elapsed_s=%.2f",
+            job_id, time.time() - runner_t0,
+        )
 
         # Resolve prompt
         prompt = (
@@ -104,14 +121,21 @@ async def run_writing_analysis_job(
             job.completed_at = datetime.datetime.utcnow()
             db.commit()
             logger.warning(
-                "V-016a job runner: job_id=%s prompt_id=%s missing",
-                job_id, prompt_id,
+                "V-016a runner FAIL job_id=%s reason=prompt_not_found "
+                "prompt_id=%s elapsed_s=%.2f",
+                job_id, prompt_id, time.time() - runner_t0,
             )
             return
 
         # Run analysis (analyze_writing handles ANTHROPIC_API_KEY-unset
         # via _demo_writing_feedback fallback). Catches any exception
         # to flip job.status=failed cleanly.
+        logger.info(
+            "V-016a runner CLAUDE_CALL_START job_id=%s "
+            "target_level=%s prompt_type=%s",
+            job_id, prompt.level, prompt.prompt_type,
+        )
+        claude_t0 = time.time()
         try:
             feedback = await analyze_writing(
                 student_text=student_text,
@@ -122,6 +146,7 @@ async def run_writing_analysis_job(
                 exam_profile=get_profile(exam_profile),
             )
         except Exception as e:
+            claude_elapsed = time.time() - claude_t0
             job.status = "failed"
             job.error_message = _truncate_error(
                 f"{type(e).__name__}: {e}"
@@ -129,10 +154,20 @@ async def run_writing_analysis_job(
             job.completed_at = datetime.datetime.utcnow()
             db.commit()
             logger.exception(
-                "V-016a job runner: job_id=%s analyze_writing failed",
-                job_id,
+                "V-016a runner FAIL job_id=%s reason=claude_exception "
+                "exception_type=%s claude_elapsed_s=%.2f total_elapsed_s=%.2f",
+                job_id, type(e).__name__, claude_elapsed,
+                time.time() - runner_t0,
             )
             return
+
+        claude_elapsed = time.time() - claude_t0
+        feedback_kind = "dict" if isinstance(feedback, dict) else "str"
+        logger.info(
+            "V-016a runner CLAUDE_CALL_DONE job_id=%s claude_elapsed_s=%.2f "
+            "feedback_kind=%s",
+            job_id, claude_elapsed, feedback_kind,
+        )
 
         # Persist submission row (mirrors legacy sync handler)
         word_count = len(student_text.split())
@@ -149,6 +184,11 @@ async def run_writing_analysis_job(
         db.add(submission)
         db.commit()
         db.refresh(submission)
+        logger.info(
+            "V-016a runner SUBMISSION_PERSISTED job_id=%s "
+            "submission_id=%s elapsed_s=%.2f",
+            job_id, submission.id, time.time() - runner_t0,
+        )
 
         # Build result_json mirroring legacy sync POST /submit response
         # so the FE polling consumer renders identically.
@@ -169,14 +209,16 @@ async def run_writing_analysis_job(
         job.completed_at = datetime.datetime.utcnow()
         db.commit()
         logger.info(
-            "V-016a job runner: job_id=%s completed submission_id=%s "
-            "word_count=%d",
+            "V-016a runner COMPLETED job_id=%s submission_id=%s "
+            "word_count=%d total_elapsed_s=%.2f",
             job_id, submission.id, word_count,
+            time.time() - runner_t0,
         )
     except Exception:
         # Defensive — catch-all so the task never raises out.
         logger.exception(
-            "V-016a job runner: job_id=%s unexpected failure", job_id
+            "V-016a runner UNEXPECTED_FAILURE job_id=%s elapsed_s=%.2f",
+            job_id, time.time() - runner_t0
         )
         try:
             job = (

@@ -355,6 +355,14 @@ async def _call_claude(system_prompt: str, user_message: str) -> dict | str:
                 "content-type": "application/json",
             },
             json={
+                # V-016a triage (2026-05-07): tested Haiku 4.5
+                # fallback locally — 42.2s on a 55-word B1 sample,
+                # LONGER than Sonnet 4's 36.0s on a 97-word sample.
+                # Refutes the "Sonnet-specific latency" hypothesis.
+                # Bottleneck is the prompt (3000+ token system) +
+                # large max_tokens output, not the model. Reverted
+                # to Sonnet. Diagnostic logging in writing_jobs.py
+                # is the path to identify the actual prod stall.
                 "model": "claude-sonnet-4-20250514",
                 "max_tokens": 8192,
                 "system": system_prompt,
