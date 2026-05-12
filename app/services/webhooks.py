@@ -66,5 +66,10 @@ def verify_stripe_webhook(
         raise WebhookSignatureError(
             f"Stripe construct_event failed: {type(e).__name__}"
         ) from e
-    # stripe.Event-like dict; treat as plain dict for downstream.
+    # stripe.Event is a StripeObject — to_dict() returns a plain dict.
+    # (dict(event) iterates as integer indices and breaks on stripe>=15.)
+    if hasattr(event, "to_dict_recursive"):
+        return event.to_dict_recursive()
+    if hasattr(event, "to_dict"):
+        return event.to_dict()
     return dict(event)
