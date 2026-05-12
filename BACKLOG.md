@@ -55,7 +55,7 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 33 | **B-100** | Stripe via US LLC formation (Stripe Atlas) — rescoped 2026-05-12 |
 | 34 | **M-103** | YouTube anchor video — French exam prep for English speakers |
 | 35 | **M-104** | Reddit community engagement (broadened subreddit list) |
-| 36 | **F-310** | Auth hardening (BE + FE) — pre-launch blocker (added 2026-05-12) |
+| 36 | **F-310** | Auth hardening (BE + FE) — BE SHIPPED 2026-05-12; FE work remains |
 | 37 | **F-311** | Token control infrastructure (BE) — pre-launch blocker (added 2026-05-12) |
 | 38 | **F-312** | RAG retrieval layer (BE) — CC corpus + Chadi-authored (Path C, rescoped 2026-05-12) |
 | 39 | **F-312.0** | RAG licensing pre-flight — CLOSED 2026-05-12 (Path C selected) |
@@ -1002,12 +1002,59 @@ Reddit-as-acquisition: helpful comments on relevant threads with low-key LeMetho
 
 ---
 
-## F-310 — Auth hardening (BE + FE)
+## F-310 — Auth hardening (BE + FE) — BE SHIPPED 2026-05-12
 
 **Filed:** 2026-05-12 (strategic session — Decision 4).
-**Status:** Queued.
+**Status:** **BE Shipped 2026-05-12** across 6 commits (Phases A-E + F-310.1).
+FE work (hCaptcha widget render, email-verification UI, refresh-on-401
+interceptor, password-reset UI) remains; tracked in lemethodic-frontend
+BACKLOG as the cross-ref from FE-side F-072 supersede.
 **Tag:** Active — Launch Critical (before soft beta launches).
 **Type:** BE + FE security infrastructure.
+
+**Shipped commits (BE):**
+- `4bb44fb` — Phase A foundation services (Redis client, hCaptcha verify,
+  Stripe HMAC helper, tier DI placeholder, Resend email helper).
+- `e397122` — Phase B migration + JWT refresh flow + 5 new endpoints
+  (refresh, verify-email, verify-email/resend, password-reset/request,
+  password-reset/confirm) + email_verified_at hard gate on protected routes.
+- `babfa5d` — Phase C rate-limit middleware + hCaptcha wiring + email send
+  on register/resend/password-reset.
+- `9ae7e34` — Phase D Stripe webhook endpoint shell (option a, no DB writes).
+- `618f447` — Phase E smoke_f310.py (14 steps, 49 PASS) + webhooks.py
+  to_dict bug fix.
+- `a999a5f` — F-310.1 X-Forwarded-For client IP fix for DO LB proxy hop.
+
+**Production state at close (2026-05-12):**
+- Migration h6f7g8e9d0c1 applied; 5 new users columns + 3 token tables
+  + 2 CHECK constraints live.
+- Soft-beta cohort grandfathered (email_verified_at = NOW() for all
+  pre-migration users).
+- All 9 new auth endpoints listed in prod /openapi.json.
+- Auto-deploy on push to master = the production rollout mechanism.
+
+**Env vars (Chadi to set in DO console for full enforcement):**
+- `ENV=production` — REQUIRED. Activates F-310.1 XFF parsing + cookie
+  secure flag. Without it, rate-limit buckets share across users
+  (broken at scale) AND cookies remain non-secure (HTTP-intercept risk
+  on any redirect path).
+- `REDIS_URL` — REQUIRED for rate limit + refresh-token revocation.
+  Provision DO Managed Redis (Frankfurt region to pair with the app).
+  Without it: rate limit fail-opens (no enforcement); refresh-token
+  revocation falls back to DB-only authoritative check.
+- `RESEND_API_KEY` — REQUIRED for email delivery. Without it:
+  register / verify-email/resend / password-reset/request succeed
+  (2xx) but no email lands. Existing soft-beta accounts can still
+  use the app (grandfathered); new registrations are stuck unverified.
+- `HCAPTCHA_SECRET` + `HCAPTCHA_SITEKEY` — REQUIRED to enforce bot
+  defense. Without them: captcha verification no-ops.
+- `STRIPE_WEBHOOK_SECRET` — set when P-106 / B-100 land. Without it:
+  webhook endpoint 400s every signature (correct posture; Stripe
+  isn't sending events until B-100 ships).
+
+**Original scope (preserved for history):**
+
+**Priority:** HIGH — **pre-launch blocker.** At 5K+ Y1 user projection, weak auth means unlimited free-tier account creation and lost cost control. Existential security/cost issue, not a nice-to-have.
 
 **Priority:** HIGH — **pre-launch blocker.** At 5K+ Y1 user projection, weak auth means unlimited free-tier account creation and lost cost control. Existential security/cost issue, not a nice-to-have.
 
@@ -1027,7 +1074,28 @@ Reddit-as-acquisition: helpful comments on relevant threads with low-key LeMetho
 
 **Owner:** BE (JWT + rate limiter + email verification + webhook HMAC + DI) + FE (hCaptcha widget + email verification UI + refresh flow on 401).
 
-**Smoke:** new `scripts/smoke_f310.py` — JWT rotation, rate-limit triggering, email-gate enforcement on new accounts, grandfathering for old accounts, webhook HMAC accept/reject cases, DI tier-gate with `tier=free` default.
+**Smoke:** new `scripts/smoke_f310.py` — JWT rotation, rate-limit triggering, email-gate enforcement on new accounts, grandfathering for old accounts, webhook HMAC accept/reject cases, DI tier-gate with `tier=free` default. **Shipped 2026-05-12 with 15 steps / 54 assertions / 0 failures.**
+
+---
+
+### F-310.1 — X-Forwarded-For client IP fix — SHIPPED 2026-05-12
+
+**Filed:** 2026-05-12 (pulled forward from "post-Phase-E" to "ship before any cohort onboarding").
+**Status:** Shipped 2026-05-12 (commit `a999a5f`).
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Parent:** F-310.
+
+**Problem:** DO App Platform's load balancer fronts the app container. `request.client.host` reads the LB's internal IP, not the user's. Without the fix, all users behind the LB share one rate-limit bucket — the moment one user trips the limit, every concurrent user is blocked.
+
+**Fix:** `app/services/rate_limit.py::_client_ip` now branches on `settings.ENV`:
+- Non-production: `request.client.host` (local dev, no proxy).
+- Production: parse `X-Forwarded-For`, trust the LAST entry (DO appends real client IP; first entries may be attacker-spoofed).
+
+**Smoke coverage:** Step 15 in `scripts/smoke_f310.py` (5 sub-assertions: ENV-dev branch, ENV-production trust, spoofing-defeat verification, no-XFF fallback, no-client sentinel).
+
+**Limitation flagged in docstring:** "trust last entry" pattern is correct ONLY for single trusted proxy hop. Adding a CDN in front of DO requires revisiting the trust position. Not relevant for soft beta; track if/when CDN ships.
+
+**Chadi prod action required:** set `ENV=production` in DO env vars. Without it the fix is a no-op (still uses `request.client.host` = broken state).
 
 ---
 

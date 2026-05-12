@@ -69,6 +69,36 @@ alembic revision --autogenerate -m "<short description>"
 alembic upgrade head
 ```
 
+### Production migration protocol (locked 2026-05-12 via F-310 contract refinement)
+
+DO App Platform is configured with `deploy_on_push: true` and a run command of `alembic upgrade head && uvicorn ...` (see `.do/app.yaml`). **Every push to `master` auto-deploys and auto-applies pending migrations.** There is no separate "apply" step that ops can gate on.
+
+This means migration approval must fire **before push**, not before a separate apply step that doesn't exist. The protocol:
+
+1. **Local verification cycle** — apply against local docker postgres + verify `alembic upgrade head` clean → `alembic downgrade -1` clean → `alembic upgrade head` idempotent re-apply clean. Capture user counts, row counts, leftover-artifact counts.
+
+2. **Migration ASK message** (sent to Chadi before the push that contains the migration file) must include:
+   - Full migration file content **inline** (not just a reference path).
+   - Generated SQL preview via `alembic upgrade <prev_rev>:<new_rev> --sql`.
+   - Local verification confirmation (upgrade + downgrade + re-upgrade output).
+   - **pg_dump command for Chadi to run against prod** as the explicit point-in-time backup. DO's daily backup is fallback, not primary.
+   - Rollback command (`alembic downgrade -1`).
+
+3. **Chadi pre-push actions:**
+   - Run the pg_dump command against prod, confirm backup file path + size + row count.
+   - Read the inline migration file + SQL preview.
+   - Approve the push.
+
+4. **BE pushes to master** → DO auto-deploys → migration auto-applies. BE confirms post-deploy state via prod probes (`/health`, `/openapi.json`, a representative endpoint that exercises new schema).
+
+If anything fails post-deploy: `alembic downgrade -1` runs by pushing a revert commit (or via DO console if available). The pg_dump from step 3 is the emergency restore path.
+
+**Gate triggers that still ASK before commit (not push) per operating contract:**
+- Payment/billing/subscription logic changes (gate #10) — shape question before code.
+- Stripe webhook secret rotation (gate #6).
+- `.env` file edits (gate #5).
+- Anything destructive (gate #7).
+
 ---
 
 ## The Methodology — La Méthode en Couches (5 Couches)
