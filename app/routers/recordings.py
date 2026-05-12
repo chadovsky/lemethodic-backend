@@ -14,6 +14,8 @@ from app.models.models import (
     SessionDetectedModule,
 )
 from app.services.auth import get_current_user
+from app.services.diagnostic_rate_limit import diagnostic_quota_required
+from app.services.prompt_safety import contains_injection_signal
 from app.services.stt import transcribe_audio
 from app.services import storage
 from app.services.analysis import analyze_transcript, analyze_recording
@@ -320,11 +322,29 @@ async def upload_and_analyze(
     exam_profile: str = Form(default="tcf_canada"),
     tache_mode: str | None = Form(default=None),
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    # F-311 Phase D: diagnostic quota gate (wraps get_current_user).
+    user: User = Depends(diagnostic_quota_required),
 ):
     # F-047: validate up front so we don't save an audio file for a
     # request that was never going to succeed.
     mode = _validate_tache_mode_for_oral(tache_mode)
+
+    # F-311 Phase D: injection check on user-supplied argument_structure
+    # (the only user-text Form field; audio bytes themselves don't go to
+    # Claude, but the STT transcript later does — that's already
+    # constrained by Anthropic's own filters and is French-only output
+    # from AssemblyAI, so we don't double-check the transcript here).
+    if settings.ENABLE_PROMPT_INJECTION_CHECK and argument_structure:
+        detected, pattern_name = contains_injection_signal(argument_structure)
+        if detected:
+            logger.warning(
+                "F-311 injection rejected: user_id=%s pattern=%s endpoint=recordings_upload field=argument_structure",
+                user.id, pattern_name,
+            )
+            raise HTTPException(
+                400,
+                detail={"code": "input_rejected", "reason": "injection_pattern_detected"},
+            )
 
     # ── Save audio ─────────────────────────────────────────────
     ext = audio.filename.split(".")[-1] if audio.filename else "webm"

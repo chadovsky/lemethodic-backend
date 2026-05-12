@@ -39,6 +39,7 @@ from app.models.models import (
     User,
 )
 from app.services.auth import get_current_user
+from app.services.diagnostic_rate_limit import diagnostic_quota_required
 from app.services.fluency import compute_fluency
 from app.services.pattern_catalog import log_unknown_pattern_keys
 from app.services.ecole_gating import is_above_a2 as _ecole_is_above_a2
@@ -956,7 +957,10 @@ async def supersede_turn(
 async def end_conversation(
     conversation_id: str,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    # F-311 Phase D: ending a conversation triggers analysis = diagnostic
+    # session. Counts against the per-day quota (free=5/sub=30/sprint=60).
+    # No injection check — no user-text input on this endpoint.
+    user: User = Depends(diagnostic_quota_required),
 ):
     """Manual end — user pressed 'Terminer la conversation'. Requires at
     least one candidate turn; under MIN_CANDIDATE_TURNS the analysis

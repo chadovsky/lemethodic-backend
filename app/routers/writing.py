@@ -17,7 +17,10 @@ from app.schemas.writing_jobs import (
     WritingJobResponse,
     WritingSubmitResponse,
 )
+from app.config import settings
 from app.services.auth import get_current_user
+from app.services.diagnostic_rate_limit import diagnostic_quota_required
+from app.services.prompt_safety import contains_injection_signal
 from app.services.writing_analysis import analyze_writing
 from app.services.exam_profiles import get_profile
 from app.services.scoring_maps import cefr_from_score, clb_from_cefr
@@ -93,7 +96,10 @@ def get_prompts(
 async def submit_writing(
     req: SubmitWritingRequest,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    # F-311 Phase D: quota-required dependency wraps get_current_user
+    # (verified-user check is implicit) AND enforces the per-day
+    # diagnostic quota (free=5/sub=30/sprint=60/premium=unlimited).
+    user: User = Depends(diagnostic_quota_required),
 ) -> WritingSubmitResponse:
     """V-016a — submit writing for async AI analysis.
 
@@ -122,6 +128,22 @@ async def submit_writing(
     text = req.student_text.strip()
     if not text:
         raise HTTPException(400, "Text cannot be empty")
+
+    # F-311 Phase D: prompt-injection check. Le Méthodic writing is
+    # always French, so English injection patterns are non-legitimate.
+    # On detection: 400 + structured WARNING log (pattern name + user_id
+    # only — never the raw text).
+    if settings.ENABLE_PROMPT_INJECTION_CHECK:
+        detected, pattern_name = contains_injection_signal(text)
+        if detected:
+            logger.warning(
+                "F-311 injection rejected: user_id=%s pattern=%s endpoint=writing_submit",
+                user.id, pattern_name,
+            )
+            raise HTTPException(
+                400,
+                detail={"code": "input_rejected", "reason": "injection_pattern_detected"},
+            )
 
     # F-044 Spanish fallback: generate content in English until ES is fully
     # supported. UI labels still render in Spanish via frontend i18n.
