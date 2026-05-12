@@ -23,3 +23,7 @@ gunicorn==22.0.0
 # stripe.Webhook.construct_event from it).
 redis[hiredis]>=5.0
 stripe>=8.0
+# F-325 — pytest convention introduced. FastAPI's TestClient requires
+# httpx at runtime; httpx is already pinned above for the F-311
+# centralized AI client, so pytest is the only addition here.
+pytest>=8.0

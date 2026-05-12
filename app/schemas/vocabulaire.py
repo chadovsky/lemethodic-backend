@@ -84,6 +84,56 @@ class VocabChunkRead(BaseModel):
     updated_at: datetime
 
 
+# ── F-325 vocab browse response wrappers ──────────────────────────
+
+
+class VocabTopicListItem(VocabTopicRead):
+    """List-endpoint item — VocabTopicRead + `locked` for FE upsell.
+
+    `locked=True` means the current user's tier doesn't grant access
+    to this topic's chunks. FE renders a 🔒 badge + upsell CTA on
+    locked rows. `free_general` topics always render `locked=False`."""
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    locked: bool = False
+
+
+class VocabTopicListResponse(BaseModel):
+    """GET /api/vocab/topics — open to any authenticated user."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    topics: list[VocabTopicListItem] = Field(default_factory=list)
+
+
+class VocabTopicDetail(VocabTopicRead):
+    """GET /api/vocab/topics/{slug} — topic + chunk count.
+
+    `chunk_count` reflects chunks visible to the API surface (i.e.,
+    AFTER filtering out source_type='third_party_publisher_DO_NOT_EXTRACT'
+    per F-320 module docstring). Source-of-truth provenance pointers
+    are never counted because they're never served."""
+
+    model_config = ConfigDict(extra="forbid", from_attributes=True)
+
+    chunk_count: int = 0
+
+
+class VocabChunkPage(BaseModel):
+    """GET /api/vocab/topics/{slug}/chunks — paginated chunk list.
+
+    `total` is the post-filter count (same `WHERE` clauses applied) so
+    the FE can compute page count from `(total // limit) + 1`."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    chunks: list[VocabChunkRead] = Field(default_factory=list)
+    total: int = 0
+    limit: int = 50
+    offset: int = 0
+
+
 # ── user_vocab_lists ──────────────────────────────────────────────
 
 

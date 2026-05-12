@@ -1411,6 +1411,35 @@ If neither ever responds: zero impact. F-312 ships and runs forever on CC + Chad
 
 ---
 
+## F-325 — Le Vocabulaire vocab browse (BE + FE)
+
+**Filed:** 2026-05-12 (operating-contract dispatch — fills the BE endpoint gap left implicit at F-320 ship-time per BACKLOG line 1369).
+**Status:** BE shipped (Phase B/C/D + commit). FE pending (filed as F-325.fe under separate dispatch).
+**Tag:** Active — Launch Critical (gates F-322 FE practice UI + F-323 FE test UI + F-324 BE/FE diagnostic-vocab link).
+**Parent:** F-330.
+
+**Priority:** Launch.
+
+**Scope (BE):**
+- `GET /api/vocab/topics` — list with optional `corpus_partition` filter. Returns metadata for ALL partitions regardless of tier; each row carries a `locked: bool` reflecting whether the current user's tier permits chunk access. FE renders 🔒 upsell card on locked rows (Decision D2 approved 2026-05-12).
+- `GET /api/vocab/topics/{slug}` — single topic + `chunk_count` (post-exclusion). Runtime tier gate on exam_tagged_* partitions (Decision D3); 404 on unknown slug; 403 with F-310 `tier_insufficient` body shape on tier mismatch.
+- `GET /api/vocab/topics/{slug}/chunks` — paginated chunks with multi-filter: `cefr_level` (string), `exam_tag` (enum), `register` (enum). Pagination: `limit` default 50 / cap 100, `offset` default 0 (Decision D5). Ordering id ASC for stable pagination.
+- Hard exclusion of `source_type='third_party_publisher_DO_NOT_EXTRACT'` from all chunk responses (Decision D4) — provenance pointers never served verbatim. `chunk_count` and pagination `total` reflect post-exclusion counts.
+- Tier-gate is RUNTIME per-handler (not a DI factory) because the required tier depends on the topic's `corpus_partition`, decided per-slug, not per-route (Decision D3). Reuses F-310 contract via new `enforce_min_tier()` + `user_tier_satisfies()` helpers added to `app/services/tiers.py` (additive, no F-310 behavior change).
+- Pytest convention introduced (Decision D6) — `tests/test_vocab_browse.py` with FastAPI TestClient, `pytest.ini` minimal config. Phase D smoke (`scripts/smoke_f325.py`) stays end-to-end against local Postgres.
+
+**Scope (FE):** Filed as **F-325.fe** under separate dispatch. Vocab topic browser surface at FE route `/vocabulaire`. Renders locked-card upsell on `locked=true` rows. Consumes the 3 BE endpoints above.
+
+**Out of scope:** Personal-lists endpoints (`POST/GET/DELETE /api/vocab/lists`, `POST /api/vocab/lists/{id}/chunks`, `POST /api/vocab/progress/{chunk_id}`) — filed under a later dispatch. F-322 / F-323 FE practice + test UIs remain FE-only as originally filed (BACKLOG lines 1356, 1375).
+
+**Depends on:** F-320 (schema; ORM + pydantic shapes already in `app/models/vocabulaire.py` + `app/schemas/vocabulaire.py`).
+
+**Owner:** BE (this ticket) + FE (F-325.fe).
+
+**Smoke:** `scripts/smoke_f325.py` — empty-DB shape check + seeded fixture covering all filter / tier / pagination paths.
+
+---
+
 ## P-107 — Soft satisfaction guarantee copy + refund flow
 
 **Filed:** 2026-04-30.

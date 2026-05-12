@@ -51,6 +51,44 @@ def _resolve_user_tier(user: User) -> str:
     return "free"
 
 
+def enforce_min_tier(user: User, min_tier: Tier) -> None:
+    """Imperative tier check — raises HTTP 403 if the user's effective
+    tier is below `min_tier`. Returns None on pass.
+
+    Use when the required tier is decided at request-time from data
+    that isn't available at DI binding (e.g. F-325 vocab browse: the
+    target topic's `corpus_partition` determines whether a tier gate
+    applies, so the decision is per-slug, not per-route).
+
+    For per-route gates known at definition time, prefer the DI factory
+    `require_tier(...)` so the dependency graph stays declarative.
+
+    403 body shape mirrors require_tier verbatim:
+        {"detail": {"code": "tier_insufficient", "required": "<min>",
+                    "current": "<effective>"}}
+    """
+    required_rank = _TIER_RANK[min_tier]
+    effective = _resolve_user_tier(user)
+    user_rank = _TIER_RANK.get(effective, 0)
+    if user_rank < required_rank:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "tier_insufficient",
+                "required": min_tier,
+                "current": effective,
+            },
+        )
+
+
+def user_tier_satisfies(user: User, min_tier: Tier) -> bool:
+    """Predicate variant — returns True if the user's effective tier
+    is at least `min_tier`. Use when the caller needs to compute a
+    derived field (e.g. F-325 list endpoint's `locked: bool` per topic)
+    without raising on failure."""
+    return _TIER_RANK.get(_resolve_user_tier(user), 0) >= _TIER_RANK[min_tier]
+
+
 def require_tier(min_tier: Tier):
     """FastAPI DI factory. Returns a dependency that raises HTTP 403
     if the current user's effective tier is below `min_tier`.
@@ -71,20 +109,8 @@ def require_tier(min_tier: Tier):
           }
         }
     """
-    required_rank = _TIER_RANK[min_tier]
-
     def _dep(user: User = Depends(get_current_user)) -> User:
-        effective = _resolve_user_tier(user)
-        user_rank = _TIER_RANK.get(effective, 0)
-        if user_rank < required_rank:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail={
-                    "code": "tier_insufficient",
-                    "required": min_tier,
-                    "current": effective,
-                },
-            )
+        enforce_min_tier(user, min_tier)
         return user
 
     return _dep
