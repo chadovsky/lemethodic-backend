@@ -40,7 +40,8 @@ _INJECTION_PATTERNS: list[tuple[re.Pattern, str]] = [
     ),
     (
         re.compile(
-            r"\bdisregard\s+(all\s+)?(previous|prior|above|earlier)\s+"
+            r"\bdisregard\s+(all\s+|the\s+|any\s+)?"
+            r"(previous|prior|above|earlier)\s+"
             r"(instructions?|prompts?|rules?)\b",
             re.IGNORECASE,
         ),
@@ -59,9 +60,11 @@ _INJECTION_PATTERNS: list[tuple[re.Pattern, str]] = [
         "you_are_now",
     ),
     (
+        # "act as a/an/the/if X" — standard persona-reassignment phrasing.
+        # Tighter alternatives like requiring (different|new|the) miss the
+        # common "act as a pirate / helpful assistant" form.
         re.compile(
-            r"\bact\s+as\s+(if\s+you\s+(were|are)\s+|a\s+)?"
-            r"(different|new|the)\s+\w+",
+            r"\bact\s+as\s+(a|an|the|if)\s+\w+",
             re.IGNORECASE,
         ),
         "act_as",
