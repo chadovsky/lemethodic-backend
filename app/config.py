@@ -7,7 +7,11 @@ class Settings:
     APP_NAME: str = "TCF Oral Practice Tool"
     SECRET_KEY: str = os.getenv("SECRET_KEY", "change-me-in-production-please")
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24h
+    # F-310 Phase B (2026-05-12): dropped from 1440 (24h) to 15 minutes
+    # alongside the refresh-token flow. Access tokens are short-lived;
+    # the FE refreshes silently on 401 via /api/auth/refresh, which mints
+    # a fresh 15-min access + rotates the 7-day refresh.
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
 
     # F-077: PostgreSQL is now the dev + prod database. Default points
     # at the local docker-compose Postgres (matching docker-compose.yml).
@@ -88,7 +92,15 @@ class Settings:
 
     # Redis: rate-limit counters + refresh-token revocation set + (F-311)
     # per-tier diagnostic counters. Defaults to docker-compose local.
-    # Production override via DATABASE_URL-style env injection.
+    # Production override via env-injection.
+    #
+    # Production host choice (locked 2026-05-12 per Chadi):
+    #   DigitalOcean Managed Redis. BE already runs on DO App Platform;
+    #   same-region pairing = sub-ms latency, integrated billing, no
+    #   extra account. Upstash is the alternative if serverless-friendly
+    #   pricing matters later; DO managed is the right call for soft beta.
+    #   Provisioning happens before Phase E smoke; DATABASE-shaped env
+    #   inject (REDIS_URL) at deploy time.
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
 
     # hCaptcha: SECRET stays server-side; SITEKEY exposed to FE via a

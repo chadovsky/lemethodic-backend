@@ -61,6 +61,27 @@ class User(Base):
     # requires the field, so any NULL is a legacy-data artifact.
     target_exam = Column(String(20), nullable=True, index=True)
 
+    # F-310 Phase B — auth hardening surface. CHECK constraints +
+    # grandfather backfill mirrored in Alembic migration
+    # h6f7g8e9d0c1_f310_auth_hardening.
+    #
+    # email_verified_at NULL = unverified; new registrations leave NULL
+    # until the verification email is clicked. Soft-beta cohort is
+    # grandfathered at migration time (UPDATE users SET email_verified_at
+    # = NOW() WHERE NULL).
+    email_verified_at = Column(DateTime, nullable=True)
+    # Stripe identifiers populated by P-105 (customer create on first
+    # session post-signup) and P-106 (subscription create at trial start
+    # / checkout completion). NULL pre-P-105 and for users who never
+    # interact with payments.
+    stripe_customer_id = Column(String(255), nullable=True)
+    stripe_subscription_id = Column(String(255), nullable=True)
+    subscription_status = Column(String(20), nullable=True)
+    # Tier is NOT NULL with default 'free' so DI tier-gate in
+    # app/services/tiers.py can rely on it. P-105 mutates this when
+    # subscription lifecycle events fire.
+    subscription_tier = Column(String(20), nullable=False, default="free")
+
     __table_args__ = (
         CheckConstraint(
             "strongest_skill IS NULL "
@@ -108,6 +129,17 @@ class User(Base):
             "OR target_exam IN "
             "('tcf_canada', 'tef_canada', 'delf_b1_b2', 'another_exam', 'not_sure')",
             name="ck_users_target_exam",
+        ),
+        # F-310 Phase B — mirror of Alembic migration h6f7g8e9d0c1.
+        CheckConstraint(
+            "subscription_status IS NULL "
+            "OR subscription_status IN "
+            "('trialing', 'active', 'lapsed', 'canceled', 'none')",
+            name="ck_users_subscription_status",
+        ),
+        CheckConstraint(
+            "subscription_tier IN ('free', 'subscription', 'sprint', 'premium')",
+            name="ck_users_subscription_tier",
         ),
     )
 

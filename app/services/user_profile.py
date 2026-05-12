@@ -21,4 +21,13 @@ def serialize_user(user: User) -> dict:
         # Exposed as `interface_language` at the API boundary even though the
         # column is still called ui_language in the DB.
         "interface_language": user.ui_language,
+        # F-310 Phase B — auth-hardening surface for FE.
+        # `email_verified` is a bool the FE uses to render the verify-email
+        # banner; the raw timestamp is internal-only.
+        "email_verified": user.email_verified_at is not None,
+        # Subscription tier + status drive the paywall + tier-aware UI.
+        # `subscription_tier` is NOT NULL (default 'free'); `subscription_status`
+        # is NULL until P-105 creates a Stripe subscription.
+        "subscription_tier": getattr(user, "subscription_tier", "free") or "free",
+        "subscription_status": getattr(user, "subscription_status", None),
     }
