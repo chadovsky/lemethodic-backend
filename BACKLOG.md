@@ -57,11 +57,11 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 35 | **M-104** | Reddit community engagement (broadened subreddit list) |
 | 36 | **F-310** | Auth hardening (BE + FE) — pre-launch blocker (added 2026-05-12) |
 | 37 | **F-311** | Token control infrastructure (BE) — pre-launch blocker (added 2026-05-12) |
-| 38 | **F-312** | OQLF / Académie RAG retrieval layer (BE) — gated on F-312.0 (added 2026-05-12) |
-| 39 | **F-312.0** | RAG licensing pre-flight (hard gate on F-312) (added 2026-05-12) |
+| 38 | **F-312** | RAG retrieval layer (BE) — CC corpus + Chadi-authored (Path C, rescoped 2026-05-12) |
+| 39 | **F-312.0** | RAG licensing pre-flight — CLOSED 2026-05-12 (Path C selected) |
 | 40 | **F-330** | Le Vocabulaire system (parent + V2 enumeration) (added 2026-05-12) |
 | 41 | **F-320** | Le Vocabulaire DB schema (BE) (added 2026-05-12) |
-| 42 | **F-321** | Le Vocabulaire OQLF Phase 1 seed (BE) — gated on F-312.0 (added 2026-05-12) |
+| 42 | **F-321** | Le Vocabulaire Phase 1 seed — Chadi tutoring artifacts (Path C, rescoped 2026-05-12) |
 
 **Tickets 36-42 (added 2026-05-12 strategic session):** slot positions pending Chadi triage. F-310 + F-311 are pre-launch blockers per Decision 4 — should reorder toward the top of the queue when triage runs. F-322 / F-323 / F-324 (Le Vocabulaire FE + Diagnostic-Vocab link) filed under Post-launch P1 with Sprint-2 priority.
 
@@ -1062,37 +1062,43 @@ Reddit-as-acquisition: helpful comments on relevant threads with low-key LeMetho
 
 ---
 
-## F-312 — OQLF / Académie française RAG retrieval layer (BE)
+## F-312 — RAG retrieval layer (BE) — CC corpus + Chadi-authored content
 
-**Filed:** 2026-05-12 (strategic session — Decision 2).
-**Status:** Queued — **HARD GATED on F-312.0 (licensing pre-flight).** Do not commit BE schema work until F-312.0 returns a legal-clear answer.
+**Filed:** 2026-05-12 (strategic session — Decision 2). **Rescoped 2026-05-12 (Path C locked):** dropped OQLF + Académie sources entirely; corpus now sourced from CC-licensed corpora + Chadi's tutoring artifacts.
+**Status:** Queued — F-312.0 sign-off received (Path C). No remaining licensing gate; engineering can start on Chadi's go-ahead.
 **Tag:** Active — Launch Critical (before soft beta launches).
 **Type:** BE diagnostic-credibility infrastructure.
 
-**Priority:** HIGH (Launch). Replaces "the AI thinks this is wrong" with "according to the OQLF, this is an anglicism." Credibility moat made concrete and citable.
+**Priority:** HIGH (Launch). Diagnostic feedback grounded in a curated corpus of L1-interference patterns Chadi has actually seen across 7,000+ hours of tutoring + CC-licensed reference data. The credibility moat is Chadi's authored methodology, not third-party authority quoting.
 
 **Scope:**
-- **Postgres schema:** new `linguistic_corpus` table — columns: `id`, `chunk` (the source excerpt), `correction` (the OQLF/Académie-prescribed alternative), `error_type` (anglicism | calque | preposition | faux-ami | register | grammar | ...), `source` (oqlf_bdl | academie_dndp), `source_url`, `register` (formal | informal | neutral | quebec | european), `exam_tag` (tcf | tef | delf | dalf | null), `cefr_level` (a1..c2 | null), `embedding` (pgvector or alternative), `created_at`.
-- **Ingest scripts:** `scripts/ingest_oqlf_bdl.py` + `scripts/ingest_academie_dndp.py` — scrape (or import from licensed dump per F-312.0 outcome), chunk, normalize, embed, insert. Idempotent per source URL.
-- **Retrieval at diagnostic call-time:** before each `analyze_writing` (and later `analyze_recording`) Claude call, embed the student text + top-N semantic search against `linguistic_corpus`. Inject top 5-15 matches into the system prompt as authoritative context.
-- **Source citation in output:** every error in the diagnostic feedback that aligns with a retrieved chunk carries a `source_citation: {"source": "OQLF BDL", "url": "..."}` field. FE renders as inline citation.
+- **Postgres schema:** new `linguistic_corpus` table — columns: `id`, `chunk` (the pattern excerpt or example sentence), `correction` (the prescribed alternative), `error_type` (anglicism | calque | preposition | faux-ami | register | grammar | ...), `source` (`chadi_authored` | `wiktionary_fr` | `tatoeba` | `curated`), `source_url` (nullable; populated for CC-licensed sources), `register` (formal | informal | neutral | quebec | european), `exam_tag` (tcf | tef | delf | dalf | null), `cefr_level` (a1..c2 | null), `embedding` (pgvector or alternative), `created_at`.
+- **Ingest scripts:**
+  - `scripts/ingest_wiktionary_fr.py` — pulls relevant French entries from the Wiktionary dump (CC BY-SA 4.0). Idempotent per page-id + revision.
+  - `scripts/ingest_tatoeba.py` — pulls sentence pairs from Tatoeba's CSV exports (CC BY 2.0 FR). Filtered to anglophone-relevant patterns at ingest time.
+  - `scripts/ingest_chadi_artifacts.py` — extraction pipeline over Chadi's tutoring `.docx` archive. Approach (extraction vs. manual curation) determined by F-321 sample audit. Source = `chadi_authored`. URL = null (no public source).
+- **Retrieval at diagnostic call-time:** before each `analyze_writing` (and later `analyze_recording`) Claude call, embed the student text + top-N semantic search against `linguistic_corpus`. Inject top 5-15 matches into the system prompt as in-context examples. **Citation format change vs. original scope:** instead of "according to the OQLF, this is an anglicism," output reads "Le Méthodic methodology library" — internal corpus, no external source attribution required.
+- **Source-attribution surface:** when a retrieved row has a `source_url` (Wiktionary, Tatoeba), the diagnostic output may carry a `see_also: {"label": "Wiktionnaire", "url": "..."}` field per Berne-art-10 short-citation defensibility. Chadi-authored rows surface no external link.
 
-**Out of scope (initial ship):** real-time corpus updates from upstream sources (run ingest weekly via cron); user-correction feedback loop (Phase 2).
+**Out of scope (initial ship):**
+- Real-time corpus updates (run ingest weekly via cron post-launch).
+- User-correction feedback loop (Phase 2).
+- OQLF + Académie sourcing — dropped per Path C decision; **F-312.1 tracks parallel authorization-request channel** if either body ever clears.
 
-**Depends on:** F-312.0 (HARD GATE — see below), F-311 (model routing — RAG synthesis uses haiku, retrieval is local).
+**Depends on:** F-311 (model routing — embedding + RAG synthesis use haiku, retrieval is local Postgres + pgvector), F-321 (sample audit determines Chadi-artifact ingest approach).
 
-**Owner:** BE + Chadi (linguistic content review on ingest output samples).
+**Owner:** BE (ingest pipelines + retrieval + schema) + Chadi (corpus curation review + artifact archive ownership).
 
 ---
 
-### F-312.0 — RAG licensing pre-flight (HARD GATE on F-312)
+### F-312.0 — RAG licensing pre-flight (HARD GATE on F-312) — CLOSED
 
 **Filed:** 2026-05-12 (strategic session — Decision 2).
-**Status:** **Decision memo drafted 2026-05-12 — awaiting Chadi sign-off on Path A / B / C.** See `docs/F-312-licensing-decision.md`. F-312 + F-321 remain blocked until sign-off.
+**Status:** **Closed 2026-05-12 — Path C selected by Chadi.** Decision memo at `docs/F-312-licensing-decision.md`. F-312 + F-321 unblocked. F-312.1 filed as parallel low-priority Path-A track.
 **Tag:** Active — Launch Critical (before soft beta launches).
 **Type:** Legal / licensing research.
 
-**Priority:** HIGH — blocks F-312 + F-321 entirely.
+**Priority:** Closed.
 
 **Scope:** read OQLF + Académie française terms; produce decision memo with source-by-source verdict + path recommendation.
 
@@ -1109,11 +1115,33 @@ Reddit-as-acquisition: helpful comments on relevant threads with low-key LeMetho
 
 **Deliverable:** `docs/F-312-licensing-decision.md` (committed 2026-05-12).
 
-**Next BE action:** none until Chadi signs off. On sign-off: rescope F-312 + F-321 bodies + file F-312.1 (if Path C + parallel authorization track desired).
+**Sign-off:** Chadi 2026-05-12 — Path C selected. F-312 + F-321 rescoped same-day to CC corpus + Chadi-authored content. F-312.1 filed as low-priority parallel Path-A track.
 
 ---
 
-## F-330 — Le Vocabulaire system (parent)
+### F-312.1 — Parallel Path-A authorization-request track (OQLF + Académie)
+
+**Filed:** 2026-05-12 (Chadi sign-off on Path C with parallel Path-A track).
+**Status:** Queued — Chadi-owned, asynchronous. **Not a launch gate.** F-312 + F-321 ship without this.
+**Tag:** Post-launch P2 — signal-driven (defer until real signal).
+**Parent:** F-312 / F-312.0.
+
+**Priority:** Low — no engineering work, zero downside to having outstanding.
+
+**Scope:** Chadi sends written authorization-request emails to both bodies:
+- **OQLF / Quebec government:** `droitdauteur@mcc.gouv.qc.ca`. Describe Le Méthodic, intended educational use of BDL entries, attribution commitment, expected scale.
+- **Académie française:** `contact@academie-francaise.fr`. Describe Le Méthodic, intended educational use of "Dire, ne pas dire" entries, attribution commitment, expected scale.
+
+If either body responds positively (any timeline — 2 weeks, 2 years), the corpus enriches:
+- `linguistic_corpus.source` enum extends with `oqlf_bdl` and/or `academie_dndp`.
+- New ingest scripts under `scripts/ingest_oqlf_bdl.py` / `scripts/ingest_academie_dndp.py` per the original F-312 plan, gated on the actual license terms received.
+- Diagnostic output gains the "according to the OQLF" / "according to the Académie française" source-attribution surface that the original F-312 scope envisioned.
+
+If neither ever responds: zero impact. F-312 ships and runs forever on CC + Chadi-authored content.
+
+**Owner:** Chadi (email drafting + send + tracking responses). No engineering owner until/unless a license is granted.
+
+**Trigger for engineering work:** positive response with license terms in hand from at least one body.
 
 **Filed:** 2026-05-12 (strategic session — Decision 3).
 **Status:** Queued — parent ticket; MVP children F-320..F-323 + F-324 link below.
@@ -1126,7 +1154,7 @@ Reddit-as-acquisition: helpful comments on relevant threads with low-key LeMetho
 
 **MVP scope (Launch — children below):**
 - **F-320** — DB schema (chunk, translation, topic, source, register, exam_tag, cefr_level + user personal lists tables).
-- **F-321** — OQLF Phase 1 seed (3 topic sets, 500-800 entries). Gated on F-312.0.
+- **F-321** — Phase 1 seed from Chadi's tutoring archive (3 topic sets, 500-800 entries). **F-321.audit** sample-audit pre-step determines extraction-vs-curation approach. Rescoped 2026-05-12 to Path C.
 - **F-322** — Practice UI (FE) — hide/reveal, self-grade, personal lists.
 - **F-323** — Test UI (FE) — MCQ, matching, dropdown, completion.
 - **F-324** — Diagnostic ↔ Vocab link (BE + FE) — flagged errors auto-suggest vocab topics. Sprint 2 priority.
@@ -1170,26 +1198,35 @@ Reddit-as-acquisition: helpful comments on relevant threads with low-key LeMetho
 
 ---
 
-## F-321 — Le Vocabulaire OQLF Phase 1 seed (BE)
+## F-321 — Le Vocabulaire Phase 1 seed (BE) — Chadi tutoring artifacts
 
-**Filed:** 2026-05-12 (strategic session — Decision 3, MVP).
-**Status:** Queued — **gated on F-312.0** (licensing pre-flight outcome determines what can be ingested).
+**Filed:** 2026-05-12 (strategic session — Decision 3, MVP). **Rescoped 2026-05-12 (Path C locked):** dropped OQLF as ingest source; corpus now sourced from Chadi's 100+ `.docx` tutoring archive in `C:\Users\pc\Downloads` (Andre course notes, Egor exercises, Yarden translations, Avery programs, Jack homework, Matt COD/COI, cause/consequence activities, subjonctif guides, etc.).
+**Status:** Queued — F-312.0 sign-off received. **Approach (extraction pipeline vs. manual curation) gated on F-321.audit sample audit.**
 **Tag:** Active — Launch Critical (before soft beta launches).
 **Parent:** F-330.
 
 **Priority:** Launch.
 
-**Scope:**
-- 3 topic sets (Chadi-selected from OQLF BDL hierarchy — likely: anglicismes lexicaux | calques syntaxiques | prépositions problématiques).
+**F-321.audit pre-step (cheap, fast):**
+- Pick 10 random `.docx` files from Chadi's tutoring archive.
+- Assess for each: are they structured enough to extract `chunk`, `translation`, `register`, `error_type`, `cefr_level` fields cleanly? Is structure consistent across files? Are headings, tables, bold/italic markup used in a parseable way? Or is it free-prose mixed with embedded examples?
+- Output: 10-file sample-audit report with verdict (`extractable | mixed | requires-curation`) per file + recommended F-321 approach + confidence level.
+- **Approach branches based on audit:**
+  - **If extractable (≥7/10 clean):** F-321 = extraction pipeline. `scripts/ingest_chadi_artifacts.py` parses .docx → linguistic_corpus rows. Chadi reviews + corrects in admin. Fast path.
+  - **If mixed (4-6/10 clean):** F-321 = hybrid. Extraction pipeline for the clean files; manual curation for the rest. Chadi authors directly into the corpus for unstructured material.
+  - **If requires-curation (≤3/10 clean):** F-321 = manual curation. Chadi's notes become input, not source. Engineering builds a lightweight admin authoring UI; Chadi populates rows by hand. Slower but bulletproof on quality.
+- Audit itself: 1-2 hours BE work. Do not start until F-310 ships or a natural break hits.
+
+**Phase 1 scope (post-audit, locked once audit returns):**
+- 3 topic sets (Chadi-selected from his tutoring archive — natural candidates: faux-amis | calques anglais | prépositions a/de/dans/par/pour).
 - 500-800 entries total (~170-270 per topic).
-- Ingest pipeline reuses F-312 ingest infrastructure where applicable (or stands alone if F-312 rescoped to snippet-only).
-- Idempotent re-run script.
+- Idempotent ingest / authoring pipeline.
 
-**Out of scope:** Académie-sourced entries (Phase 2 corpus expansion); exam-specific tagging (default `exam_tag=null` at MVP; F-330.partition adds exam-tagging pass).
+**Out of scope:** Wiktionary FR + Tatoeba ingests — those live in F-312's ingest scripts (different scope: reference corpus for retrieval-side augmentation, not the user-facing vocab MVP). Exam-specific tagging (default `exam_tag=null` at MVP; F-330.partition adds exam-tagging pass).
 
-**Depends on:** F-320 (schema), F-312.0 (licensing — if not-permitted, rescope to curated CC corpus).
+**Depends on:** F-320 (schema), F-321.audit (sample-audit gate).
 
-**Owner:** BE + Chadi (topic-set selection + content review).
+**Owner:** BE (audit + ingest pipeline or admin authoring UI per branch) + Chadi (artifact archive owner + content review + post-extraction correction).
 
 ---
 
