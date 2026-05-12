@@ -133,4 +133,45 @@ class Settings:
     # in dev sends links to prod — annoying but not dangerous.
     FRONTEND_PUBLIC_URL: str = os.getenv("FRONTEND_PUBLIC_URL", "https://lemethodic.com")
 
+    # ── F-311 — token control infrastructure ─────────────────
+    # Anthropic prompt caching. Disable when measuring cache-disabled
+    # cost or when debugging cache-related issues.
+    ENABLE_PROMPT_CACHE: bool = os.getenv("ENABLE_PROMPT_CACHE", "true").lower() == "true"
+
+    # Prompt-injection detection (English patterns; conservative for now —
+    # Le Méthodic user input is French, so false-positive risk is low).
+    # Disable if false-positive rate surfaces in production logs.
+    ENABLE_PROMPT_INJECTION_CHECK: bool = os.getenv(
+        "ENABLE_PROMPT_INJECTION_CHECK", "true"
+    ).lower() == "true"
+
+    # Diagnostic max_tokens cap. Decision 4 (2026-05-12) said 800; F-311
+    # Q1 override locked 1600 (V-016a's 5-couche output is ~2-3K tokens;
+    # 800 truncates). Tunable down via env if smoke shows safe room;
+    # NEVER raise above 2400 without explicit re-justification (cost).
+    MAX_TOKENS_DIAGNOSTIC: int = int(os.getenv("MAX_TOKENS_DIAGNOSTIC", "1600"))
+
+    # Per-user-per-day diagnostic-session quota by tier. UTC-day window.
+    # Premium tier is unlimited — no constant needed (resolver short-circuits).
+    DIAGNOSTIC_RATE_LIMIT_FREE: int = int(os.getenv("DIAGNOSTIC_RATE_LIMIT_FREE", "5"))
+    DIAGNOSTIC_RATE_LIMIT_SUBSCRIPTION: int = int(
+        os.getenv("DIAGNOSTIC_RATE_LIMIT_SUBSCRIPTION", "30")
+    )
+    DIAGNOSTIC_RATE_LIMIT_SPRINT: int = int(os.getenv("DIAGNOSTIC_RATE_LIMIT_SPRINT", "60"))
+
+    # Model IDs by task (Decision 4 + Q2 confirmations 2026-05-12). Each
+    # env-overrideable for fast rollback if smoke or human-ear validation
+    # shows a quality regression vs the current sonnet-4-20250514 baseline.
+    # Defaults use the latest Anthropic aliases per the 2026-05 model
+    # generation; legacy date-pinned IDs work too if needed.
+    MODEL_DIAGNOSTIC: str = os.getenv("MODEL_DIAGNOSTIC", "claude-sonnet-4-6")
+    MODEL_DETECTION: str = os.getenv("MODEL_DETECTION", "claude-sonnet-4-6")
+    MODEL_EXAMINER: str = os.getenv("MODEL_EXAMINER", "claude-haiku-4-5")
+    MODEL_OUTLINE_SCAFFOLD: str = os.getenv("MODEL_OUTLINE_SCAFFOLD", "claude-sonnet-4-6")
+    MODEL_TRANSCRIPT_CORRECTION: str = os.getenv(
+        "MODEL_TRANSCRIPT_CORRECTION", "claude-haiku-4-5-20251001"
+    )
+    MODEL_VOCAB: str = os.getenv("MODEL_VOCAB", "claude-haiku-4-5")
+    MODEL_RAG_SYNTHESIS: str = os.getenv("MODEL_RAG_SYNTHESIS", "claude-haiku-4-5")
+
 settings = Settings()
