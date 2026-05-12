@@ -56,7 +56,7 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 34 | **M-103** | YouTube anchor video — French exam prep for English speakers |
 | 35 | **M-104** | Reddit community engagement (broadened subreddit list) |
 | 36 | **F-310** | Auth hardening (BE + FE) — BE SHIPPED 2026-05-12; FE work remains |
-| 37 | **F-311** | Token control infrastructure (BE) — pre-launch blocker (added 2026-05-12) |
+| 37 | **F-311** | Token control infrastructure (BE) — SHIPPED 2026-05-12 |
 | 38 | **F-312** | RAG retrieval layer (BE) — CC corpus + Chadi-authored (Path C, rescoped 2026-05-12) |
 | 39 | **F-312.0** | RAG licensing pre-flight — CLOSED 2026-05-12 (Path C selected) |
 | 40 | **F-330** | Le Vocabulaire system (parent + V2 enumeration) (added 2026-05-12) |
@@ -1099,12 +1099,65 @@ BACKLOG as the cross-ref from FE-side F-072 supersede.
 
 ---
 
-## F-311 — Token control infrastructure (BE)
+## F-311 — Token control infrastructure (BE) — SHIPPED 2026-05-12
 
 **Filed:** 2026-05-12 (strategic session — Decision 4).
-**Status:** Queued.
+**Status:** **BE Shipped 2026-05-12** across 5 phases / commits. No FE
+component (purely BE infrastructure). Production-ready.
 **Tag:** Active — Launch Critical (before soft beta launches).
 **Type:** BE cost-control infrastructure.
+
+**Shipped commits:**
+- `9b25652` — Phase A foundation (anthropic_client + ai_router +
+  prompt_safety + config additions).
+- `6ba3e2c` — Phase B analysis.py + writing_analysis.py refactor →
+  centralized client, model routing, max_tokens 8192→1600, cache enabled.
+- `e925519` — Phase C 4 inline httpx call sites refactored (tache_1/2,
+  argument_assistant, transcript_suggestions). Examiner routes to haiku.
+- `a7706c1` — Phase D diagnostic_rate_limit + DI wrappers on the 3
+  analysis endpoints + injection check on writing/upload.
+- `9a912ba` — Phase E smoke_f311.py (45 assertions, all PASS) + live
+  Claude cost validation + 2 pattern loosenings caught during smoke.
+
+**Production state at close (2026-05-12):**
+- Every Claude API call site routes through anthropic_client.call_anthropic.
+- Diagnostic helpers (analysis, writing_analysis) cap output at 1600
+  tokens (down from 8192) + cache system prompts via Anthropic's
+  prompt-caching beta.
+- Examiner turns (tache_1, tache_2) route to haiku-4-5 (down from sonnet-4),
+  ~10x cost cut per turn.
+- 3 analysis endpoints (recordings/upload, conversations/end, writing/submit)
+  enforce per-user-per-UTC-day quota: free=5 / sub=30 / sprint=60 / premium=unlimited.
+- Prompt injection check on writing/submit + recordings/upload (argument_structure
+  field). 12 patterns; conservative on English; French content unaffected.
+
+**Live-validated cost-saving math (Phase E smoke step 11):**
+- Cache hit ratio: **90.1%** on a real-Claude call within the 5-min window.
+- Per-call cost: $0.01073 (cache write) vs $0.00107 (cache read).
+- Projected at 5K users × 3 diagnostic/month: **$144.94/mo savings on
+  diagnostic alone** ($160.95 no-cache → $16.01 cached).
+- Examiner-turn sonnet→haiku savings compound on top (not measured but
+  ~10x per turn).
+
+**Env vars (Chadi to set in DO console for full enforcement):**
+- `REDIS_URL` — REQUIRED for diagnostic quota enforcement (same Redis
+  as F-310). Without it: quota fails-open with WARNING; cost-control
+  layer is dark.
+- `ENABLE_PROMPT_CACHE=true` (default) — keep set for the 90% savings.
+- `ENABLE_PROMPT_INJECTION_CHECK=true` (default) — keep set unless
+  false-positive rate surfaces.
+- `MAX_TOKENS_DIAGNOSTIC=1600` (default) — env-overrideable. Lower
+  if smoke shows safe room; never raise above 2400.
+- `MODEL_DIAGNOSTIC=claude-sonnet-4-6` (default per Decision 4) —
+  override to `claude-sonnet-4-20250514` for rollback to pre-F-311
+  model if quality regresses.
+- `MODEL_EXAMINER=claude-haiku-4-5` (default per Q2a) — override to
+  `claude-sonnet-4-6` for rollback if Tâche 1/2 examiner quality drops.
+- `DIAGNOSTIC_RATE_LIMIT_FREE/SUBSCRIPTION/SPRINT=5/30/60` (defaults).
+
+**Original scope (preserved for history):**
+
+**Priority:** HIGH — **pre-launch blocker.** At 5K+ Y1 user projection, uncapped diagnostic abuse blows up Anthropic API costs before subscription revenue compensates. Existential cost issue.
 
 **Priority:** HIGH — **pre-launch blocker.** At 5K+ Y1 user projection, uncapped diagnostic abuse blows up Anthropic API costs before subscription revenue compensates. Existential cost issue.
 
