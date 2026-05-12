@@ -134,24 +134,24 @@ async def generate_examiner_turn(conversation) -> str:
     messages = _build_messages_from_turns(turns)
 
     try:
-        async with httpx.AsyncClient(timeout=60) as client:
-            resp = await client.post(
-                "https://api.anthropic.com/v1/messages",
-                headers={
-                    "x-api-key": settings.ANTHROPIC_API_KEY,
-                    "anthropic-version": "2023-06-01",
-                    "content-type": "application/json",
-                },
-                json={
-                    "model": _EXAMINER_MODEL,
-                    "max_tokens": _EXAMINER_MAX_TOKENS,
-                    "system": PERSONA,
-                    "messages": messages,
-                },
-            )
-            resp.raise_for_status()
-            data = resp.json()
-        text = (data.get("content", [{}])[0].get("text") or "").strip()
+        from app.services.ai_router import pick_model
+        from app.services.anthropic_client import call_anthropic
+
+        # F-311 Phase C: examiner → haiku via ai_router (Q2a confirmed
+        # 2026-05-12). cache_system=True so PERSONA caches across the
+        # multi-turn conversation (engages above 4096 tokens for Haiku;
+        # below threshold Anthropic silently ignores the marker).
+        result = await call_anthropic(
+            system=PERSONA,
+            messages=messages,
+            model=pick_model("examiner"),
+            max_tokens=_EXAMINER_MAX_TOKENS,
+            cache_system=True,
+            timeout=60.0,
+        )
+        # call_anthropic returns str when content isn't JSON; examiner
+        # output is French prose so we always land here.
+        text = (result if isinstance(result, str) else "").strip()
     except Exception as exc:
         logger.warning("F-048 examiner generation failed, using fallback close: %s", exc)
         return FALLBACK_CLOSE

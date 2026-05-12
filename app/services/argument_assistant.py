@@ -41,25 +41,23 @@ async def generate_structure(
     )
 
     try:
-        async with httpx.AsyncClient(timeout=60) as client:
-            resp = await client.post(
-                "https://api.anthropic.com/v1/messages",
-                headers={
-                    "x-api-key": settings.ANTHROPIC_API_KEY,
-                    "anthropic-version": "2023-06-01",
-                    "content-type": "application/json",
-                },
-                json={
-                    "model": "claude-sonnet-4-20250514",
-                    "max_tokens": 1024,
-                    "system": system,
-                    "messages": [{"role": "user", "content": user_msg}],
-                },
-            )
-            resp.raise_for_status()
-            data = resp.json()
+        from app.services.ai_router import pick_model
+        from app.services.anthropic_client import call_anthropic
 
-        structure = data["content"][0]["text"].strip()
+        # F-311 Phase C: outline_scaffold → sonnet (Q2b confirmed
+        # 2026-05-12 — reasoning-heavy outline generation needs the
+        # better model). cache_system=True so the SYSTEM_PROMPT template
+        # caches across calls (static across all users; perfect cache fit).
+        # max_tokens=1024 unchanged (already a reasonable cap for outline output).
+        result = await call_anthropic(
+            system=system,
+            messages=[{"role": "user", "content": user_msg}],
+            model=pick_model("outline_scaffold"),
+            max_tokens=1024,
+            cache_system=True,
+            timeout=60.0,
+        )
+        structure = (result if isinstance(result, str) else "").strip()
         return {"structure": structure}
 
     except Exception as e:

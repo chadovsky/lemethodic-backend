@@ -65,35 +65,27 @@ async def suggest_corrections(
     )
 
     try:
-        async with httpx.AsyncClient(timeout=45) as client:
-            resp = await client.post(
-                "https://api.anthropic.com/v1/messages",
-                headers={
-                    "x-api-key": settings.ANTHROPIC_API_KEY,
-                    "anthropic-version": "2023-06-01",
-                    "content-type": "application/json",
-                },
-                json={
-                    "model": _MODEL,
-                    "max_tokens": 1024,
-                    "system": system,
-                    "messages": [{"role": "user", "content": user_msg}],
-                },
-            )
-            resp.raise_for_status()
-            data = resp.json()
+        from app.services.ai_router import pick_model
+        from app.services.anthropic_client import call_anthropic
+
+        # F-311 Phase C: transcript_correction → haiku via ai_router
+        # (already haiku pre-F-311; refactor is consistency-only).
+        # cache_system=True for the static FR-correction system prompt.
+        parsed = await call_anthropic(
+            system=system,
+            messages=[{"role": "user", "content": user_msg}],
+            model=pick_model("transcript_correction"),
+            max_tokens=1024,
+            cache_system=True,
+            timeout=45.0,
+        )
     except Exception as e:
         logger.warning(f"[F-002] Haiku suggestion call failed: {e}")
         return {}
 
-    raw = data.get("content", [{}])[0].get("text", "")
-    try:
-        parsed = json.loads(
-            raw.strip()
-            .removeprefix("```json").removeprefix("```")
-            .removesuffix("```").strip()
-        )
-    except json.JSONDecodeError:
+    # call_anthropic returns parsed dict on JSON success, raw str on
+    # JSON parse failure (matching the legacy fallback behavior).
+    if not isinstance(parsed, dict):
         logger.warning(f"[F-002] Haiku returned non-JSON; dropping suggestions")
         return {}
 

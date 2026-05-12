@@ -120,24 +120,22 @@ async def generate_examiner_turn(conversation, scenario) -> str | None:
     messages = _build_messages_from_turns(turns)
 
     try:
-        async with httpx.AsyncClient(timeout=60) as client:
-            resp = await client.post(
-                "https://api.anthropic.com/v1/messages",
-                headers={
-                    "x-api-key": settings.ANTHROPIC_API_KEY,
-                    "anthropic-version": "2023-06-01",
-                    "content-type": "application/json",
-                },
-                json={
-                    "model": _EXAMINER_MODEL,
-                    "max_tokens": _EXAMINER_MAX_TOKENS,
-                    "system": system,
-                    "messages": messages,
-                },
-            )
-            resp.raise_for_status()
-            data = resp.json()
-        text = (data.get("content", [{}])[0].get("text") or "").strip()
+        from app.services.ai_router import pick_model
+        from app.services.anthropic_client import call_anthropic
+
+        # F-311 Phase C: examiner → haiku via ai_router. cache_system=True
+        # so the scenario-specific persona caches across the multi-turn
+        # conversation. Persona varies per scenario, not per turn — fits
+        # caching naturally.
+        result = await call_anthropic(
+            system=system,
+            messages=messages,
+            model=pick_model("examiner"),
+            max_tokens=_EXAMINER_MAX_TOKENS,
+            cache_system=True,
+            timeout=60.0,
+        )
+        text = (result if isinstance(result, str) else "").strip()
     except Exception as exc:
         logger.warning("F-049 examiner generation failed: %s", exc)
         # Stay in character even on error — don't leak a 500 into the
