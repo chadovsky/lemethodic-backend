@@ -29,6 +29,7 @@ from alembic import context
 from app.database import Base
 from app.models import models as _models  # noqa: F401 — side-effect: register tables
 from app.models import writing as _writing_models  # noqa: F401 — side-effect: register tables
+from app.models import vocabulaire as _vocab_models  # noqa: F401 — side-effect: register tables
 
 config = context.config
 

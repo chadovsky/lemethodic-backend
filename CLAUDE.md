@@ -81,17 +81,27 @@ This means migration approval must fire **before push**, not before a separate a
    - Full migration file content **inline** (not just a reference path).
    - Generated SQL preview via `alembic upgrade <prev_rev>:<new_rev> --sql`.
    - Local verification confirmation (upgrade + downgrade + re-upgrade output).
-   - **pg_dump command for Chadi to run against prod** as the explicit point-in-time backup. DO's daily backup is fallback, not primary.
+   - **pg_dump command for Chadi to run against prod** — see pg_dump pre-flight tiering below.
    - Rollback command (`alembic downgrade -1`).
 
+   **pg_dump pre-flight tiering (refined 2026-05-12 via F-320 contract refinement):**
+   - **REQUIRED** — pg_dump is the primary point-in-time backup and Chadi must capture + confirm file path + size + row count BEFORE approving the push when ANY of the following apply:
+     - Migration includes `ALTER TABLE` on existing tables (column add/drop/type change), OR
+     - Migration includes `INSERT` / `UPDATE` / `DELETE` DML on existing data, OR
+     - Migration adds a NOT NULL column with backfill, OR
+     - Migration touches `users` / auth-related tables / payment-adjacent tables (`refresh_tokens`, `email_verification_tokens`, `password_reset_tokens`, anything Stripe-adjacent).
+   - **OPTIONAL** — pg_dump is skipped and the DO daily auto-backup serves as fallback when the migration is **100% additive** (only `CREATE TABLE` / `CREATE INDEX` / `CREATE CONSTRAINT` on NEW objects, zero touch on existing tables). SQL preview must prove zero `ALTER` / `INSERT` / `UPDATE` / `DELETE` on existing data; ASK message states "pg_dump skipped — additive-only" so the tiering decision is auditable.
+
+   Tiering rationale: 100% additive migrations have a clean `alembic downgrade -1` path that loses zero existing data (the new tables ship empty); a pg_dump for additive migrations protects against nothing the rollback can't already restore. Non-additive migrations need pg_dump because rollback alone can't recover dropped/mutated rows.
+
 3. **Chadi pre-push actions:**
-   - Run the pg_dump command against prod, confirm backup file path + size + row count.
+   - If pg_dump REQUIRED: run the pg_dump command against prod, confirm backup file path + size + row count.
    - Read the inline migration file + SQL preview.
    - Approve the push.
 
 4. **BE pushes to master** → DO auto-deploys → migration auto-applies. BE confirms post-deploy state via prod probes (`/health`, `/openapi.json`, a representative endpoint that exercises new schema).
 
-If anything fails post-deploy: `alembic downgrade -1` runs by pushing a revert commit (or via DO console if available). The pg_dump from step 3 is the emergency restore path.
+If anything fails post-deploy: `alembic downgrade -1` runs by pushing a revert commit (or via DO console if available). For REQUIRED-tier migrations, the pg_dump from step 3 is the emergency restore path; for OPTIONAL-tier migrations, the downgrade is sufficient and the DO daily auto-backup is the secondary fallback.
 
 **Gate triggers that still ASK before commit (not push) per operating contract:**
 - Payment/billing/subscription logic changes (gate #10) — shape question before code.

@@ -1303,8 +1303,8 @@ If neither ever responds: zero impact. F-312 ships and runs forever on CC + Chad
 
 **Scope:**
 - New tables:
-  - `vocab_chunks` — `id`, `chunk_fr`, `chunk_en` (optional, for FR↔EN exercises), `topic_slug`, `source` (oqlf | academie | curated), `source_url`, `register`, `exam_tag` (tcf | tef | delf | dalf | null), `cefr_level`, `created_at`.
-  - `vocab_topics` — `slug`, `labels{i18n}` (JSONB), `corpus_partition` (free_general | exam_specific), `cefr_level_min`, `cefr_level_max`, `description{i18n}`.
+  - `vocab_chunks` — `id`, `chunk_fr`, `chunk_en` (optional, for FR↔EN exercises), `topic_id` (FK→vocab_topics), `source` (URL or docx filename, nullable), `source_type` (`CC_corpus | chadi_authored | book_lab | third_party_publisher_DO_NOT_EXTRACT` — parent F-330 enum, supersedes the pre-Path-C `oqlf | academie | curated` text per Decision D2 approved 2026-05-12), `register` (nullable: `formel | semi_formel | informel | argotique`), `exam_tag` (`tcf | tef | delf | dalf | null`), `cefr_level`, `created_at`, `updated_at`.
+  - `vocab_topics` — `slug`, `labels{i18n}` (JSONB), `description{i18n}` (JSONB), `corpus_partition` (`free_general | exam_tagged_TCF | exam_tagged_DELF | exam_tagged_TEF` per parent F-330 enum), `cefr_level_min`, `cefr_level_max`, `created_at`. Distinct from P-202 `vocabulary_themes` per Decision D1 approved 2026-05-12 (different concept, different lifecycle).
   - `user_vocab_lists` — `user_id`, `list_id`, `name`, `created_at`. Personal-list metadata.
   - `user_vocab_list_chunks` — `list_id`, `chunk_id`, `added_at`. Join table for personal lists.
   - `user_vocab_progress` — `user_id`, `chunk_id`, `seen_count`, `correct_count`, `last_seen_at`. Per-chunk progress (feeds SRS in F-330.lists later).
