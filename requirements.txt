@@ -17,3 +17,9 @@ boto3>=1.36
 # both local dev (docker-compose Postgres) and production.
 psycopg[binary]>=3.1
 gunicorn==22.0.0
+# F-310 Phase A — auth hardening foundation. Redis async client for
+# rate-limit + refresh-token revocation; Stripe SDK for webhook HMAC
+# verification (P-106 will use the full SDK; F-310 uses only
+# stripe.Webhook.construct_event from it).
+redis[hiredis]>=5.0
+stripe>=8.0

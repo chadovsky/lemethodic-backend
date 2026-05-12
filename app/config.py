@@ -81,4 +81,37 @@ class Settings:
     TTS_CACHE_DIR: str = os.getenv("TTS_CACHE_DIR", os.path.join(STORAGE_LOCAL_ROOT, "tts_cache"))
     TTS_COST_LOG: str = os.getenv("TTS_COST_LOG", "data/tts_cost.log")
 
+    # ── F-310 auth hardening (Phase A) ───────────────────────
+    # ENV gates production-only behaviors (secure cookie flag, etc.).
+    # Set to "production" on the DO App Platform deploy.
+    ENV: str = os.getenv("ENV", "development")
+
+    # Redis: rate-limit counters + refresh-token revocation set + (F-311)
+    # per-tier diagnostic counters. Defaults to docker-compose local.
+    # Production override via DATABASE_URL-style env injection.
+    REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
+
+    # hCaptcha: SECRET stays server-side; SITEKEY exposed to FE via a
+    # /api/config/public endpoint Phase C ships (or hardcoded in FE
+    # build, FE's call). Fail-closed when SECRET unset.
+    HCAPTCHA_SECRET: str = os.getenv("HCAPTCHA_SECRET", "")
+    HCAPTCHA_SITEKEY: str = os.getenv("HCAPTCHA_SITEKEY", "")
+
+    # Stripe webhook secret. Payload handler is P-106; Phase A/D wire
+    # the verification + a bare endpoint shell.
+    STRIPE_WEBHOOK_SECRET: str = os.getenv("STRIPE_WEBHOOK_SECRET", "")
+
+    # Transactional email. Provider pluggable; only "resend" is
+    # implemented in Phase A (Chadi sign-off 2026-05-12).
+    EMAIL_PROVIDER: str = os.getenv("EMAIL_PROVIDER", "resend")
+    EMAIL_FROM_ADDRESS: str = os.getenv("EMAIL_FROM_ADDRESS", "noreply@lemethodic.com")
+    EMAIL_FROM_NAME: str = os.getenv("EMAIL_FROM_NAME", "Le Méthodic")
+    RESEND_API_KEY: str = os.getenv("RESEND_API_KEY", "")
+
+    # Refresh-token lifetime. Phase B wires the actual mint/verify flow;
+    # default visible now so the JWT helpers in Phase B import from one
+    # source of truth. Access-token lifetime stays at the legacy 1440
+    # until Phase B drops it to 15 alongside the refresh flow.
+    REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
+
 settings = Settings()
