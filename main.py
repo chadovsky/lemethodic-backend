@@ -16,6 +16,7 @@ from app.routers import onboarding
 from app.routers import diagnostic
 from app.routers import today
 from app.routers import clusters
+from app.routers import stripe_webhook  # F-310 Phase D — empty handler shell
 from app.models.models import User
 from app.services.auth import get_current_user
 from app.services import storage
@@ -139,6 +140,7 @@ app.include_router(onboarding.router)
 app.include_router(diagnostic.router)
 app.include_router(today.router)
 app.include_router(clusters.router)
+app.include_router(stripe_webhook.router)
 
 # Serve static files
 import os
