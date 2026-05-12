@@ -40,7 +40,7 @@ from app.models.writing import (
     WritingSubmissionJob,
 )
 from app.services.exam_profiles import get_profile
-from app.services.writing_analysis import analyze_writing
+from app.services.writing_analysis import _extract_couches, analyze_writing
 
 
 logger = logging.getLogger(__name__)
@@ -191,12 +191,18 @@ async def run_writing_analysis_job(
         )
 
         # Build result_json mirroring legacy sync POST /submit response
-        # so the FE polling consumer renders identically.
+        # so the FE polling consumer renders identically. V-016a (2026-05-12):
+        # added top-level `couches` array (5-couche La Méthode en Couches
+        # surface) so the FE polling consumer reads couche scores without
+        # descending into feedback.methode_en_couches.
         result = {
             "id": submission.id,
             "word_count": word_count,
             "time_taken_seconds": time_taken_seconds,
             "feedback": feedback,
+            "couches": (
+                _extract_couches(feedback) if isinstance(feedback, dict) else []
+            ),
             "submitted_at": (
                 submission.submitted_at.isoformat()
                 if submission.submitted_at else ""

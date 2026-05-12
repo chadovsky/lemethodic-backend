@@ -303,6 +303,35 @@ This contradicts the 5-couche model locked 2026-05-05 (F-202 + F-227 surfaced as
 
 ---
 
+### V-009.be — Unify oral analysis surface to 5 couches (BE)
+
+**Status:** Queued.
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Filed:** 2026-05-12 (parallel BE follow-up to V-009 FE; trigger met by V-016a shipping).
+**Type:** BE methodology-surface alignment.
+**Priority:** Ship after V-016a validates `methode_en_couches` shape in production.
+
+**Trigger:** V-016a ships and the writing-side `methode_en_couches` + top-level `couches` array are validated in prod (smoke green, FE polling consumer renders 5 axes correctly).
+
+**Scope:**
+- `app/services/analysis.py` — extend the oral system prompt to score 5 couches (add `la_voix`); rewrite `analyse_par_couche` output shape OR introduce `methode_en_couches` parallel to writing for symmetry. Decide in plan-first which way to migrate (rename vs new key); writing path uses `methode_en_couches`, oral should match.
+- `app/services/couche_labels.py` — extend `COUCHE_ORDER` from 4 → 5 by adding `la_voix`; extend `COUCHE_DISPLAY_LABELS` with `{en: "Voice", fr: "Voix"}`. Once unified, retire the writing-local `COUCHE_ORDER` / `COUCHE_DISPLAY_LABELS` / `_extract_couches` in `writing_analysis.py` in favor of the shared helper (drops a duplication that V-016a deliberately accepted as the price of shipping cleanly without cross-coupling).
+- Existing `couches_array` callers in `app/routers/recordings.py` start emitting 5 rows automatically — verify FE radar handles the 5th row gracefully (it should already, since V-009 FE was shipped expecting 5 axes).
+- Smoke test: extend or add a smoke covering the oral path emitting 5 couches end-to-end.
+
+**Out of scope:** the writing path (already on 5 via V-016a); FE work (covered by V-009 FE).
+
+**Why deferred:**
+- V-016a ships first to de-risk the prompt rewrite + Claude scoring of La Voix on a single surface.
+- If `la_voix` scores prove unstable in prod (Claude over/under-weights the new dimension), we tune the prompt on writing-only before propagating to oral.
+- Once writing is stable, oral migration is a mechanical extension (same prompt pattern, same output shape, same display labels).
+
+**Notes:**
+- The writing-local 5-couche helpers in `writing_analysis.py` (`COUCHE_ORDER`, `COUCHE_DISPLAY_LABELS`, `_extract_couches`) are intentionally duplicated from `couche_labels.py`. V-009.be's last step is collapsing them.
+- Old oral submissions stored with the 4-couche `analyse_par_couche` shape are pre-soft-beta — acceptable to leave as legacy; no migration script needed.
+
+---
+
 ## V-010 — /ecole phase structure correction
 
 **Status:** Active LC

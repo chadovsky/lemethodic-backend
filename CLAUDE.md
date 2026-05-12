@@ -12,7 +12,7 @@ This is **Chadi's TCF Oral Practice Tool** — a web app where French learners (
 
 - **Backend:** Python 3 + FastAPI + SQLAlchemy + Alembic (PostgreSQL local + prod, F-077)
 - **Speech-to-Text:** AssemblyAI API
-- **AI Analysis:** Anthropic Claude API (claude-sonnet-4-20250514) — processes transcriptions through the 4-layer Les Moules prompt
+- **AI Analysis:** Anthropic Claude API (claude-sonnet-4-20250514) — processes transcriptions through the 5-layer Méthode en Couches prompt (writing path on the full 5 couches as of V-016a; oral path on 4 couches until V-009.be lifts La Voix)
 - **Frontend:** Vanilla HTML/CSS/JS served via FastAPI templates (Jinja2)
 - **Auth:** Session-based with hashed passwords
 - **File uploads:** Audio recordings stored in `uploads/`
@@ -27,7 +27,8 @@ app/
 ├── models/              → SQLAlchemy models (User, Topic, Recording, Analysis)
 ├── routers/             → FastAPI route handlers
 ├── services/
-│   └── analysis.py      → THE CORE — 4-layer Les Moules AI analysis engine
+│   ├── analysis.py      → Oral analysis engine (4 couches today; V-009.be lifts to 5)
+│   └── writing_analysis.py → Writing analysis engine (5 couches, La Méthode en Couches)
 ├── templates/           → Jinja2 HTML templates (index.html, admin.html)
 └── static/              → CSS, JS, images
 alembic/                 → Alembic migrations (F-077)
@@ -70,9 +71,9 @@ alembic upgrade head
 
 ---
 
-## The Methodology — La Méthode en Couches (4 Couches)
+## The Methodology — La Méthode en Couches (5 Couches)
 
-This is the heart of the product. The AI analysis engine in `analysis.py` evaluates oral production across 4 layers:
+This is the heart of the product. The AI analysis engines (`analysis.py` for oral, `writing_analysis.py` for writing) evaluate production across 5 layers. The writing path emits the full 5-couche surface as of V-016a (2026-05-12); the oral path is scheduled to align in V-009.be.
 
 | Couche | Name | What It Measures |
 |--------|------|-----------------|
@@ -80,11 +81,12 @@ This is the heart of the product. The AI analysis engine in `analysis.py` evalua
 | 2 | **Les Moules des Idées** | Discourse organization — does the student structure thought like a French speaker? (context-first vs. point-first, thèse-antithèse-synthèse, etc.) |
 | 3 | **Les Moules** | Sentence-level architecture — does each sentence sound French or like translated English? |
 | 4 | **Les Réflexes Anglais** | L1 interference — English habits bleeding through: faux-amis, calques, missing *ne*, preposition errors, anglicisms |
+| 5 | **La Voix** | Native-French read vs. translated-English read. Register fit, idiomatic patterns, French rhetorical flow, cultural-fit phrasing, voice consistency across paragraphs. Detects whether a native French writer would recognize the text as "thinking in French" vs "translating from English." |
 
 ### Feedback Output — Le Diagnostic
 
 The analysis returns:
-1. **La Carte** — 4 scores (0-5 per couche) + overall /20
+1. **La Carte** — 5 scores (0-20 per couche) + overall /20 (mean of the 5 couches, rounded to 1 decimal)
 2. **Le Goulet** — THE bottleneck. Which couche is dragging everything down?
 3. **Les Patterns** — Specific patterns detected and missing per couche
 4. **L'Ordonnance** — Prioritized action items (what to fix first)
@@ -107,7 +109,7 @@ The analysis returns:
 ✅ User auth (register, login, sessions)
 ✅ Audio recording in browser (MediaRecorder API)
 ✅ Deepgram STT integration
-✅ 4-layer Les Moules analysis engine (analysis.py)
+✅ 5-layer Méthode en Couches analysis engine (writing_analysis.py — V-016a 2026-05-12; analysis.py oral still at 4, V-009.be queued)
 ✅ 84 topics seeded across 7 themes
 ✅ Basic frontend (index.html) — functional but needs redesign
 ✅ Admin page (admin.html) — functional but still uses old level-based dropdown
@@ -168,7 +170,8 @@ The analysis returns:
 | File | Purpose |
 |------|---------|
 | `main.py` | App entry, router mounting, static files |
-| `app/services/analysis.py` | **THE CORE** — 4-layer Les Moules prompt + Claude API call |
+| `app/services/analysis.py` | Oral analysis — 4-couche prompt + Claude call (V-009.be will lift to 5) |
+| `app/services/writing_analysis.py` | **THE CORE for writing** — 5-couche La Méthode en Couches prompt + Claude API call |
 | `app/templates/index.html` | Main user-facing page |
 | `app/templates/admin.html` | Admin dashboard for topic management |
 | `app/models/` | SQLAlchemy models |
@@ -186,11 +189,11 @@ The analysis returns:
 ## Don'ts
 
 - Don't suggest switching to React/Vue/Next.js — vanilla HTML/JS is intentional for now
-- Don't use internal methodology names in user-facing text — these are code/backend only: La Carte, Le Goulet, L'Ordonnance, Le Diagnostic, La Méthode en Couches, Le Fond, Les Moules, Les Moules des Idées, Les Réflexes Anglais. User-facing labels are:
-  - EN: Content, Idea Structure, Sentence Quality, English Habits, Your #1 Blocker, Priority fixes
-  - FR: Contenu, Structure des idées, Qualité des phrases, Réflexes anglais, Votre frein principal, Corrections prioritaires
-  - ES: Contenido, Estructura, Calidad frase, Hábitos inglés, Tu bloqueador #1, Correcciones prioritarias
-  - Internal names stay only in `analysis.py`, backend code, and `CLAUDE.md`
+- Don't use internal methodology names in user-facing text — these are code/backend only: La Carte, Le Goulet, L'Ordonnance, Le Diagnostic, La Méthode en Couches, Le Fond, Les Moules, Les Moules des Idées, Les Réflexes Anglais, La Voix. User-facing labels (V-009 lock, 2026-05-05; La Voix added V-016a 2026-05-12):
+  - EN: Range, Coherence, Accuracy, Fluency, Voice, Your #1 Blocker, Priority fixes
+  - FR: Étendue, Cohérence, Correction, Aisance, Voix, Votre frein principal, Corrections prioritaires
+  - ES: Alcance, Coherencia, Corrección, Fluidez, Voz, Tu bloqueador #1, Correcciones prioritarias
+  - Internal names stay only in `analysis.py`, `writing_analysis.py`, backend code, and `CLAUDE.md`
 - Don't use academic jargon (e.g. "L1 interference", "discourse patterns") in user-facing text
 - Don't create separate CSS/JS files — keep templates self-contained for now
 - Don't suggest features not in the phase plan above without asking

@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import datetime
+import json
 import sys
 import uuid
 from unittest.mock import patch, AsyncMock
@@ -41,6 +42,7 @@ from app.schemas.writing_jobs import (
     WritingJobResponse, WritingSubmitResponse,
 )
 from app.services.auth import create_access_token, hash_password
+from app.services.writing_analysis import COUCHE_ORDER
 from app.services.writing_jobs import run_writing_analysis_job
 
 
@@ -195,6 +197,16 @@ _FAKE_FEEDBACK = {
     "errors": [],
     "strengths": ["smoke test"],
     "next_steps": [],
+    # V-016a 2026-05-12 — 5-couche surface. Distinct scores per couche so
+    # Step 6 can verify ordering by checking the score round-trips at the
+    # right index.
+    "methode_en_couches": {
+        "le_fond":              {"score": 11, "examiner_remark_fr": "smoke", "teacher_coaching": {}},
+        "les_moules_des_idees": {"score": 12, "examiner_remark_fr": "smoke", "teacher_coaching": {}},
+        "les_moules":           {"score": 13, "examiner_remark_fr": "smoke", "teacher_coaching": {}},
+        "les_reflexes_anglais": {"score": 14, "examiner_remark_fr": "smoke", "teacher_coaching": {}},
+        "la_voix":              {"score": 15, "examiner_remark_fr": "smoke", "teacher_coaching": {}},
+    },
 }
 
 
@@ -445,6 +457,96 @@ def step_5_forbid() -> None:
         check("WritingJobResponse invalid status rejected", True)
 
 
+# ── Step 6 — 5-couche surface in result_json (V-016a 2026-05-12) ────
+
+
+def step_6_five_couche_surface() -> None:
+    print("\nStep 6: result_json carries the 5-couche surface")
+
+    db = SessionLocal()
+    try:
+        u = _ensure_user(db, SMOKE_EMAIL)
+        _wipe_jobs(db, u.id)
+        prompt = _ensure_prompt(db)
+        user_id = u.id
+        prompt_id = prompt.id
+        job_id = _make_pending_job(db, user_id)
+    finally:
+        db.close()
+
+    with patch(
+        "app.services.writing_jobs.analyze_writing",
+        new=AsyncMock(return_value=_FAKE_FEEDBACK),
+    ):
+        asyncio.run(run_writing_analysis_job(
+            job_id=job_id,
+            user_id=user_id,
+            prompt_id=prompt_id,
+            student_text="test sample for couche surface",
+            time_taken_seconds=33,
+            ui_language="en",
+            exam_profile="tcf_canada",
+        ))
+
+    db = SessionLocal()
+    try:
+        job = db.query(WritingSubmissionJob).filter_by(id=job_id).first()
+        check("job completed", job and job.status == "completed")
+        if not job or not job.result_json:
+            check("result_json present", False)
+            return
+        result = json.loads(job.result_json)
+    finally:
+        db.close()
+
+    # Top-level couches array
+    couches = result.get("couches")
+    check("result.couches is a list",
+          isinstance(couches, list), str(type(couches).__name__))
+    check("result.couches has 5 rows",
+          isinstance(couches, list) and len(couches) == 5,
+          str(len(couches)) if isinstance(couches, list) else "n/a")
+    if not isinstance(couches, list) or len(couches) != 5:
+        return
+
+    # Order check
+    keys = [c.get("key") for c in couches]
+    check("couches order matches COUCHE_ORDER",
+          tuple(keys) == COUCHE_ORDER, str(keys))
+
+    # Each row has display labels + score
+    shape_ok = all(
+        isinstance(c.get("display_label_en"), str)
+        and isinstance(c.get("display_label_fr"), str)
+        and isinstance(c.get("score"), (int, float))
+        for c in couches
+    )
+    check("each row has display_label_en/fr + numeric score", shape_ok)
+
+    # La Voix row sanity (Voice / Voix)
+    la_voix = couches[4]
+    check("la_voix.display_label_en == 'Voice'",
+          la_voix.get("display_label_en") == "Voice",
+          str(la_voix.get("display_label_en")))
+    check("la_voix.display_label_fr == 'Voix'",
+          la_voix.get("display_label_fr") == "Voix",
+          str(la_voix.get("display_label_fr")))
+
+    # Score round-trip — _FAKE_FEEDBACK uses 11/12/13/14/15 in canonical order
+    expected_scores = [11.0, 12.0, 13.0, 14.0, 15.0]
+    actual_scores = [float(c.get("score", 0)) for c in couches]
+    check("scores round-trip in canonical order",
+          actual_scores == expected_scores,
+          f"actual={actual_scores}")
+
+    # Feedback's methode_en_couches still embedded (FE may read either)
+    feedback = result.get("feedback") or {}
+    mec = feedback.get("methode_en_couches") if isinstance(feedback, dict) else None
+    check("feedback.methode_en_couches preserved",
+          isinstance(mec, dict) and "la_voix" in mec,
+          str(list(mec.keys())) if isinstance(mec, dict) else "n/a")
+
+
 # ── Cleanup ────────────────────────────────────────────────────
 
 
@@ -472,6 +574,7 @@ def main() -> int:
         step_3_runner_lifecycle()
         step_4_get_contract()
         step_5_forbid()
+        step_6_five_couche_surface()
     finally:
         cleanup()
 

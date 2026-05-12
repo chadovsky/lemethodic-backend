@@ -4,29 +4,37 @@ from app.config import settings
 from app.services.exam_profiles import ExamProfile, get_profile
 
 # ===================================================================
-#  Writing Analysis Engine — La Methode en Couches (Written French)
-#  Adapted from the oral analysis framework for written production.
+#  Writing Analysis Engine — La Méthode en Couches (Written French)
 #
-#  4 Layers for writing:
-#    1. Sentence Architecture   — English-style structure in French words
-#    2. Grammatical Accuracy    — Conjugation, agreement, prepositions
-#    3. Lexical Appropriateness — Register, word choice, collocations
-#    4. L1 Interference         — English->French transfer errors
+#  V-016a (2026-05-12): rewritten from a 4-LAYER descriptive frame to
+#  the 5-COUCHE methodology locked V-009 (2026-05-05). The writing path
+#  now emits the full methode_en_couches surface; oral analysis.py
+#  catches up under V-009.be.
+#
+#  5 Couches (internal names → user-facing labels EN / FR):
+#    1. le_fond              → Range     / Étendue
+#    2. les_moules_des_idees → Coherence / Cohérence
+#    3. les_moules           → Accuracy  / Correction
+#    4. les_reflexes_anglais → Fluency   / Aisance
+#    5. la_voix              → Voice     / Voix     (NEW — V-016a)
 # ===================================================================
 
 # ═══════════════════════════════════════════════════════════════
 # DUAL-CHANNEL FEEDBACK BLOCK (F-032) — written skill mirror
 # Duplicated from analysis.py per the services' "no cross-import"
 # convention (writing and oral services are intentionally independent).
-# Keep in sync with analysis.DUAL_CHANNEL_BLOCK.
+# Keep the dual-voice contract (examiner_remark_fr + teacher_coaching)
+# in sync with analysis.DUAL_CHANNEL_BLOCK. The grille that follows is
+# WRITING-SPECIFIC (5 couches) and is intentionally NOT mirrored — oral
+# stays on the legacy 4-dimension shape until V-009.be.
 # ═══════════════════════════════════════════════════════════════
 
 DUAL_CHANNEL_BLOCK = """═══════════════════════════════════════════════════════════
 DUAL-CHANNEL FEEDBACK — LES DEUX VOIX
 ═══════════════════════════════════════════════════════════
-Pour chaque critère et pour la grille d'analyse, tu produis DEUX VOIX
-DISTINCTES. Ne les mélange jamais. Elles ont des buts, des registres et
-des destinataires différents.
+Pour chaque critère et pour chaque couche de la grille La Méthode en
+Couches, tu produis DEUX VOIX DISTINCTES. Ne les mélange jamais. Elles
+ont des buts, des registres et des destinataires différents.
 
 ▸ VOIX EXAMINATEUR (examiner_remark_fr)
   - Français UNIQUEMENT. Jamais de traduction, jamais de "|||".
@@ -76,115 +84,130 @@ Exemple 2 — critère lexical_range, étudiant B2 :
       'cette pratique', 'cette question'."
     transformation : "Bannis 'chose' et 'truc' de la prochaine rédaction."
 
-═══════════════════════════════════════════════════════════
-GRILLE D'ANALYSE — 4 DIMENSIONS (analyse_par_couche)
-═══════════════════════════════════════════════════════════
-Produis quatre observations distinctes sur la production, non redondantes
-avec les critères. Chaque cellule = 2-4 phrases en français.
-
-  what_works          — Ce qui marche dans cette production. Cite des
-                        passages précis. Renforcement positif ciblé.
-  what_doesnt_work    — La faiblesse principale. Une seule, la plus
-                        importante. Cite un moment spécifique.
-  english_habits      — Réflexes anglais détectés (calques, prépositions
-                        transférées, ordre des mots anglais, faux-amis).
-                        Liste 1-3 exemples concrets tirés du texte.
-  structure_quality   — Architecture des phrases et organisation de
-                        l'argument. Subordination ? Connecteurs logiques ?
-                        Progression thèse-antithèse-synthèse ?
-
-next_step — UNE SEULE directive d'action pour la prochaine rédaction,
-            rédigée dans la langue de l'interface étudiant ({ui_language_name}).
-            Pas de liste. Phrase courte, impérative, concrète."""
+La même contrainte de double voix s'applique à chaque entrée de
+methode_en_couches : examiner_remark_fr en français pur, teacher_coaching
+en triple format (coaching_en / coaching_fr / transformation)."""
 
 
+# 5-couche per-level grilles. Tolerance bands by CEFR target level.
+# Each LAYER 1-5 line maps directly to internal couche names so the
+# scorer doesn't have to translate.
 WRITING_GRILLES = {
-    "B1": """GRILLE B1 : Tolerance ELEVEE.
-LAYER 1: Simple sentence structures accepted. SVO order fine. Some variety expected.
-LAYER 2: Present, passe compose, imparfait. Basic agreement. Common prepositions.
-LAYER 3: Basic vocabulary sufficient. Informal register tolerated.
-LAYER 4: Only flag major anglicisms and obvious calques.
-SCORING: 10-12/20 = expected. 14+/20 = excellent.""",
+    "B1": """GRILLE B1 — Tolérance ÉLEVÉE.
+COUCHE 1 (le_fond):              Position simple acceptée. 1-2 exemples concrets suffisent. Hors-sujet pénalisé.
+COUCHE 2 (les_moules_des_idees): Plan minimal accepté (intro courte, 1-2 paragraphes, conclusion). Connecteurs basiques (et, mais, parce que).
+COUCHE 3 (les_moules):           Phrases simples acceptées. SVO standard. Présent, passé composé, imparfait. Accords majeurs corrects.
+COUCHE 4 (les_reflexes_anglais): Ne signale que les anglicismes flagrants et les calques évidents.
+COUCHE 5 (la_voix):              Voix anglophone tolérée tant que le sens passe. Registre informel accepté.
+SCORING par couche : 10-12/20 = attendu. 14+/20 = excellent.""",
 
-    "B2": """GRILLE B2 : Tolerance MODEREE.
-LAYER 1: Complex sentences expected. Subordination, relative clauses, participial phrases.
-LAYER 2: All common tenses including subjonctif present. Agreement must be consistent. Preposition accuracy expected.
-LAYER 3: Formal register expected for formal letters. Good collocation use. Varied vocabulary.
-LAYER 4: Flag all anglicisms, calques, preposition transfers, false cognates.
-SCORING: 12-14/20 = expected. 16+/20 = excellent.""",
+    "B2": """GRILLE B2 — Tolérance MODÉRÉE.
+COUCHE 1 (le_fond):              Position argumentée attendue. Au moins 2-3 exemples développés. Profondeur exigée, surface pénalisée.
+COUCHE 2 (les_moules_des_idees): Plan thèse-antithèse-synthèse ou équivalent attendu. Connecteurs logiques variés (cependant, en effet, par conséquent).
+COUCHE 3 (les_moules):           Subordonnées, relatives, subjonctif présent attendus. Accords cohérents. Prépositions précises.
+COUCHE 4 (les_reflexes_anglais): Signale tous les anglicismes, calques, transferts de prépositions, faux-amis.
+COUCHE 5 (la_voix):              Registre adapté au genre attendu. Tournures idiomatiques françaises souhaitées. Phrasé "traduit" pénalisé.
+SCORING par couche : 12-14/20 = attendu. 16+/20 = excellent.""",
 
-    "C1": """GRILLE C1 : Tolerance TRES FAIBLE.
-LAYER 1: Sophisticated sentence architecture. Inversion, nominalization, passive voice where appropriate, complex subordination.
-LAYER 2: Near-perfect grammar. Subjonctif past, conditionnel passe, concordance des temps.
-LAYER 3: Precise, nuanced vocabulary. Appropriate register throughout. Natural collocations.
-LAYER 4: Flag EVERYTHING. Near-zero tolerance for L1 interference.
-SCORING: 14-16/20 = expected. 18+/20 = excellent.""",
+    "C1": """GRILLE C1 — Tolérance TRÈS FAIBLE.
+COUCHE 1 (le_fond):              Argumentation nuancée, contre-arguments anticipés, exemples précis et variés exigés.
+COUCHE 2 (les_moules_des_idees): Architecture rhétorique française pleine (mise en relief, progression dialectique, transitions invisibles).
+COUCHE 3 (les_moules):           Subjonctif passé, conditionnel passé, concordance des temps, nominalisation, voix passive idiomatique.
+COUCHE 4 (les_reflexes_anglais): Tolérance quasi-nulle. Tout réflexe anglais est signalé.
+COUCHE 5 (la_voix):              Voix native attendue. Registre, idiomatismes, rythme rhétorique français — un correcteur natif doit reconnaître "pensée en français".
+SCORING par couche : 14-16/20 = attendu. 18+/20 = excellent.""",
 }
 
 
-SYSTEM_PROMPT_WRITING = """You are an expert French writing evaluator specializing in anglophone learners preparing for TCF/DELF written exams. You use a 4-layer diagnostic framework to analyze written French production.
+SYSTEM_PROMPT_WRITING = """You are an expert French writing evaluator specializing in anglophone learners preparing for TCF / TEF / DELF / DALF written exams. You use the 5-couche diagnostic framework "La Méthode en Couches" to analyze written French production.
 
-LAYER 1 — SENTENCE ARCHITECTURE
-Does the student write sentences that sound French, or are they English sentences dressed in French words?
-Look for:
-- English word order transferred to French (adjective placement, adverb position)
-- Lack of subordination (too many short, choppy sentences)
-- Missing or incorrect use of relative pronouns (qui, que, dont, ou)
-- Failure to use impersonal constructions ("Il est important que..." vs "C'est important pour...")
-- Missing nominalization where French prefers it
-- Passive voice overuse (English pattern) vs active/pronominal French alternatives
+═══════════════════════════════════════════════════════════
+LA MÉTHODE EN COUCHES — 5 DIAGNOSTIC LAYERS
+═══════════════════════════════════════════════════════════
+Each couche is scored 0-20 INDEPENDENTLY. The overall score is the
+arithmetic mean of the five couches, rounded to one decimal.
 
-LAYER 2 — GRAMMATICAL ACCURACY
-Concrete grammar errors:
-- Verb conjugation (wrong tense, wrong form)
-- Subject-verb agreement
-- Noun-adjective agreement (gender, number)
-- Preposition errors (a/de/en/dans/par/pour)
-- Article errors (missing, wrong gender, wrong type)
-- Pronoun errors (wrong pronoun, missing "en"/"y")
-- Subjonctif missing after required triggers
-- Concordance des temps
+──────────────────────────────────────
+COUCHE 1 — LE FOND  (display: Range / Étendue)
+──────────────────────────────────────
+Substance and span of the text. Ideas, arguments, examples, evidence,
+relevance to the prompt. Does the candidate develop a position with
+adequate depth and breadth, with concrete supporting material?
+LIFTS:  precise examples, varied angles, clear position, on-prompt focus, adequate length.
+SINKS:  paraphrasing the prompt, surface-only ideas, off-topic drift, hollow generalities, missing development.
 
-LAYER 3 — LEXICAL APPROPRIATENESS
-- Wrong register (too informal for formal letter, too formal for opinion essay)
-- False cognates used incorrectly (realiser, supporter, actuellement, etc.)
-- Poor collocations (direct English translation instead of natural French pairing)
-- Repetitive vocabulary (same word used 3+ times when alternatives exist)
-- Missing or wrong connectors
+──────────────────────────────────────
+COUCHE 2 — LES MOULES DES IDÉES  (display: Coherence / Cohérence)
+──────────────────────────────────────
+Macro-organization of thought. Does the text progress like a French
+speaker thinks (context-first, thèse-antithèse-synthèse, signposted
+turns) or like an anglophone bullet-list (point-first, evidence after,
+flat enumeration)?
+LIFTS:  French rhetorical scaffolding (intro posing a question → developed argument → conclusion), logical connectors (cependant, en effet, par conséquent), context-first paragraph openings.
+SINKS:  thesis-led-then-evidence (English shape), bullet-style flat lists, missing transitions, stitched fragments.
 
-LAYER 4 — L1 INTERFERENCE PATTERNS
-Specific English-to-French transfer errors:
-- Calques: direct translations of English expressions ("faire sens" instead of "avoir du sens")
-- Preposition transfer: using English preposition logic ("dependre sur" instead of "dependre de")
-- Tense transfer: using passe compose where imparfait is needed (habitual actions)
-- Article transfer: zero article from English where French requires one
-- Structure transfer: "it is + adj + to" patterns, "there is" overuse
-- Question formation: English syntax in indirect questions
+──────────────────────────────────────
+COUCHE 3 — LES MOULES  (display: Accuracy / Correction)
+──────────────────────────────────────
+Sentence-level architecture and grammatical accuracy. Conjugation,
+agreement, prepositions, articles, tense choice, subordination,
+relative pronouns, impersonal constructions, nominalization. Does each
+sentence sound French-built or English-translated?
+LIFTS:  correct subjonctif after triggers, concordance des temps, native preposition logic, varied subordination, impersonal "il est ... que" patterns where appropriate, accurate gender/number agreement.
+SINKS:  agreement errors (gender, number), wrong prepositions, missing/wrong articles, calqued English sentence shapes in French words, choppy parataxis, missing or misused relative pronouns.
+
+──────────────────────────────────────
+COUCHE 4 — LES RÉFLEXES ANGLAIS  (display: Fluency / Aisance)
+──────────────────────────────────────
+L1 interference patterns — English habits bleeding through. Faux-amis,
+calques, missing or misplaced "ne", anglicized question forms, "il y a"
+vs "there is" overuse, English preposition transfer, English tense
+logic on habitual actions, zero-article transfer.
+LIFTS:  idiomatic French where the English temptation existed (faire face à vs "face up to", avoir du sens vs "make sense"), correct ne placement, French question shapes, preposition independence from English logic.
+SINKS:  faux-amis used wrong (réaliser, supporter, actuellement, éventuellement), calques (faire sens, avoir du fun, prendre une décision pour "make a decision"), preposition transfers (dépendre sur, chercher pour), English tense logic ("hier j'ai mangé" for habitual past).
+
+──────────────────────────────────────
+COUCHE 5 — LA VOIX  (display: Voice / Voix)
+──────────────────────────────────────
+Native-French read vs translated-English read. Register fit, idiomatic
+patterns, French rhetorical flow, cultural-fit phrasing, voice
+consistency across paragraphs. Detects whether a native French writer
+would recognize the text as "thinking in French" vs "translating from
+English."
+LIFTS:  idiomatic phrasing in service of the argument, register matched to the genre (formal letter vs opinion essay vs journalistic style), rhetorical patterns native readers expect (mise en relief, focus by left-dislocation, rhetorical questions where French uses them), consistent voice across paragraphs.
+SINKS:  register clash (slang in formal letter, stiff in casual opinion), translated phrasing that's grammatically correct but reads anglophone, voice shifts paragraph-to-paragraph, French words deployed in English rhetorical molds.
 
 {grille}
 
-INSTRUCTIONS:
-- Evaluate STRICTLY according to the target level grid.
-- For each error found, quote the EXACT student text, provide the correction, and explain WHY in {ui_language_name}. The quoted French text and French corrections stay in French — only the explanation prose follows {ui_language_name}.
-- Classify severity: "minor" (doesn't impede understanding), "moderate" (causes confusion), "major" (fundamentally wrong or incomprehensible).
-- Be specific in explanations — don't just say "wrong preposition", say which preposition and why.
-- In the summary, be encouraging but honest.
-- Strengths should cite SPECIFIC examples from the student's text.
-- Next steps should be actionable and prioritized.
+═══════════════════════════════════════════════════════════
+SCORING DIRECTIVES
+═══════════════════════════════════════════════════════════
+- Score each of the 5 couches 0-20 INDEPENDENTLY using the level grid above.
+- overall_score = arithmetic mean of the 5 couches, rounded to 1 decimal.
+- For each error found, quote the EXACT student text, classify by couche
+  (internal name), provide the correction, and explain WHY in {ui_language_name}.
+  The quoted French text and French corrections stay in French — only the
+  explanation prose follows {ui_language_name}.
+- Severity: "minor" (no comprehension impact) | "moderate" (causes confusion)
+  | "major" (breaks meaning).
+- Strengths cite SPECIFIC examples from the student's text.
+- next_step is ONE imperative directive in {ui_language_name}, concrete and
+  actionable for the next attempt.
 
 {exam_profile_block}
 
 {dual_channel_block}
 
-Respond ONLY in valid JSON:
+═══════════════════════════════════════════════════════════
+RESPONSE — JSON ONLY
+═══════════════════════════════════════════════════════════
 {{
-  "overall_score": <0-20>,
+  "overall_score": <float 0-20, mean of methode_en_couches scores>,
   "word_count": <integer>,
   "summary": "<2-3 sentence overall assessment in {ui_language_name}>",
   "errors": [
     {{
-      "layer": <1-4>,
-      "layer_name": "<Sentence Architecture | Grammatical Accuracy | Lexical Appropriateness | L1 Interference>",
+      "couche": "<le_fond | les_moules_des_idees | les_moules | les_reflexes_anglais | la_voix>",
       "original_text": "<exact text from student>",
       "corrected_text": "<corrected French>",
       "explanation": "<in {ui_language_name} — why this is wrong and how to fix it>",
@@ -192,12 +215,37 @@ Respond ONLY in valid JSON:
     }}
   ],
   "strengths": ["<specific things the student did well, citing their text>"],
-  "next_steps": ["<legacy — kept for backward compat, can mirror next_step>"],
-  "analyse_par_couche": {{
-    "what_works":        {{"title_fr": "Ce qui marche",              "content_fr": "<2-4 phrases FR, cite des passages>"}},
-    "what_doesnt_work":  {{"title_fr": "Ce qui ne marche pas",       "content_fr": "<2-4 phrases FR, LA faiblesse principale>"}},
-    "english_habits":    {{"title_fr": "Habitudes anglaises",        "content_fr": "<2-4 phrases FR, 1-3 exemples concrets>"}},
-    "structure_quality": {{"title_fr": "Structure et construction",  "content_fr": "<2-4 phrases FR, architecture + organisation>"}}
+  "next_steps": ["<legacy alias of next_step — keep populated for backward compat>"],
+  "methode_en_couches": {{
+    "le_fond": {{
+      "score": <0-20>,
+      "examiner_remark_fr": "<FR uniquement, 1-2 phrases, évaluation pure — jamais de citation>",
+      "teacher_coaching": {{
+        "coaching_en": "<ALWAYS in English, cites student's EXACT words>",
+        "coaching_fr": "<ALWAYS a French example (learning material)>",
+        "transformation": "<in {ui_language_name} — one concrete action for the next attempt>"
+      }}
+    }},
+    "les_moules_des_idees": {{
+      "score": <0-20>,
+      "examiner_remark_fr": "<FR uniquement>",
+      "teacher_coaching": {{"coaching_en": "...", "coaching_fr": "...", "transformation": "..."}}
+    }},
+    "les_moules": {{
+      "score": <0-20>,
+      "examiner_remark_fr": "<FR uniquement>",
+      "teacher_coaching": {{"coaching_en": "...", "coaching_fr": "...", "transformation": "..."}}
+    }},
+    "les_reflexes_anglais": {{
+      "score": <0-20>,
+      "examiner_remark_fr": "<FR uniquement>",
+      "teacher_coaching": {{"coaching_en": "...", "coaching_fr": "...", "transformation": "..."}}
+    }},
+    "la_voix": {{
+      "score": <0-20>,
+      "examiner_remark_fr": "<FR uniquement>",
+      "teacher_coaching": {{"coaching_en": "...", "coaching_fr": "...", "transformation": "..."}}
+    }}
   }},
   "next_step": "<in {ui_language_name} — UNE seule directive impérative et concrète pour la prochaine rédaction>",
   "{exam_profile_namespace}": {{
@@ -206,7 +254,7 @@ Respond ONLY in valid JSON:
       {{
         "criterion_key": "<key from the profile criteria list above>",
         "score": <0-20>,
-        "examiner_remark_fr": "<FR uniquement, 1-2 phrases, évaluation pure — jamais de citation ou de transformation>",
+        "examiner_remark_fr": "<FR uniquement, 1-2 phrases, évaluation pure>",
         "teacher_coaching": {{
           "coaching_en": "<ALWAYS in English, cites student's EXACT words>",
           "coaching_fr": "<ALWAYS a French example (learning material)>",
@@ -218,6 +266,53 @@ Respond ONLY in valid JSON:
 }}"""
 
 
+# Canonical 5-couche order + display labels — locked V-009 2026-05-05;
+# La Voix added V-016a 2026-05-12. Mirrors couche_labels.COUCHE_ORDER /
+# COUCHE_DISPLAY_LABELS in shape, but writing-side stays independent
+# (no cross-import oral↔writing). V-009.be will unify the helper.
+COUCHE_ORDER: tuple[str, ...] = (
+    "le_fond",
+    "les_moules_des_idees",
+    "les_moules",
+    "les_reflexes_anglais",
+    "la_voix",
+)
+
+COUCHE_DISPLAY_LABELS: dict[str, dict[str, str]] = {
+    "le_fond":              {"en": "Range",     "fr": "Étendue"},
+    "les_moules_des_idees": {"en": "Coherence", "fr": "Cohérence"},
+    "les_moules":           {"en": "Accuracy",  "fr": "Correction"},
+    "les_reflexes_anglais": {"en": "Fluency",   "fr": "Aisance"},
+    "la_voix":              {"en": "Voice",     "fr": "Voix"},
+}
+
+
+def _extract_couches(feedback: dict | None) -> list[dict]:
+    """Flatten methode_en_couches into the FE-consumable shape:
+    [{key, display_label_en, display_label_fr, score}, ...] in canonical
+    order. Defensive: missing couches default to score=0 so the FE
+    surface stays stable when Claude omits a key or the parse fails.
+    """
+    block = (feedback or {}).get("methode_en_couches") if isinstance(feedback, dict) else None
+    if not isinstance(block, dict):
+        block = {}
+    rows = []
+    for key in COUCHE_ORDER:
+        cell = block.get(key) if isinstance(block.get(key), dict) else {}
+        raw = cell.get("score") if isinstance(cell, dict) else None
+        try:
+            score = float(raw) if raw is not None else 0.0
+        except (TypeError, ValueError):
+            score = 0.0
+        rows.append({
+            "key": key,
+            "display_label_en": COUCHE_DISPLAY_LABELS[key]["en"],
+            "display_label_fr": COUCHE_DISPLAY_LABELS[key]["fr"],
+            "score": score,
+        })
+    return rows
+
+
 async def analyze_writing(
     student_text: str,
     prompt_text: str,
@@ -226,8 +321,9 @@ async def analyze_writing(
     ui_language: str = "en",
     exam_profile: str | ExamProfile = "tcf_canada",
 ) -> dict:
-    """Analyze a student's written French production using the 4-layer framework
-    plus the selected exam profile's official criteria (default: TCF Canada).
+    """Analyze a student's written French production using the 5-couche
+    framework (La Méthode en Couches) plus the selected exam profile's
+    official criteria (default: TCF Canada).
     """
     profile = exam_profile if isinstance(exam_profile, ExamProfile) else get_profile(exam_profile)
 
@@ -284,6 +380,7 @@ async def analyze_writing(
         "errors": [],
         "strengths": [],
         "next_steps": [],
+        "methode_en_couches": {},
         "exam_profile": _normalize_writing_profile({}, profile),
         "raw_response": str(result),
     }
@@ -391,22 +488,35 @@ def _demo_writing_feedback(student_text: str, profile: ExamProfile | None = None
         {"criterion_key": c.key, "score": 12, "feedback": "[DEMO]|||[DEMO]"}
         for c in profile.criteria_for("writing")
     ]
+    demo_couches = {
+        key: {
+            "score": 12,
+            "examiner_remark_fr": "[DEMO] Configurez ANTHROPIC_API_KEY pour une vraie évaluation.",
+            "teacher_coaching": {
+                "coaching_en": "[DEMO] Configure ANTHROPIC_API_KEY for real coaching.",
+                "coaching_fr": "[DEMO] Exemple en français à venir.",
+                "transformation": "[DEMO] Action concrète à venir.",
+            },
+        }
+        for key in COUCHE_ORDER
+    }
     result = {
         "overall_score": 12.0,
         "word_count": wc,
         "summary": f"[DEMO] Received {wc} words. Configure ANTHROPIC_API_KEY for real analysis.",
         "errors": [
             {
-                "layer": 1,
-                "layer_name": "Sentence Architecture",
+                "couche": "les_moules",
                 "original_text": "[DEMO] Example error",
                 "corrected_text": "[DEMO] Corrected version",
-                "explanation_english": "[DEMO] Configure API key for real feedback.",
+                "explanation": "[DEMO] Configure API key for real feedback.",
                 "severity": "moderate",
             }
         ],
         "strengths": ["[DEMO] Text was submitted successfully."],
         "next_steps": ["[DEMO] Configure ANTHROPIC_API_KEY in .env for real analysis."],
+        "methode_en_couches": demo_couches,
+        "next_step": "[DEMO] Configure ANTHROPIC_API_KEY in .env for real analysis.",
         profile.namespace: {"overall_score": 12.0, "criteria": demo_criteria},
     }
     result["exam_profile"] = _normalize_writing_profile(result, profile)
