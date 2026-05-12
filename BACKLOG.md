@@ -52,12 +52,21 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 30 | **P-234** | Cluster detail view |
 | 31 | **P-105** | 7-day free trial logic |
 | 32 | **P-106** | Paddle integration with subscription + one-time SKU |
-| 33 | **B-100** | Paddle account setup |
+| 33 | **B-100** | Stripe via US LLC formation (Stripe Atlas) — rescoped 2026-05-12 |
 | 34 | **M-103** | YouTube anchor video — French exam prep for English speakers |
 | 35 | **M-104** | Reddit community engagement (broadened subreddit list) |
+| 36 | **F-310** | Auth hardening (BE + FE) — pre-launch blocker (added 2026-05-12) |
+| 37 | **F-311** | Token control infrastructure (BE) — pre-launch blocker (added 2026-05-12) |
+| 38 | **F-312** | OQLF / Académie RAG retrieval layer (BE) — gated on F-312.0 (added 2026-05-12) |
+| 39 | **F-312.0** | RAG licensing pre-flight (hard gate on F-312) (added 2026-05-12) |
+| 40 | **F-330** | Le Vocabulaire system (parent + V2 enumeration) (added 2026-05-12) |
+| 41 | **F-320** | Le Vocabulaire DB schema (BE) (added 2026-05-12) |
+| 42 | **F-321** | Le Vocabulaire OQLF Phase 1 seed (BE) — gated on F-312.0 (added 2026-05-12) |
+
+**Tickets 36-42 (added 2026-05-12 strategic session):** slot positions pending Chadi triage. F-310 + F-311 are pre-launch blockers per Decision 4 — should reorder toward the top of the queue when triage runs. F-322 / F-323 / F-324 (Le Vocabulaire FE + Diagnostic-Vocab link) filed under Post-launch P1 with Sprint-2 priority.
 
 ---
-# Active — Launch Critical (35 tickets, before soft beta launches)
+# Active — Launch Critical (42 tickets, before soft beta launches)
 
 ## F-225 — Desktop verification protocol
 
@@ -471,22 +480,20 @@ Surfaced after V-015 first-pass shipped. V-016a is a production failure (writing
 
 ---
 
-### V-016a — Writing submit timeout (BE — URGENT, under investigation)
+### V-016a — Writing submit timeout (BE) — SHIPPED 2026-05-12
 
-**Symptom:** user submits writing → 30s wait → Edge "This page couldn't load." V-015a fixed the 422 field name; production still fails downstream.
+**Status:** Shipped 2026-05-12 across three commits:
+- `fd54bb8` (2026-05-07) — async writing-job pattern (POST returns 202 + job_id; FE polls GET /api/writing/jobs/{id}) + DO request_timeout stopgap.
+- `217f8ea` (2026-05-07) — structured diagnostic logging at every job state transition + Claude-call duration.
+- `f3aa23e` (2026-05-12) — full SYSTEM_PROMPT_WRITING rewrite to the 5-couche methodology (La Méthode en Couches); output schema swaps `analyse_par_couche` → `methode_en_couches` with uniform per-couche `{score, examiner_remark_fr, teacher_coaching}` shape; La Voix lit at v1; result_json gains top-level `couches` array for the FE polling consumer. Smoke `smoke_v016a.py` extended with Step 6 verifying the 5-couche surface.
 
-**Hypotheses (under plan-first investigation 2026-05-06):**
-- `writing_analysis.py` Claude API call exceeding DO worker timeout
-- Synchronous Claude calls without timeout protection
-- Large 4-layer prompt overhead from current methodology
-- Async/await chain leaking back to sync
+**Root cause:** prompt-size + max_tokens, NOT Sonnet-specific latency. 2026-05-07 triage tested Haiku 4.5 fallback locally — 42.2s on a 55-word B1 sample, LONGER than Sonnet 4's 36.0s on a 97-word sample. Refuted the "Sonnet-specific" hypothesis. Bottleneck is the 3000+ token system prompt + large max_tokens output. Reverted to Sonnet; async-job pattern is the architectural fix.
 
-**Fix paths to evaluate (plan-first surfaces choice):**
-- Reduce analysis time (smaller prompt, cheaper model first pass, parallel layer analysis)
-- Increase DO worker timeout
-- Async background job pattern (return job_id immediately, FE polls)
+**Original symptom (history):** user submits writing → 30s wait → Edge "This page couldn't load." V-015a fixed the 422 field name; production fail was downstream timeout.
 
-Plan-first reply will surface root cause + recommended fix before any push.
+**Bonus shipped in same line of work:** La Voix definition locked 2026-05-12 (native-French read vs translated-English read across register fit, idiomatic patterns, French rhetorical flow, cultural-fit phrasing, voice consistency). Writing path emits all 5 couches at v1; FE expectation from V-009 (2026-05-05) is met on the writing surface. Oral surface alignment is V-009.be (queued).
+
+**Follow-up:** V-009.be (filed 2026-05-12, queued) — extend oral `analysis.py` to 5 couches, unify writing-local helpers with `couche_labels.py`. Trigger: V-016a validates `methode_en_couches` shape in production.
 
 ### V-016b — La Méthode en Couches copy revision (FE)
 
@@ -875,74 +882,84 @@ When FE ships, this entry flips to fully Shipped and moves to the SHIPPED sectio
 
 ## P-105 — 7-day free trial logic
 
-**Filed:** 2026-04-30; **scope clarified 2026-05-03** (post Stripe → LemonSqueezy pivot); **rescoped 2026-05-04** (LemonSqueezy → Paddle per B-100 Path B decision).
-**Status:** Queued (blocked on P-106 / B-100 — Paddle account + integration must land first).
+**Filed:** 2026-04-30; **scope clarified 2026-05-03** (post Stripe → LemonSqueezy pivot); rescoped 2026-05-04 (LemonSqueezy → Paddle per B-100 Path B); **rescoped 2026-05-12 → Stripe trial mechanics (per B-100 Path C).**
+**Status:** Queued (blocked on P-106 / B-100 — Stripe Atlas LLC + integration must land first).
 **Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** High (pre-launch).
 
-7-day free trial gating new-user access to the paid feature set. Implementation uses Paddle's native trial mechanics (subscription created with `trial_ends_at`; webhook fires on trial expiry transitioning the user to active-paid or lapsed).
+7-day free trial gating new-user access to the paid feature set. Implementation uses Stripe's native trial mechanics (`subscription.create(trial_period_days=7)`; `customer.subscription.trial_will_end` webhook fires 3 days before expiry; `customer.subscription.updated` fires on transition to active-paid or `customer.subscription.deleted` on lapse).
 
 Backend scope:
-- New entitlement state on User: `trial_started_at`, `trial_ends_at`, `subscription_status` (trialing | active | lapsed | canceled | none) — alembic migration.
-- Trial-start trigger: first authenticated session post-signup auto-creates a Paddle subscription in trialing state (no card required for trial entry; card collected at trial-end transition).
-- Gating decision lives in a single helper `app/services/entitlement.py::has_active_access(user) -> bool`. Callers: recording upload, conversation start, /api/users/me/today.
+- New entitlement state on User: `trial_started_at`, `trial_ends_at`, `subscription_status` (trialing | active | lapsed | canceled | none), `stripe_customer_id`, `stripe_subscription_id` — alembic migration.
+- Trial-start trigger: first authenticated session post-signup auto-creates a Stripe customer + subscription in trialing state (no card required for trial entry via Stripe's `payment_behavior=default_incomplete` flow; card collected at trial-end transition via Customer Portal redirect).
+- Gating decision lives in a single helper `app/services/entitlement.py::has_active_access(user) -> bool`. Callers: recording upload, conversation start, /api/users/me/today, writing submit, vocab access. Consumed via F-310's FastAPI DI tier-check layer.
 - Lapsed-user UX: read-only access to past recordings + diagnostic; new recordings blocked with paywall redirect.
 
-**Depends on:** P-106 (Paddle integration), B-100 (Paddle account approval).
+**Depends on:** P-106 (Stripe integration), B-100 (Stripe Atlas LLC + activation), F-310 (DI layer for tier-check).
 
 **Owner:** Engineering. Trial copy + paywall wording owned by M-101 / Chadi.
 
 ---
 
-## P-106 — Paddle integration with subscription + one-time SKU
+## P-106 — Stripe integration (subscription + one-time + Premium SKU)
 
-**Filed:** 2026-04-30; rescoped 2026-05-03 (Stripe → LemonSqueezy — Morocco constraint); **rescoped 2026-05-04 (LemonSqueezy → Paddle, per B-100 Path B decision).**
-**Status:** Queued (blocked on B-100 — Paddle account approval).
+**Filed:** 2026-04-30; rescoped 2026-05-03 (Stripe → LemonSqueezy — Morocco constraint); rescoped 2026-05-04 (LemonSqueezy → Paddle, per B-100 Path B); **rescoped 2026-05-12 → Stripe SDK (Path C via US LLC, per B-100 Path C).**
+**Status:** Queued (blocked on B-100 — Stripe Atlas LLC formation + activation).
 **Tag:** Active — Launch Critical (before soft beta launches).
 
 **Priority:** High (pre-launch).
 
-Integrate Paddle API as the payment + subscription provider:
-- **$29/mo subscription** SKU for the recurring product.
-- **$199 one-time** SKU for the Sprint product (3-week TCF crash-prep cohort).
-- Webhook endpoint(s) for subscription lifecycle events (created, updated, canceled, payment_failed) — drives entitlement state on User rows.
-- Customer portal link for self-serve billing management (Paddle hosts; we just deep-link).
+Integrate Stripe SDK as the payment + subscription provider:
+- **$29/mo subscription** SKU (recurring) — `subscription.create` with `trial_period_days=7` (drives P-105).
+- **$199 Sprint one-time** SKU — Checkout Session in `payment` mode.
+- **$499 Premium one-time/subscription** SKU (NEW — month 2-3 launch tier).
+- **Webhook endpoint** for subscription + payment lifecycle events (`customer.subscription.created/updated/deleted`, `invoice.payment_succeeded/failed`, `customer.subscription.trial_will_end`). **HMAC signature verification on every webhook** via `Stripe-Signature` header — reject before any DB mutation (F-310 scope reference). Drives entitlement state on User rows.
+- **Customer Portal** link for self-serve billing management (Stripe-hosted; deep-link from settings).
 - Test-mode + production-mode key separation via env (mirror of existing `ANTHROPIC_API_KEY` / `ASSEMBLYAI_API_KEY` pattern).
+- Subscription tier → FastAPI dependency-injection layer (consumed by F-310 auth-hardening's per-route gating).
 
-**Why Paddle (post-LemonSqueezy):** Stripe doesn't onboard Morocco-based merchants. LemonSqueezy attempted (KYC submitted 2026-05-03); approval stalled with no confirmed timeline. Paddle is also MoR (handles tax, EU VAT, US sales tax) and accepts Morocco; selected 2026-05-04 per B-100 Path B for the more transparent / faster approval process. Fee structure ~5% + $0.50 (similar to LemonSqueezy; Stripe-equivalent rates not available given geographic constraint).
+**Why Stripe (post-Paddle):** US LLC formation via Stripe Atlas (B-100 Path C) routes around the Morocco merchant constraint that originally blocked Stripe. Net wins over Paddle: ~7% fee delta (2.9% + $0.30 vs ~5% + $0.50), cleaner subscription API, native trial mechanics, better-documented webhook lifecycle, mature TypeScript SDK.
 
-**Depends on:** B-100 (Paddle account approval — application pending Chadi 2026-05-04+).
+**Depends on:** B-100 (Stripe Atlas LLC formation + activation — application pending Chadi 2026-05-12+).
 
-**Out of scope:** geographic price differentiation (the original "dual + geographic pricing" framing) — LemonSqueezy supports purchase-power-parity adjustments natively but Phase 1 ships with a single global $29/mo + $199 Sprint price. Geographic pricing revisits post-launch if conversion data warrants.
+**Out of scope:** geographic price differentiation (the original "dual + geographic pricing" framing) — Phase 1 ships with single global $29/$199/$499 pricing. Stripe's native Tax + multi-currency support revisits post-launch if conversion data warrants.
 
 ---
 
-## B-100 — Paddle account setup
+## B-100 — Stripe via US LLC formation (Stripe Atlas)
 
-**Filed:** 2026-04-30; renamed 2026-05-03 Stripe → LemonSqueezy (Morocco constraint); reframed 2026-05-04 to MoR provider selection (LemonSqueezy approval stalled); **decided 2026-05-04: Path B — Paddle.** Active scope = Paddle account setup + integration prep.
-**Status:** In Progress — Chadi to apply for Paddle merchant account (Path B locked).
+**Filed:** 2026-04-30 (Stripe account setup); renamed 2026-05-03 Stripe → LemonSqueezy (Morocco constraint); reframed 2026-05-04 to MoR provider selection (LemonSqueezy approval stalled); decided 2026-05-04 Path B — Paddle; **rescoped 2026-05-12 → Path C: Stripe via US LLC formation (Stripe Atlas).**
+**Status:** In Progress — Chadi to initiate Stripe Atlas application (Path C locked 2026-05-12).
 **Tag:** Active — Launch Critical (before soft beta launches).
 
-**Priority:** HIGH (pre-launch — blocks P-106 + P-105).
+**Priority:** HIGH (pre-launch — unblocks P-106 + P-105).
 
-Set up the Paddle merchant account (MoR — handles tax, EU VAT, US sales tax — accepts Morocco-based founders), configure storefront, provision API keys for backend integration:
+**Path C rationale:** Stripe at 2.9% + $0.30 vs Paddle ~5% + $0.50 = ~7% fee delta. Breakeven on LLC setup cost (~$500 Stripe Atlas + registered agent year 1) lands at ~250 paying subs. At Chadi's projected scale (5,000+ Y1 users with even modest paid-conversion), the savings recover the slip within the first month. The 2-6 week Stripe Atlas processing slip is acceptable because the product isn't ready to charge anyone yet — payment timeline is no longer the launch critical path. Quality-gated launch (per F-300 framing) means payments can land alongside or after first paid feature, not before.
 
-- ✗ Paddle merchant account application (Chadi).
-- ✗ Identity verification + KYC submission.
-- ✗ Account approval — pending Paddle review.
-- ✗ Storefront configuration (product naming, branding, terms link to `/terms`).
-- ✗ Two SKUs: $29/mo subscription + $199 one-time Sprint.
-- ✗ Sandbox + production API keys generated and handed to engineering for env injection.
-- ✗ Webhook secret generated for backend signature verification.
+**Scope:**
+- ✗ Stripe Atlas application — $500 flat, Delaware LLC, registered agent year 1, immediate Stripe activation on LLC formation.
+- ✗ EIN issuance via Atlas (typically same-week after LLC formation).
+- ✗ Mercury business bank account — pairs with Atlas LLC for US business banking.
+- ✗ Stripe activation + sandbox/production API key separation.
+- ✗ Storefront / Stripe Checkout configuration (product naming, branding, terms link to `/terms`).
+- ✗ Three SKUs: **$29/mo subscription + $199 Sprint one-time + $499 Premium** (month 2-3 launch).
+- ✗ Webhook secret for backend HMAC signature verification.
 
-**Decision history:** Stripe blocked (no Morocco merchants). LemonSqueezy attempted 2026-05-03; approval stalled with no confirmed timeline. Path B selected 2026-05-04 — Paddle is also MoR, accepts Morocco, has a more transparent / faster approval process per industry signal.
+**Decision history:**
+- 2026-05-03: Stripe → LemonSqueezy (Morocco constraint — Stripe doesn't onboard Morocco-based merchants directly).
+- 2026-05-04: LemonSqueezy → Paddle (LemonSqueezy KYC stalled; Path B locked).
+- 2026-05-12: Paddle → Stripe via US LLC (Path C). LLC structure routes around Morocco constraint cleanly; Stripe's lower fee + cleaner subscription API justify the setup slip.
 
-**Fee structure expectation:** ~5% + $0.50 per transaction (similar to LemonSqueezy; Stripe-equivalent rates not available given the geographic constraint).
+**Decision-making ceiling (locked 2026-05-12):** No further payment pivots without documented failure of Path C. Three pivots in 9 days is the ceiling — break this rule and we have a decision-making problem, not a payment-processor problem.
 
-**Owner:** Chadi (account / KYC / storefront) → handoff to Engineering for API key + webhook configuration once approved.
+**Fee structure expectation:** 2.9% + $0.30 per transaction (Stripe standard).
 
-**Unblocks:** P-106 (integration — rescope to Paddle SDK), P-105 (trial logic — provider-agnostic in spec; integration-specific in code).
+**Owner:** Chadi (Atlas application / EIN / Mercury / Stripe storefront) → handoff to Engineering for API key + webhook configuration once activated.
+
+**Unblocks:** P-106 (integration — rescoped to Stripe SDK), P-105 (trial logic — rescoped to Stripe `trial_period_days`).
+
+**Timeline:** Stripe Atlas processing 2-6 weeks per public timeline; EIN issuance ~1 week post-LLC; Mercury onboarding ~3-5 business days post-EIN. Total: 3-8 weeks Chadi → handoff to Engineering.
 
 ---
 
@@ -985,7 +1002,251 @@ Reddit-as-acquisition: helpful comments on relevant threads with low-key LeMetho
 
 ---
 
+## F-310 — Auth hardening (BE + FE)
+
+**Filed:** 2026-05-12 (strategic session — Decision 4).
+**Status:** Queued.
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Type:** BE + FE security infrastructure.
+
+**Priority:** HIGH — **pre-launch blocker.** At 5K+ Y1 user projection, weak auth means unlimited free-tier account creation and lost cost control. Existential security/cost issue, not a nice-to-have.
+
+**Scope:**
+- **JWT lifecycle:** 15-minute access token + 7-day refresh token. Refresh on every access — rotation on every refresh (revoke old refresh, issue new). HttpOnly + Secure + SameSite=Lax cookie storage. Redis-backed refresh-token revocation list keyed by `jti`; access tokens stateless (signature + exp check only).
+- **/auth rate limiting:** 5 attempts per IP per 15 minutes (login + register + password-reset). Exponential backoff on failure (1s → 2s → 4s → 8s → 16s). 10-attempt lockout per IP per hour with admin-clearable Redis key.
+- **Email verification gate:** hard gate on all NEW registrations (post-2026-05-12). Existing soft-beta accounts grandfathered as verified — backfill migration sets `email_verified_at = NOW()` for users created before deploy date. Email-verification token: signed JWT with 24h expiry, single-use (consumed on click, marked in Redis).
+- **hCaptcha:** on registration form + password-reset form. Fail-closed: reject submission if hCaptcha response missing or invalid.
+- **Stripe webhook HMAC verification:** every Stripe webhook arrives with `Stripe-Signature` header. Verify via `stripe.Webhook.construct_event(payload, sig, webhook_secret)` BEFORE any DB mutation. Reject 400 on bad signature. (Coordinates with P-106 scope — same code path.)
+- **Subscription-tier check via FastAPI DI:** `Depends(require_tier("free" | "subscription" | "sprint" | "premium"))` decorator on every protected route. Tier resolution reads from User.subscription_status. **Ship with `tier=free` placeholder for all users until P-105 lands** — the DI layer is in place but enforcement table is empty. P-105 populates real tier values; F-310 doesn't block on P-105.
+
+**Absorbs FE-side F-072 scope** (FE ticket marked Superseded by F-310 in lemethodic-frontend BACKLOG; cross-reference only — BE doesn't edit FE BACKLOG).
+
+**Depends on:** Redis (also dependency of F-311 — provision once, share).
+
+**Sequencing:** ship before P-105/P-106 (so the DI layer exists when tier values populate). Do NOT block on B-100 timeline (auth hardening doesn't need Stripe live).
+
+**Owner:** BE (JWT + rate limiter + email verification + webhook HMAC + DI) + FE (hCaptcha widget + email verification UI + refresh flow on 401).
+
+**Smoke:** new `scripts/smoke_f310.py` — JWT rotation, rate-limit triggering, email-gate enforcement on new accounts, grandfathering for old accounts, webhook HMAC accept/reject cases, DI tier-gate with `tier=free` default.
+
+---
+
+## F-311 — Token control infrastructure (BE)
+
+**Filed:** 2026-05-12 (strategic session — Decision 4).
+**Status:** Queued.
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Type:** BE cost-control infrastructure.
+
+**Priority:** HIGH — **pre-launch blocker.** At 5K+ Y1 user projection, uncapped diagnostic abuse blows up Anthropic API costs before subscription revenue compensates. Existential cost issue.
+
+**Scope:**
+- **Redis-backed per-user rate limiter** scoped by subscription tier. Limits:
+  - `tier=free`: 5 diagnostic sessions/day
+  - `tier=subscription` ($29/mo): 30 diagnostic sessions/day
+  - `tier=sprint` ($199): 60 diagnostic sessions/day
+  - `tier=premium` ($499): unlimited (no Redis check)
+  - Counter key: `tokens:{user_id}:diagnostic:{YYYY-MM-DD}` with 25h TTL.
+- **Model routing:** `claude-haiku-4-5-20251001` for vocab exercises + lookups (cheaper, faster, sufficient for lexical retrieval). `claude-sonnet-4-6` for diagnostic scoring (depth required). Routing decision in a single helper `app/services/ai_router.py::pick_model(task: Literal["vocab" | "diagnostic" | "rag_synthesis"])`.
+- **Anthropic prompt caching** on system prompts. Mark long system prompts with `cache_control: {"type": "ephemeral"}` to hit 90% cost reduction on repeat. Coordinates with V-016a's 3000+ token writing system prompt — prime caching candidate.
+- **Hard cap `max_tokens=800`** on every diagnostic response. Already in writing path (set to 8192 — lower this to 800 per Decision 4). Note: V-016a's 5-couche output schema fits comfortably under 800 tokens with the dual-channel block intact; verify with a smoke output-token measurement.
+- **Prompt-injection detection layer pre-Claude:** reject system-override patterns before the API call. Detect: `IGNORE PREVIOUS INSTRUCTIONS`, `You are now`, `<\|im_start\|>`, `<\|system\|>`, and the standard injection corpus. Return 400 to the user; log the rejected payload to a separate audit table for review. Layer lives at `app/services/prompt_safety.py`.
+
+**Depends on:** F-310 (tier resolution + Redis) — F-311 reads tier from F-310's DI layer.
+
+**Note on max_tokens=800:** V-016a currently sets `max_tokens=8192` in `_call_claude` for the writing flow. Lowering this is a F-311 sub-task; verify the 5-couche output fits under 800 in production samples first. If output truncation surfaces, raise to 1200 — but never back to 8192 without re-justification.
+
+**Owner:** BE.
+
+**Smoke:** new `scripts/smoke_f311.py` — rate-limit triggering per tier, model routing, prompt-cache hit verification on repeat calls, max_tokens enforcement, injection-pattern rejection.
+
+---
+
+## F-312 — OQLF / Académie française RAG retrieval layer (BE)
+
+**Filed:** 2026-05-12 (strategic session — Decision 2).
+**Status:** Queued — **HARD GATED on F-312.0 (licensing pre-flight).** Do not commit BE schema work until F-312.0 returns a legal-clear answer.
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Type:** BE diagnostic-credibility infrastructure.
+
+**Priority:** HIGH (Launch). Replaces "the AI thinks this is wrong" with "according to the OQLF, this is an anglicism." Credibility moat made concrete and citable.
+
+**Scope:**
+- **Postgres schema:** new `linguistic_corpus` table — columns: `id`, `chunk` (the source excerpt), `correction` (the OQLF/Académie-prescribed alternative), `error_type` (anglicism | calque | preposition | faux-ami | register | grammar | ...), `source` (oqlf_bdl | academie_dndp), `source_url`, `register` (formal | informal | neutral | quebec | european), `exam_tag` (tcf | tef | delf | dalf | null), `cefr_level` (a1..c2 | null), `embedding` (pgvector or alternative), `created_at`.
+- **Ingest scripts:** `scripts/ingest_oqlf_bdl.py` + `scripts/ingest_academie_dndp.py` — scrape (or import from licensed dump per F-312.0 outcome), chunk, normalize, embed, insert. Idempotent per source URL.
+- **Retrieval at diagnostic call-time:** before each `analyze_writing` (and later `analyze_recording`) Claude call, embed the student text + top-N semantic search against `linguistic_corpus`. Inject top 5-15 matches into the system prompt as authoritative context.
+- **Source citation in output:** every error in the diagnostic feedback that aligns with a retrieved chunk carries a `source_citation: {"source": "OQLF BDL", "url": "..."}` field. FE renders as inline citation.
+
+**Out of scope (initial ship):** real-time corpus updates from upstream sources (run ingest weekly via cron); user-correction feedback loop (Phase 2).
+
+**Depends on:** F-312.0 (HARD GATE — see below), F-311 (model routing — RAG synthesis uses haiku, retrieval is local).
+
+**Owner:** BE + Chadi (linguistic content review on ingest output samples).
+
+---
+
+### F-312.0 — RAG licensing pre-flight (HARD GATE on F-312)
+
+**Filed:** 2026-05-12 (strategic session — Decision 2).
+**Status:** Queued — **gates F-312. No BE schema work until this returns legal-clear.**
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Type:** Legal / licensing research.
+
+**Priority:** HIGH — blocks F-312 entirely.
+
+**Scope:**
+1. **Read OQLF BDL terms of use** — `https://www.oqlf.gouv.qc.ca/conditions_utilisation.html` (and any linked policy pages). Determine: is scraping permitted? Is redistribution as in-prompt context permitted? Is commercial use permitted? Is attribution required, and in what form?
+2. **Read Académie française terms** — Académie's website (`academie-francaise.fr`) for "Dire et ne pas dire" entries. The Académie's online Dictionnaire is explicitly copyrighted (9th edition); "Dire et ne pas dire" entries may follow the same regime. Determine same questions as OQLF.
+3. **Decision matrix outcomes:**
+   - **Clear-redistribute:** proceed with F-312 as scoped (full text in `chunk` column, full retrieval into prompts, source citation).
+   - **Clear-snippet-only:** rescope F-312 to fair-use snippet citation — store metadata + URL only; FE renders inline citation linking to source, no full text in prompt. Claude prompt gets brief excerpts (≤30 words per source) under fair use.
+   - **Not-clear / not-permitted:** Fall back to a custom-curated corpus from CC-licensed sources (Wiktionary FR, OpenSubtitles, Tatoeba) — different scope, different ticket.
+
+**Owner:** Chadi (legal call) or contracted French copyright lawyer if Chadi wants formal sign-off.
+
+**Deliverable:** one-page decision memo committed to `docs/F-312-licensing-decision.md` with: source-by-source verdict, recommended path (clear-redistribute | clear-snippet-only | not-permitted-rescope), citation format spec, sign-off date.
+
+---
+
+## F-330 — Le Vocabulaire system (parent)
+
+**Filed:** 2026-05-12 (strategic session — Decision 3).
+**Status:** Queued — parent ticket; MVP children F-320..F-323 + F-324 link below.
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Type:** New product surface — third pillar alongside L'École and Le Diagnostic.
+
+**Priority:** HIGH (Launch — MVP) + V2 sub-bullets deferred.
+
+**Strategic frame (locked 2026-05-12):** Le Vocabulaire is a Lexogoth-equivalent web-based chunk-based French vocabulary system. Distinct from L'École (curriculum) and Le Diagnostic (oral/written examiner). Lives alongside them as a third product surface. **Without Le Vocabulaire, Le Méthodic is exam-prep only. With it, the product serves both general French learners and exam candidates — one engine, two audiences.**
+
+**MVP scope (Launch — children below):**
+- **F-320** — DB schema (chunk, translation, topic, source, register, exam_tag, cefr_level + user personal lists tables).
+- **F-321** — OQLF Phase 1 seed (3 topic sets, 500-800 entries). Gated on F-312.0.
+- **F-322** — Practice UI (FE) — hide/reveal, self-grade, personal lists.
+- **F-323** — Test UI (FE) — MCQ, matching, dropdown, completion.
+- **F-324** — Diagnostic ↔ Vocab link (BE + FE) — flagged errors auto-suggest vocab topics. Sprint 2 priority.
+
+**V2 scope (NOT separate tickets yet — enumerated here per Chadi's 2026-05-12 decomposition decision; file as F-330.x sub-tickets when triggered):**
+- **F-330.tutor** — Tutor mode: teachers build custom databases, assign to students. Distinct user role + assignment tables.
+- **F-330.lists** — Personal lists + spaced-repetition scheduling (SRS) on user-built lists. Box-promotion logic, daily review queue.
+- **F-330.partition** — Topic library partition: free general FR (arts, loisirs, voyages, société — Vocabulaire progressif style) vs exam-specific (TCF, DELF, TEF vocabulary by task type). Two different content corpus shapes.
+- **F-330.authoring** — Exercise authoring admin tooling: admin surface for building MCQ/matching/dropdown/completion sets at scale.
+
+**Triggers for V2 sub-tickets:** post-launch P1 — once MVP usage data shows which surface matters most (tutor mode for the B2B-tutoring angle, SRS for retention, etc.), file the relevant F-330.x and prioritize.
+
+**Owner:** BE (F-320, F-321, F-324 BE side) + FE (F-322, F-323, F-324 FE side) + Chadi (content sourcing decisions, V2 prioritization).
+
+---
+
+## F-320 — Le Vocabulaire DB schema (BE)
+
+**Filed:** 2026-05-12 (strategic session — Decision 3, MVP).
+**Status:** Queued.
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Parent:** F-330.
+
+**Priority:** Launch.
+
+**Scope:**
+- New tables:
+  - `vocab_chunks` — `id`, `chunk_fr`, `chunk_en` (optional, for FR↔EN exercises), `topic_slug`, `source` (oqlf | academie | curated), `source_url`, `register`, `exam_tag` (tcf | tef | delf | dalf | null), `cefr_level`, `created_at`.
+  - `vocab_topics` — `slug`, `labels{i18n}` (JSONB), `corpus_partition` (free_general | exam_specific), `cefr_level_min`, `cefr_level_max`, `description{i18n}`.
+  - `user_vocab_lists` — `user_id`, `list_id`, `name`, `created_at`. Personal-list metadata.
+  - `user_vocab_list_chunks` — `list_id`, `chunk_id`, `added_at`. Join table for personal lists.
+  - `user_vocab_progress` — `user_id`, `chunk_id`, `seen_count`, `correct_count`, `last_seen_at`. Per-chunk progress (feeds SRS in F-330.lists later).
+- Alembic migration with explicit Postgres extensions (pgvector if F-312 lands first; otherwise no vector column at MVP).
+- Pydantic schemas + ORM models.
+
+**Out of scope:** SRS scheduling logic (F-330.lists V2); exam-specific corpus partition data (handled in F-321 seed).
+
+**Owner:** BE.
+
+**Smoke:** new `scripts/smoke_f320.py` — schema verification, idempotent migration, sample insert/query.
+
+---
+
+## F-321 — Le Vocabulaire OQLF Phase 1 seed (BE)
+
+**Filed:** 2026-05-12 (strategic session — Decision 3, MVP).
+**Status:** Queued — **gated on F-312.0** (licensing pre-flight outcome determines what can be ingested).
+**Tag:** Active — Launch Critical (before soft beta launches).
+**Parent:** F-330.
+
+**Priority:** Launch.
+
+**Scope:**
+- 3 topic sets (Chadi-selected from OQLF BDL hierarchy — likely: anglicismes lexicaux | calques syntaxiques | prépositions problématiques).
+- 500-800 entries total (~170-270 per topic).
+- Ingest pipeline reuses F-312 ingest infrastructure where applicable (or stands alone if F-312 rescoped to snippet-only).
+- Idempotent re-run script.
+
+**Out of scope:** Académie-sourced entries (Phase 2 corpus expansion); exam-specific tagging (default `exam_tag=null` at MVP; F-330.partition adds exam-tagging pass).
+
+**Depends on:** F-320 (schema), F-312.0 (licensing — if not-permitted, rescope to curated CC corpus).
+
+**Owner:** BE + Chadi (topic-set selection + content review).
+
+---
+
 # Post-launch P1 (2-4 weeks after launch)
+
+## F-322 — Le Vocabulaire practice UI (FE)
+
+**Filed:** 2026-05-12 (strategic session — Decision 3, MVP).
+**Status:** Queued.
+**Tag:** Post-launch P1 (Sprint 2 priority per strategic session 2026-05-12).
+**Parent:** F-330.
+
+**Priority:** Sprint 2 (post-soft-beta-launch).
+
+**Scope (FE-only):**
+- Practice mode UI: hide/reveal one language, self-grade (knew it | partial | didn't know), build personal lists from the current set.
+- Topic browser surface (browse `vocab_topics`).
+- Personal-lists CRUD UI.
+- Consumes BE endpoints exposed by F-320 (GET /api/vocab/topics, GET /api/vocab/chunks?topic=..., POST /api/vocab/lists, etc. — endpoint surface filed at F-320 ship time).
+
+**Owner:** FE.
+
+---
+
+## F-323 — Le Vocabulaire test UI (FE)
+
+**Filed:** 2026-05-12 (strategic session — Decision 3, MVP).
+**Status:** Queued.
+**Tag:** Post-launch P1 (Sprint 2 priority per strategic session 2026-05-12).
+**Parent:** F-330.
+
+**Priority:** Sprint 2.
+
+**Scope (FE-only):**
+- Test mode UI: MCQ, matching (drag-drop), dropdown selection, exact-completion typing (Lexogoth Toolbox style).
+- Scoring surface: per-question result + topic-level summary.
+- Retake flow.
+- Consumes BE endpoints from F-320.
+
+**Owner:** FE.
+
+---
+
+## F-324 — Diagnostic ↔ Vocab link (BE + FE)
+
+**Filed:** 2026-05-12 (strategic session — Decision 3, MVP / Sprint 2).
+**Status:** Queued.
+**Tag:** Post-launch P1 (Sprint 2 priority per strategic session 2026-05-12).
+**Parent:** F-330.
+
+**Priority:** Sprint 2.
+
+**Scope:**
+- **BE:** when a diagnostic flags an error (writing or oral), match the error's `couche` + `error_type` against `vocab_topics` and surface 1-3 suggested topic-slugs in the diagnostic response (`suggested_vocab_topics: [...]`).
+- **FE:** render suggested topics as inline CTAs on the diagnostic results screen ("Practice this with Le Vocabulaire →").
+- Mapping table: error_type → relevant topic_slugs (curated by Chadi; lives in `app/services/vocab_suggestions.py` as a static dict at MVP, promotable to DB-backed later).
+
+**Depends on:** F-320 (vocab schema), F-321 (seed), V-016a methode_en_couches surface (shipped — error couche is already in diagnostic output).
+
+**Owner:** BE + FE + Chadi (error-type → topic mapping).
+
+---
 
 ## P-107 — Soft satisfaction guarantee copy + refund flow
 

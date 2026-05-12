@@ -2,7 +2,7 @@
 
 ## Project Identity
 
-This is **Chadi's TCF Oral Practice Tool** — a web app where French learners (primarily English-speaking Canadians preparing for TCF Canada) record oral responses to exam-style prompts and receive instant AI-powered feedback using Chadi's proprietary methodology.
+This is **Le Méthodic** (lemethodic.com) — a web app where French learners (primarily English-speaking Canadians preparing for TCF Canada, plus a broader pivot to TCF/TEF/DELF/DALF/FIDE/AP/DCL) record oral responses + submit writing to exam-style prompts and receive instant AI-powered feedback using Chadi's proprietary 5-couche methodology (La Méthode en Couches). Dead names: TCF Oral Practice Tool, FluentPath, FluentPrep, Le Raccourci.
 
 **This is NOT a generic language learning app.** The competitive edge is the 4-layer diagnostic framework (La Méthode en Couches) built from 7,000+ hours of tutoring anglophone French learners. No other tool evaluates L1 interference patterns at this depth.
 
