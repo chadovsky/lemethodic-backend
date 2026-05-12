@@ -36,6 +36,7 @@ from typing import Callable
 
 from fastapi import Depends, HTTPException, Request, status
 
+from app.config import settings
 from app.services.redis_client import get_redis
 
 
@@ -50,12 +51,38 @@ _LONG_WINDOW = 60 * 60           # 1 hour
 
 
 def _client_ip(request: Request) -> str:
-    """Best-effort client IP. Behind a single proxy this is the proxy's
-    IP — App Platform terminates at the load balancer and forwards via
-    X-Forwarded-For. For soft beta we accept the simpler model.
+    """Resolve the real client IP.
+
+    F-310.1 (2026-05-12): in production behind DO App Platform's load
+    balancer, request.client.host is the LB's IP, not the user's.
+    Without this fix all users share one rate-limit bucket per LB IP,
+    which breaks the moment a handful of concurrent users hit the
+    rate-limited endpoints (one user triggers the limit; everyone is
+    blocked).
+
+    Trust model:
+      - When ENV != "production", trust request.client.host as the real
+        client (local dev: no proxy between client and uvicorn).
+      - When ENV == "production", DO App Platform inserts the real
+        client IP into X-Forwarded-For. The chain is
+        `[client-spoofed-XFF, ..., real-client-IP-inserted-by-DO]`.
+        The LAST entry is the one DO inserted, which is the trusted
+        real-client IP. Earlier entries may be attacker-spoofed and
+        must NOT be trusted.
+
+    The "trust last entry" pattern is correct ONLY because DO is a
+    single trusted proxy hop. If a CDN (Cloudflare etc.) sits in front
+    of DO, the trust position shifts and this needs revisiting.
 
     `request.client` is None in some test contexts; default to a stable
-    sentinel so the test path doesn't crash."""
+    sentinel so the test path doesn't crash.
+    """
+    if settings.ENV.lower() == "production":
+        xff = request.headers.get("x-forwarded-for")
+        if xff:
+            parts = [p.strip() for p in xff.split(",") if p.strip()]
+            if parts:
+                return parts[-1]
     if request.client and request.client.host:
         return request.client.host
     return "unknown"

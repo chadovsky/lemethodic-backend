@@ -539,6 +539,58 @@ def step_14_orm_mirror() -> None:
               u.stripe_customer_id is None)
 
 
+# ── Step 15: _client_ip XFF parsing (F-310.1) ──────────────────
+
+
+def step_15_client_ip_xff() -> None:
+    print("\nStep 15: F-310.1 — _client_ip returns XFF last entry when ENV=production")
+    import app.config
+    from app.services.rate_limit import _client_ip
+    from unittest.mock import MagicMock
+
+    orig_env = app.config.settings.ENV
+
+    # Build a fake request: client.host = LB IP, XFF carries chain
+    req = MagicMock()
+    req.client = MagicMock(host="10.0.0.5")  # would be DO LB internal IP
+    req.headers = {"x-forwarded-for": "1.1.1.1, 10.0.0.5"}
+
+    # ENV != production → fall back to request.client.host
+    app.config.settings.ENV = "development"
+    ip = _client_ip(req)
+    check("ENV=development uses request.client.host", ip == "10.0.0.5", ip)
+
+    # ENV == production → trust LAST XFF entry
+    app.config.settings.ENV = "production"
+    ip = _client_ip(req)
+    check("ENV=production uses XFF last entry", ip == "10.0.0.5", ip)
+
+    # Spoofing attempt: attacker sends XFF=<fake>; DO appends real
+    req2 = MagicMock()
+    req2.client = MagicMock(host="10.0.0.5")
+    req2.headers = {"x-forwarded-for": "attacker-fake-ip, 198.51.100.42"}
+    ip = _client_ip(req2)
+    check("XFF spoofing defeated — last entry trusted, not first",
+          ip == "198.51.100.42", ip)
+
+    # No XFF in production → fall back to request.client.host
+    req3 = MagicMock()
+    req3.client = MagicMock(host="10.0.0.5")
+    req3.headers = {}
+    ip = _client_ip(req3)
+    check("ENV=production without XFF falls back to client.host",
+          ip == "10.0.0.5", ip)
+
+    # request.client is None → "unknown" sentinel
+    req4 = MagicMock()
+    req4.client = None
+    req4.headers = {}
+    ip = _client_ip(req4)
+    check("client=None → 'unknown' sentinel", ip == "unknown", ip)
+
+    app.config.settings.ENV = orig_env
+
+
 # ── Cleanup ────────────────────────────────────────────────────
 
 
@@ -576,6 +628,7 @@ def main() -> int:
         step_12_stripe_webhook(client)
         step_13_tier_di()
         step_14_orm_mirror()
+        step_15_client_ip_xff()
     finally:
         cleanup()
 
