@@ -1088,23 +1088,28 @@ Reddit-as-acquisition: helpful comments on relevant threads with low-key LeMetho
 ### F-312.0 — RAG licensing pre-flight (HARD GATE on F-312)
 
 **Filed:** 2026-05-12 (strategic session — Decision 2).
-**Status:** Queued — **gates F-312. No BE schema work until this returns legal-clear.**
+**Status:** **Decision memo drafted 2026-05-12 — awaiting Chadi sign-off on Path A / B / C.** See `docs/F-312-licensing-decision.md`. F-312 + F-321 remain blocked until sign-off.
 **Tag:** Active — Launch Critical (before soft beta launches).
 **Type:** Legal / licensing research.
 
-**Priority:** HIGH — blocks F-312 entirely.
+**Priority:** HIGH — blocks F-312 + F-321 entirely.
 
-**Scope:**
-1. **Read OQLF BDL terms of use** — `https://www.oqlf.gouv.qc.ca/conditions_utilisation.html` (and any linked policy pages). Determine: is scraping permitted? Is redistribution as in-prompt context permitted? Is commercial use permitted? Is attribution required, and in what form?
-2. **Read Académie française terms** — Académie's website (`academie-francaise.fr`) for "Dire et ne pas dire" entries. The Académie's online Dictionnaire is explicitly copyrighted (9th edition); "Dire et ne pas dire" entries may follow the same regime. Determine same questions as OQLF.
-3. **Decision matrix outcomes:**
-   - **Clear-redistribute:** proceed with F-312 as scoped (full text in `chunk` column, full retrieval into prompts, source citation).
-   - **Clear-snippet-only:** rescope F-312 to fair-use snippet citation — store metadata + URL only; FE renders inline citation linking to source, no full text in prompt. Claude prompt gets brief excerpts (≤30 words per source) under fair use.
-   - **Not-clear / not-permitted:** Fall back to a custom-curated corpus from CC-licensed sources (Wiktionary FR, OpenSubtitles, Tatoeba) — different scope, different ticket.
+**Scope:** read OQLF + Académie française terms; produce decision memo with source-by-source verdict + path recommendation.
 
-**Owner:** Chadi (legal call) or contracted French copyright lawyer if Chadi wants formal sign-off.
+**Findings (2026-05-12 research pass — full detail in memo):**
+1. **OQLF BDL** — original URL `oqlf.gouv.qc.ca/conditions_utilisation.html` returns 404. BDL is now under the Vitrine linguistique (`vitrinelinguistique.oqlf.gouv.qc.ca`); governing terms live at `quebec.ca/droit-auteur` (Quebec government umbrella). Regime: **"tous droits réservés" — reproduction, download, storage, translation, adaptation, publication explicitly prohibited without prior written authorization**. Authorization channel: `droitdauteur@mcc.gouv.qc.ca`.
+2. **Académie française** — terms at `academie-francaise.fr/mentions-legales`. Regime: **all rights reserved, digital reproduction "formellement interdite sauf autorisation expresse", personal use only, commercial use explicitly excluded**. Educational exception is paper-only + free + with attribution — does not cover Le Méthodic's paid SaaS use case. Authorization channel: `contact@academie-francaise.fr`.
 
-**Deliverable:** one-page decision memo committed to `docs/F-312-licensing-decision.md` with: source-by-source verdict, recommended path (clear-redistribute | clear-snippet-only | not-permitted-rescope), citation format spec, sign-off date.
+**Recommended path (BE Claude analysis — not legal advice):** **Path C — curated CC corpus + Chadi-authored content**. Both authoritative sources prohibit Le Méthodic's intended use without prior authorization; Paths A (authorization) and B (fair-use snippet) are either calendar-uncertain or legally thin. Path C unblocks F-312 + F-321 immediately and reinforces Chadi's authored-methodology moat over third-party authority quoting.
+
+**Decision matrix (Chadi picks one):**
+- **Path A — License + redistribute:** file written requests with both bodies. 2-12 weeks, possibly never. F-312 + F-321 blocked until response.
+- **Path B — Fair-use snippet + link-only:** ≤30-word excerpts, attribution + link, no full-text storage. Legal margin thin. Recommend French-copyright lawyer sign-off before committing.
+- **Path C — Curated CC + Chadi-authored corpus:** Wiktionary FR (CC BY-SA), Tatoeba (CC BY 2.0), Chadi-authored content from 7,000+ hours of tutoring. F-312 + F-321 rescope accordingly; F-312.1 sub-ticket may be filed to pursue Path A in parallel as low-priority background.
+
+**Deliverable:** `docs/F-312-licensing-decision.md` (committed 2026-05-12).
+
+**Next BE action:** none until Chadi signs off. On sign-off: rescope F-312 + F-321 bodies + file F-312.1 (if Path C + parallel authorization track desired).
 
 ---
 
