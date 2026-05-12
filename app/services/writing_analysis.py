@@ -443,41 +443,36 @@ def _normalize_writing_profile(result: dict, profile: ExamProfile) -> dict:
 
 
 async def _call_claude(system_prompt: str, user_message: str) -> dict | str:
-    async with httpx.AsyncClient(timeout=120) as client:
-        resp = await client.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "x-api-key": settings.ANTHROPIC_API_KEY,
-                "anthropic-version": "2023-06-01",
-                "content-type": "application/json",
-            },
-            json={
-                # V-016a triage (2026-05-07): tested Haiku 4.5
-                # fallback locally — 42.2s on a 55-word B1 sample,
-                # LONGER than Sonnet 4's 36.0s on a 97-word sample.
-                # Refutes the "Sonnet-specific latency" hypothesis.
-                # Bottleneck is the prompt (3000+ token system) +
-                # large max_tokens output, not the model. Reverted
-                # to Sonnet. Diagnostic logging in writing_jobs.py
-                # is the path to identify the actual prod stall.
-                "model": "claude-sonnet-4-20250514",
-                "max_tokens": 8192,
-                "system": system_prompt,
-                "messages": [{"role": "user", "content": user_message}],
-            },
-        )
-        resp.raise_for_status()
-        data = resp.json()
+    """Thin wrapper around app.services.anthropic_client.call_anthropic.
 
-    raw = data["content"][0]["text"]
-    try:
-        return json.loads(
-            raw.strip()
-            .removeprefix("```json").removeprefix("```")
-            .removesuffix("```").strip()
-        )
-    except json.JSONDecodeError:
-        return raw
+    F-311 Phase B (2026-05-12): centralized HTTP + model routing +
+    prompt caching. Mirrors analysis._call_claude's refactor — writing
+    helper stays parallel-but-independent (the "no cross-import"
+    convention from V-016a) by importing the same low-level client
+    but keeping its own JSON-parse / demo-fallback path.
+
+    Routing: ai_router.pick_model("writing_diagnostic") (same model
+    as oral diagnostic — both route to MODEL_DIAGNOSTIC). max_tokens
+    = settings.MAX_TOKENS_DIAGNOSTIC (1600 default). cache_system=True
+    so the 3000+ token writing system prompt enters Anthropic's
+    ephemeral cache.
+
+    V-016a triage notes (preserved for history): tested Haiku 4.5 in
+    2026-05-07 — 42.2s on a 55-word B1 sample, LONGER than Sonnet 4's
+    36.0s on 97 words. Refuted the "Sonnet-specific latency" hypothesis.
+    Bottleneck was prompt size + max_tokens, not the model. Async-job
+    pattern + max_tokens=1600 + cache addresses that root cause.
+    """
+    from app.services.ai_router import pick_model
+    from app.services.anthropic_client import call_anthropic
+
+    return await call_anthropic(
+        system=system_prompt,
+        messages=[{"role": "user", "content": user_message}],
+        model=pick_model("writing_diagnostic"),
+        max_tokens=settings.MAX_TOKENS_DIAGNOSTIC,
+        cache_system=True,
+    )
 
 
 def _demo_writing_feedback(student_text: str, profile: ExamProfile | None = None) -> dict:

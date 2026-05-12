@@ -695,33 +695,34 @@ def _coerce_float(v) -> float | None:
 # ═══════════════════════════════════════════════════════════════
 
 async def _call_claude(system_prompt: str, user_message: str) -> dict | str:
-    async with httpx.AsyncClient(timeout=120) as client:
-        resp = await client.post(
-            "https://api.anthropic.com/v1/messages",
-            headers={
-                "x-api-key": settings.ANTHROPIC_API_KEY,
-                "anthropic-version": "2023-06-01",
-                "content-type": "application/json",
-            },
-            json={
-                "model": "claude-sonnet-4-20250514",
-                "max_tokens": 8192,
-                "system": system_prompt,
-                "messages": [{"role": "user", "content": user_message}],
-            },
-        )
-        resp.raise_for_status()
-        data = resp.json()
+    """Thin wrapper around app.services.anthropic_client.call_anthropic.
 
-    raw = data["content"][0]["text"]
-    try:
-        return json.loads(
-            raw.strip()
-            .removeprefix("```json").removeprefix("```")
-            .removesuffix("```").strip()
-        )
-    except json.JSONDecodeError:
-        return raw
+    F-311 Phase B (2026-05-12): centralized HTTP + model routing +
+    prompt caching. Pre-F-311 this was an inline httpx POST with
+    hardcoded sonnet-4 + max_tokens=8192. Now:
+      - Model from ai_router.pick_model("diagnostic") — sonnet alias.
+        Env override: MODEL_DIAGNOSTIC.
+      - max_tokens from settings.MAX_TOKENS_DIAGNOSTIC (default 1600 —
+        F-311 Q1 override of Decision 4's literal 800; V-016a's 5-couche
+        output is ~2-3K tokens and 800 truncates).
+      - cache_system=True enables Anthropic prompt caching on the
+        system prompt (this prompt is >3K tokens — prime cache candidate).
+        At repeat-call volume (10+ calls / 5min window), savings ~90%
+        on system-prompt input cost.
+
+    Callers (detection.py, module_detector.py, tache_*.py, tache_rubric.py)
+    are unchanged — they treat this function as a black box.
+    """
+    from app.services.ai_router import pick_model
+    from app.services.anthropic_client import call_anthropic
+
+    return await call_anthropic(
+        system=system_prompt,
+        messages=[{"role": "user", "content": user_message}],
+        model=pick_model("diagnostic"),
+        max_tokens=settings.MAX_TOKENS_DIAGNOSTIC,
+        cache_system=True,
+    )
 
 
 # ═══════════════════════════════════════════════════════════════
