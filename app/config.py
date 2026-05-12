@@ -126,4 +126,11 @@ class Settings:
     # until Phase B drops it to 15 alongside the refresh flow.
     REFRESH_TOKEN_EXPIRE_DAYS: int = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
 
+    # F-310 Phase C — FE base URL used in email links (verify-email +
+    # password-reset). Distinct from FRONTEND_ORIGIN (which is the CORS
+    # allowlist consumed inline in main.py and can be comma-separated).
+    # Defaults to the production canonical domain so a missing env var
+    # in dev sends links to prod — annoying but not dangerous.
+    FRONTEND_PUBLIC_URL: str = os.getenv("FRONTEND_PUBLIC_URL", "https://lemethodic.com")
+
 settings = Settings()

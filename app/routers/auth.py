@@ -58,7 +58,7 @@ backfill statement.
 from __future__ import annotations
 
 import datetime
-import hashlib
+import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Response, Request
 from pydantic import BaseModel, EmailStr
@@ -76,6 +76,12 @@ from app.services.auth import (
     verify_password,
     get_current_user_allow_unverified,
 )
+from app.services.captcha import verify_hcaptcha
+from app.services.email import send_email
+from app.services.email_templates import (
+    build_password_reset_email,
+    build_verification_email,
+)
 from app.services.jwt_tokens import (
     generate_secret_token,
     hash_token,
@@ -86,7 +92,11 @@ from app.services.jwt_tokens import (
     verify_refresh_token,
     RefreshTokenError,
 )
+from app.services.rate_limit import auth_rate_limit
 from app.services.user_profile import serialize_user
+
+
+logger = logging.getLogger(__name__)
 
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
@@ -163,34 +173,46 @@ def _clear_auth_cookies(response: Response) -> None:
 # ─── Endpoints ───────────────────────────────────────────────────────
 
 
-@router.post("/register", status_code=201)
-def register(req: RegisterRequest, response: Response, db: Session = Depends(get_db)):
+@router.post(
+    "/register",
+    status_code=201,
+    dependencies=[Depends(auth_rate_limit("register"))],
+)
+async def register(
+    req: RegisterRequest,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db),
+):
     if len(req.password) < 8:
         raise HTTPException(400, "Password must be at least 8 characters")
     if db.query(User).filter(User.email == req.email).first():
         raise HTTPException(400, "Email already registered")
 
-    # TODO F-310 Phase C: hCaptcha verify via app.services.captcha.verify_hcaptcha
-    # TODO F-310 Phase D: /auth rate-limit middleware
+    # hCaptcha — enforced only when HCAPTCHA_SECRET is configured. In
+    # dev / soft-beta-without-captcha, this is a no-op so the flow stays
+    # testable. Production must set HCAPTCHA_SECRET to enforce.
+    await _enforce_captcha_or_400(req.hcaptcha_token, request)
 
     user = User(
         email=req.email,
         hashed_password=hash_password(req.password),
         full_name=req.full_name,
-        # email_verified_at stays NULL — Decision 4 gate. Verification
-        # email send wires up in Phase C; the token row exists from
-        # the helper below.
+        # email_verified_at stays NULL — Decision 4 gate. New
+        # registrations cannot use protected endpoints until they
+        # click the link in the email we send below.
         subscription_tier="free",
     )
     db.add(user)
     db.commit()
     db.refresh(user)
 
-    # Create the email-verification token row. Raw token returned here is
-    # what Phase C will email; Phase B keeps it server-side only (no
-    # response leakage — verification flow is broken until Phase C sends
-    # the email, which is the intentional sequencing).
-    _, _token_hash = _create_email_verification_token(db, user.id)
+    # Create the verification token + send the email. send_email
+    # fail-quiets when RESEND_API_KEY is unset (logs warning; returns
+    # False). Registration itself succeeds either way — the user lands
+    # on /auth/verify-email-sent and can hit /verify-email/resend.
+    raw_token, _ = _create_email_verification_token(db, user.id)
+    await _send_verification_email(user, raw_token)
 
     # Issue both tokens so the FE can land on the "check your email" page
     # while still being authenticated enough to call /verify-email/resend.
@@ -206,10 +228,11 @@ def register(req: RegisterRequest, response: Response, db: Session = Depends(get
     }
 
 
-@router.post("/login")
+@router.post(
+    "/login",
+    dependencies=[Depends(auth_rate_limit("login"))],
+)
 def login(req: LoginRequest, response: Response, db: Session = Depends(get_db)):
-    # TODO F-310 Phase D: /auth rate-limit (5 attempts / 15min / IP +
-    # exponential backoff + 10-attempt lockout).
     user = db.query(User).filter(User.email == req.email).first()
     if not user or not verify_password(req.password, user.hashed_password):
         raise HTTPException(401, "Invalid credentials")
@@ -319,13 +342,15 @@ def verify_email(
     return {"message": "Email verified"}
 
 
-@router.post("/verify-email/resend")
-def verify_email_resend(
+@router.post(
+    "/verify-email/resend",
+    dependencies=[Depends(auth_rate_limit("verify_email_resend"))],
+)
+async def verify_email_resend(
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user_allow_unverified),
 ):
-    """Regenerate the verification token for the current user. Phase C
-    wires the email send; Phase B creates the token row only."""
+    """Regenerate the verification token + send the email."""
     if user.email_verified_at is not None:
         raise HTTPException(
             409,
@@ -333,26 +358,28 @@ def verify_email_resend(
         )
     # Consume any outstanding tokens so only the freshest is valid.
     _consume_outstanding_email_tokens(db, user.id)
-    _create_email_verification_token(db, user.id)
-    # TODO F-310 Phase C: app.services.email.send_email(...) the link.
+    raw_token, _ = _create_email_verification_token(db, user.id)
+    await _send_verification_email(user, raw_token)
     return {"message": "Verification email sent"}
 
 
-@router.post("/password-reset/request")
-def password_reset_request(
+@router.post(
+    "/password-reset/request",
+    dependencies=[Depends(auth_rate_limit("password_reset_request"))],
+)
+async def password_reset_request(
     req: PasswordResetRequest,
+    request: Request,
     db: Session = Depends(get_db),
 ):
     """Generate a password-reset token for the user (if exists). Returns
-    200 unconditionally to prevent email enumeration. Phase C wires the
-    email send. Phase D rate-limits this endpoint."""
-    # TODO F-310 Phase C: hCaptcha verify on req.hcaptcha_token
-    # TODO F-310 Phase D: /auth rate-limit
+    200 unconditionally to prevent email enumeration."""
+    await _enforce_captcha_or_400(req.hcaptcha_token, request)
     user = db.query(User).filter(User.email == req.email).first()
     if user is not None:
         _consume_outstanding_password_reset_tokens(db, user.id)
-        _create_password_reset_token(db, user.id)
-        # TODO F-310 Phase C: send the email
+        raw_token, _ = _create_password_reset_token(db, user.id)
+        await _send_password_reset_email(user, raw_token)
     return {"message": "If the email is registered, a reset link has been sent"}
 
 
@@ -455,3 +482,65 @@ def _consume_outstanding_password_reset_tokens(db: Session, user_id: int) -> Non
         .update({PasswordResetToken.consumed_at: now}, synchronize_session=False)
     )
     db.commit()
+
+
+# ─── F-310 Phase C — captcha + email helpers ────────────────────────
+
+
+async def _enforce_captcha_or_400(
+    token: str | None,
+    request: Request,
+) -> None:
+    """Verify hCaptcha if HCAPTCHA_SECRET is configured. No-op when
+    unset (dev / soft-beta without captcha). On verification failure,
+    raises HTTP 400 with {"code": "captcha_failed"}."""
+    if not settings.HCAPTCHA_SECRET:
+        return
+    ip = request.client.host if request.client else None
+    ok = await verify_hcaptcha(token, remote_ip=ip)
+    if not ok:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "code": "captcha_failed",
+                "message": "hCaptcha verification failed",
+            },
+        )
+
+
+async def _send_verification_email(user: User, raw_token: str) -> None:
+    """Send the verification email. Fail-quiet: never blocks the
+    user-facing operation. Logs at WARNING when delivery fails."""
+    subject, html, text = build_verification_email(
+        to_email=user.email,
+        raw_token=raw_token,
+        lang=user.ui_language or "en",
+    )
+    sent = await send_email(
+        to=user.email, subject=subject, html=html, text=text,
+    )
+    if not sent:
+        logger.warning(
+            "F-310 register/resend: verification email NOT sent to %s "
+            "(check RESEND_API_KEY / provider status)",
+            user.email,
+        )
+
+
+async def _send_password_reset_email(user: User, raw_token: str) -> None:
+    """Send the password-reset email. Fail-quiet: never blocks the
+    anti-enumeration 200 response."""
+    subject, html, text = build_password_reset_email(
+        to_email=user.email,
+        raw_token=raw_token,
+        lang=user.ui_language or "en",
+    )
+    sent = await send_email(
+        to=user.email, subject=subject, html=html, text=text,
+    )
+    if not sent:
+        logger.warning(
+            "F-310 password-reset: reset email NOT sent to %s "
+            "(check RESEND_API_KEY / provider status)",
+            user.email,
+        )
