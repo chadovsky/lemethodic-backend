@@ -1395,6 +1395,55 @@ Route ~60 L'École curriculum files identified during F-321.audit (foundation gr
 
 # Post-launch P1 (2-4 weeks after launch)
 
+## F-061.1 — Tache2Picker reads live BE catalog instead of hardcoded literal (FE)
+
+**Filed:** 2026-05-13 (during F-BUGS-001-BE-A — Tâche 2 production-drift incident).
+**Status:** Queued.
+**Tag:** Post-launch P1 — regression prevention; high signal-to-effort.
+**Owner:** FE.
+
+**Priority:** Medium (defensive — would have surfaced the 2026-05-13 prod gap immediately on launch instead of waiting for Chadi to manually flag).
+
+**Scope:**
+- `components/speaking/Tache2Picker.tsx` currently renders a hardcoded `SCENARIOS` literal listing the 5 Tâche 2 scenario codes. This literal stayed in lockstep with the BE seed file (`scripts/seed_tache2_scenarios.py`) by author convention, NOT by build-time verification.
+- Wire `Tache2Picker` to fetch `GET /api/conversations/scenarios` at mount, render the live BE catalog, drop the hardcoded literal.
+- Add an empty-state branch: when the API returns `{"scenarios": []}`, render a "No scenarios available — contact support" surface instead of a silent empty picker.
+- Loading state: render a 3-card skeleton while the fetch resolves. Error state: render "Failed to load scenarios — retry" with a retry button.
+
+**Why now:** Pre-F-BUGS-001-BE-A (today), the BE seed never ran on prod from launch until 2026-05-13. The hardcoded FE literal listed 5 scenarios while prod served 0; every Tâche 2 conversation-start was a silent 404. Live-data binding would have surfaced an empty picker immediately on first load, escalating the bug days-or-weeks earlier.
+
+**Out of scope:** Caching / SWR optimization (one-time fetch on Tâche 2 entry is fine for Phase 1 traffic levels); admin UI for scenario CRUD (separate ticket if/when needed).
+
+**Depends on:** Nothing — `GET /api/conversations/scenarios` is already live (F-049 endpoint).
+
+---
+
+## F-BUGS-001-BE-A.content — Tâche 2 placeholder content replacement (BE seed + Chadi authoring)
+
+**Filed:** 2026-05-13 (during F-BUGS-001-BE-A — first-ever prod execution of F-049 seeder exposed that the seed payload is placeholder text).
+**Status:** Queued.
+**Tag:** Post-launch P1 — HIGH priority for product quality but not blocking (users can interact with scenarios using placeholder content; the placeholders are structurally complete).
+**Owner:** Chadi (content authoring) + BE (re-seed pipeline OR admin endpoint for content updates).
+
+**Priority:** HIGH (defensible scenario quality is core to the Tâche 2 differentiator) but **not launch-blocking** — the placeholder briefs + examiner_persona + data_targets are structurally complete and yield a working end-to-end flow today; only the prose quality is degraded vs. Chadi's polished authoring.
+
+**Context:**
+Per `scripts/seed_tache2_scenarios.py` header (filed F-049): "Every brief, persona, and data_targets entry below is a placeholder that Chadi replaces before Day 7 with the authored text from the Yarden documents." The seed never ran on prod from launch until 2026-05-13 (F-BUGS-001-BE-A) so production users were 404'ing on every Tâche 2 start — but now that the seed has run, the placeholder content is live and visible to users.
+
+Each of the 5 scenarios (`ami_demenagement`, `agence_voyages`, `bibliotheque`, `nouveau_collegue_quebecois`, `agence_immobiliere_canada`) has 3 fields needing replacement: `candidate_brief_{fr,en,es}`, `examiner_persona`, `data_targets`. Placeholders are marked with `# CHADI:` comments in the seed file.
+
+**Scope:**
+1. **Chadi:** author final FR/EN/ES briefs + examiner_persona + data_targets per scenario, sourced from Yarden Livraison 1 documents. ~5 × 3 fields = 15 text blocks; estimate 4-8 hours.
+2. **BE:** when Chadi delivers the polished payloads, either:
+   - Edit the seed file in-place and re-run the seeder (idempotent — upserts on `code`, overwrites placeholder text). Surfaces as gate #7 prod seed ASK per refined contract (see CLAUDE.md migration protocol). Single-shot replacement.
+   - OR build a lightweight admin endpoint (`PATCH /api/admin/tache2/scenarios/{code}`) for in-place editing without a redeploy. Heavier engineering but enables future content-tuning without re-seed-execute cycles.
+
+**Recommendation:** seed-file path (option 1). Tâche 2 scenario content is low-frequency-changed authored material; an admin endpoint adds surface area for low return.
+
+**Depends on:** F-BUGS-001-BE-A (Tâche 2 catalog now live in prod — done).
+
+---
+
 ## F-322 — Le Vocabulaire practice UI (FE)
 
 **Filed:** 2026-05-12 (strategic session — Decision 3, MVP).
@@ -2392,6 +2441,50 @@ Original priority was Medium. Decided not to pursue per 2026-05-02 marketing tri
 ---
 
 # Shipped
+
+## F-BUGS-001-BE-A — Tâche 2 agence_voyages production drift — SHIPPED 2026-05-13
+
+**Filed:** 2026-05-13 (Chadi flagged via FE-side 404 trace — every Tâche 2 conversation-start was returning `HTTP 404 "Unknown or inactive scenario_code 'agence_voyages'"`).
+**Status:** Shipped 2026-05-13. Prod fix executed by Chadi via DO console + verified.
+**Tag:** Shipped — bug fix.
+
+**Root cause:**
+The F-049 seeder (`scripts/seed_tache2_scenarios.py`) **never ran against production from launch until 2026-05-13**. Local dev DB had all 5 scenarios seeded (the seeder ran on every fresh dev checkout per `docker-compose up + alembic upgrade head + seed`); prod's `tache2_scenarios` table was empty. Every Tâche 2 conversation-start request hit the 404 branch in `app/routers/conversations.py:642`:
+
+```python
+scenario = db.query(Tache2Scenario).filter(
+    Tache2Scenario.code == code, Tache2Scenario.is_active == True
+).first()
+if not scenario:
+    raise HTTPException(404, f"Unknown or inactive scenario_code '{code}'")
+```
+
+Production was silently broken on the entire Tâche 2 surface from launch. The FE-side hardcoded `SCENARIOS` literal in `components/speaking/Tache2Picker.tsx` continued to render the picker as if the catalog existed — so users saw 5 selectable scenarios but every click 404'd. **Chadi was the first to flag** (no monitoring or canary caught it).
+
+**Diagnosis pipeline (gate #7 ASK, 2026-05-13):**
+1. BE-side investigation confirmed local DB had all 5 scenarios + `is_active=True`. Bug must be a prod-vs-local drift.
+2. Gate #7 ASK surfaced two branches (Case A: row missing; Case B: `is_active=False`) with diagnostic query + matching fix + rollback for each.
+3. Chadi ran `psql "$PROD_DATABASE_URL" -c "SELECT ... FROM tache2_scenarios WHERE code='agence_voyages';"` — result: `(0 rows)`. Full table query: 0 rows. **Case A confirmed; AND scope expanded to "all 5 scenarios missing, not just agence_voyages".**
+4. Fix: `python -m scripts.seed_tache2_scenarios` via DO console. Output: `Seeded Tâche 2 scenarios: 5 inserted, 0 updated.`
+5. Post-fix verification: 5 rows, all `is_active=True`, codes match canonical set (`ami_demenagement`, `agence_voyages`, `bibliotheque`, `nouveau_collegue_quebecois`, `agence_immobiliere_canada`).
+
+**Regression canary:** `scripts/smoke_f_bugs_001_be_a.py` — local-Postgres FastAPI TestClient walk-through of GET `/scenarios` + POST `/start` with `scenario_code=agence_voyages`. 10 PASS checks. Asserts: seed row exists + is_active + difficulty=A2_B1; `/scenarios` lists agence_voyages; `/start` returns 2xx with conversation_id and tache_mode echo; unknown-code path still returns 404 (error path intact). Runnable as smoke after every BE deploy.
+
+**Process learning — operating contract amendment (2026-05-13):**
+This incident exposes a gap in gate #7 documentation: the migration protocol (CLAUDE.md "Production migration protocol") covers `alembic upgrade head` auto-application but says nothing about **seeder scripts**. Local seeder runs (the convention being "the seeder ran on fresh dev checkout") do not propagate to prod automatically because `alembic upgrade head` only runs migrations, not seed scripts. **CLAUDE.md migration protocol section amended in same commit** to flag seeder scripts as gate #7 prod-execution items alongside migrations: every future BE ticket involving a seeder script must include explicit "run the seeder on prod" step in the dispatch plan + a corresponding gate #7 ASK before the seeder fires.
+
+**Follow-up tickets filed (same commit):**
+- **F-061.1** (Post-launch P1, FE) — wire `Tache2Picker` to GET `/api/conversations/scenarios` live data instead of the hardcoded `SCENARIOS` literal. Would have surfaced this gap on launch day instead of waiting for Chadi to flag.
+- **F-BUGS-001-BE-A.content** (Post-launch P1, Chadi + BE) — replace the placeholder briefs + examiner_persona + data_targets in `scripts/seed_tache2_scenarios.py` with Chadi's polished authoring per the `# CHADI: replace before Day 7` markers in the seed file. Placeholder content is structurally complete but reads as generic.
+
+**Files in this commit:**
+- `scripts/smoke_f_bugs_001_be_a.py` — regression canary (NEW)
+- `BACKLOG.md` — this entry + F-061.1 + F-BUGS-001-BE-A.content
+- `CLAUDE.md` — migration protocol: seeder scripts flagged under gate #7
+
+No code change, no migration, no DB write from BE this commit. Prod fix already executed by Chadi.
+
+---
 
 ## B-102 — Privacy policy + ToS + Refund
 

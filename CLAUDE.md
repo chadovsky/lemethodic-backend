@@ -103,11 +103,32 @@ This means migration approval must fire **before push**, not before a separate a
 
 If anything fails post-deploy: `alembic downgrade -1` runs by pushing a revert commit (or via DO console if available). For REQUIRED-tier migrations, the pg_dump from step 3 is the emergency restore path; for OPTIONAL-tier migrations, the downgrade is sufficient and the DO daily auto-backup is the secondary fallback.
 
+### Seeder scripts — gate #7 prod-execution required (added 2026-05-13 via F-BUGS-001-BE-A contract refinement)
+
+`scripts/seed_*.py` runners ARE NOT auto-applied to production. The DO App Platform run command is `alembic upgrade head && uvicorn ...` — migrations auto-apply, seeders do not. Local-dev convention is "run the seeder after every fresh `docker-compose up` + `alembic upgrade head`", but that convention does NOT extend to prod deploys. Result of the gap before this amendment: F-049's Tâche 2 scenario seeder lived in master from launch but never ran on prod, so every Tâche 2 conversation-start returned HTTP 404 until 2026-05-13 (F-BUGS-001-BE-A).
+
+**Protocol for every BE ticket that adds OR modifies a `scripts/seed_*.py` runner OR depends on seeded data being live in prod:**
+
+1. **Dispatch plan MUST include an explicit "run the seeder on prod" step** with the exact command (typically `python -m scripts.seed_<name>` via DO console terminal). Treat this step as a discrete deliverable, not an implicit follow-up.
+2. **Surface a gate #7 seed ASK to Chadi BEFORE the seeder fires on prod.** Same shape as the migration ASK:
+   - Inline seed file content (or diff if updating an existing seeder).
+   - SQL preview of the INSERT/UPDATE statements the seeder will issue against prod.
+   - Idempotency claim (e.g., "upsert by `code` — re-running is safe; existing rows updated in place").
+   - Diagnostic query Chadi runs FIRST to confirm prod state pre-seed (e.g., `SELECT COUNT(*) FROM <table>;`).
+   - Rollback SQL (typically `DELETE FROM <table> WHERE <constraint>;` — only safe if no downstream FK rows have been created since the seed).
+   - Post-seed verification query Chadi runs to confirm the rows landed correctly.
+3. **Chadi runs the seeder on prod via DO console** after approving the ASK. BE does NOT execute prod writes; Chadi does, with seed ASK content as the runbook.
+4. **Post-seed verification:** Chadi confirms the seed succeeded via the query from step 2. BE may then run a smoke script (e.g., `scripts/smoke_*.py`) against the FE-facing endpoint that exercises the newly-seeded data to confirm end-to-end flow.
+
+**Tiering parity with pg_dump:** seeder pre-flight backup follows the same REQUIRED-vs-OPTIONAL split as migrations:
+- **REQUIRED pg_dump** when the seeder runs against a non-empty table (existing rows could be overwritten by the upsert path), OR touches `users` / auth / payment-adjacent tables, OR the rollback path is non-trivial (FK cascades, computed fields).
+- **OPTIONAL pg_dump** when the seeder runs against a known-empty table (pure-insert pattern, no overwrite risk). Bootstrap seeds (first prod execution of a seeder against a 0-row table) typically qualify OPTIONAL.
+
 **Gate triggers that still ASK before commit (not push) per operating contract:**
 - Payment/billing/subscription logic changes (gate #10) — shape question before code.
 - Stripe webhook secret rotation (gate #6).
 - `.env` file edits (gate #5).
-- Anything destructive (gate #7).
+- Anything destructive (gate #7) — includes seeder prod execution per the section above.
 
 ---
 
