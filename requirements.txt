@@ -27,3 +27,7 @@ stripe>=8.0
 # httpx at runtime; httpx is already pinned above for the F-311
 # centralized AI client, so pytest is the only addition here.
 pytest>=8.0
+# F-321 — parses Chadi's tutoring .docx archive for vocab-chunk
+# extraction. Walks Document.tables (table extractor) + Document.paragraphs
+# (regex extractor). MIT-licensed, ~10y stable.
+python-docx>=1.1.0

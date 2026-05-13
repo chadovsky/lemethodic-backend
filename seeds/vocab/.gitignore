@@ -1,0 +1,6 @@
+# F-321 — phase2_deferred.csv is the deferred-content overflow from
+# the Phase D dedup + split. Per Chadi's 2026-05-13 Phase D refinement,
+# this stays uncommitted until a future Phase 2 dispatch revisits the
+# Le Vocabulaire topic universe. Reproducible from the Phase B/C
+# scripts + .docx archive.
+phase2_deferred.csv

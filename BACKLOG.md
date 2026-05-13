@@ -1321,33 +1321,75 @@ If neither ever responds: zero impact. F-312 ships and runs forever on CC + Chad
 
 ## F-321 — Le Vocabulaire Phase 1 seed (BE) — Chadi tutoring artifacts
 
-**Filed:** 2026-05-12 (strategic session — Decision 3, MVP). **Rescoped 2026-05-12 (Path C locked):** dropped OQLF as ingest source; corpus now sourced from Chadi's 100+ `.docx` tutoring archive in `C:\Users\pc\Downloads` (Andre course notes, Egor exercises, Yarden translations, Avery programs, Jack homework, Matt COD/COI, cause/consequence activities, subjonctif guides, etc.).
-**Status:** Queued — F-312.0 sign-off received. **Approach (extraction pipeline vs. manual curation) gated on F-321.audit sample audit.**
+**Filed:** 2026-05-12 (strategic session — Decision 3, MVP). **Rescoped 2026-05-12 (Path C locked):** dropped OQLF as ingest source; corpus now sourced from Chadi's `.docx` tutoring archive in `C:\Users\pc\Downloads`. **Audit verified 2026-05-13** — 35-file sample, verdict `mixed` (29% HIGH / 29% PARTIAL / 17% NEEDS_MANUAL / 26% SKIP); F-321 implementation = hybrid pipeline.
+**Status:** Phases B/C/D shipped 2026-05-13 (commit history). Phase E (seed) BLOCKED on Chadi review of `seeds/vocab/phase1_review.csv`.
 **Tag:** Active — Launch Critical (before soft beta launches).
 **Parent:** F-330.
 
 **Priority:** Launch.
 
-**F-321.audit pre-step (cheap, fast):**
-- Pick 10 random `.docx` files from Chadi's tutoring archive.
-- Assess for each: are they structured enough to extract `chunk`, `translation`, `register`, `error_type`, `cefr_level` fields cleanly? Is structure consistent across files? Are headings, tables, bold/italic markup used in a parseable way? Or is it free-prose mixed with embedded examples?
-- Output: 10-file sample-audit report with verdict (`extractable | mixed | requires-curation`) per file + recommended F-321 approach + confidence level.
-- **Approach branches based on audit:**
-  - **If extractable (≥7/10 clean):** F-321 = extraction pipeline. `scripts/ingest_chadi_artifacts.py` parses .docx → linguistic_corpus rows. Chadi reviews + corrects in admin. Fast path.
-  - **If mixed (4-6/10 clean):** F-321 = hybrid. Extraction pipeline for the clean files; manual curation for the rest. Chadi authors directly into the corpus for unstructured material.
-  - **If requires-curation (≤3/10 clean):** F-321 = manual curation. Chadi's notes become input, not source. Engineering builds a lightweight admin authoring UI; Chadi populates rows by hand. Slower but bulletproof on quality.
-- Audit itself: 1-2 hours BE work. Do not start until F-310 ships or a natural break hits.
+**Phase 1 scope (locked 2026-05-13):**
+- 3 topics: `faux_amis`, `calques_anglais`, `prepositions_a_de_dans_par_pour` (BACKLOG-hint trio, finalized by Chadi 2026-05-13 — `subjonctif_emploi` and `faire_causatif` dropped from Phase 1 as L'École-side curriculum content, see F-321.curriculum).
+- Target: 500-800 seeded chunks (achievable from a 1,684-chunk review pool post-noise-filter).
+- Idempotent ingest pipeline via `scripts/seed_f321_phase1.py` (Phase E — gated on Chadi's reviewed `seeds/vocab/phase1.csv`).
 
-**Phase 1 scope (post-audit, locked once audit returns):**
-- 3 topic sets (Chadi-selected from his tutoring archive — natural candidates: faux-amis | calques anglais | prépositions a/de/dans/par/pour).
-- 500-800 entries total (~170-270 per topic).
-- Idempotent ingest / authoring pipeline.
+**Pipeline shipped (Phases B/C/D):**
+- **`app/services/f321_classifier.py`** — pre-classification filename + content publisher-import skip filters (catches CLE International / Hachette FLE / Claire Miquel / ISBN markers); duplicate-suffix collapse for `(1)`/`(2)`/`_-_Copie` variants; Haiku 4.5 classifier wrapper with 4-value verdict + source_type + suggested_topic_slug.
+- **`app/services/f321_extractors.py`** — three extractors: table (python-docx 2-column FR/EN walker), regex (paragraph gloss patterns `FR (EN)` / `FR — EN` / `FR : EN`), Haiku-assisted (PARTIAL/NEEDS_MANUAL fallback with strict JSON-array output + lenient-parser fallback for max-token truncation).
+- **`scripts/classify_f321_docx.py`** — Phase B runner (203 raw .docx → 170 post-dedup → classified via Haiku, retry on 429 with backoff). Cost: $0.20.
+- **`scripts/extract_f321_phase1.py`** — Phase C runner. `--mode table-regex-only` for deterministic; `--mode validation` for the mandatory 5-file Haiku slice + Chadi sign-off gate; `--mode post-validation` after the gate marker file exists. Cost: $0.19 (Haiku slices).
+- **`scripts/dedup_f321_phase1.py`** — Phase D runner. Noise filter drops exercise numbering / placeholder lines / section headers before hash dedup on normalized `chunk_fr`. Splits output into Phase 1 review CSV (3-topic scope + Les_Moules + preposition content-inference) and Phase 2 deferred CSV (everything else from chadi_authored + book_lab).
+- **Tests:** `tests/test_f321_classifier.py` (33 cases) + `tests/test_f321_extractors.py` (20 cases) cover skip filters, dedup, gloss regex patterns, table column heuristics, Haiku response parser.
 
-**Out of scope:** Wiktionary FR + Tatoeba ingests — those live in F-312's ingest scripts (different scope: reference corpus for retrieval-side augmentation, not the user-facing vocab MVP). Exam-specific tagging (default `exam_tag=null` at MVP; F-330.partition adds exam-tagging pass).
+**Phase 1 pipeline numbers (2026-05-13):**
+- 203 raw `.docx` → 170 post-dedup → 117 eligible (HIGH/PARTIAL/NEEDS_MANUAL with source_type ∈ {chadi_authored, book_lab}) → 6,462 raw chunks → 5,529 post-noise-filter → 4,483 unique post-dedup → **1,684 in Phase 1 review** + 2,799 in Phase 2 deferred.
+- Phase 1 topic distribution: prepositions 941 / faux_amis 566 / calques_anglais 177.
+- Phase 1 extractor distribution: table 1,196 / regex 306 / haiku 182.
+- Phase 1 source_type: chadi_authored 1,547 / book_lab 137 (Les_Moules_Complete_Framework.docx).
+- Estimated Chadi review burden: 2-3 hours (12 chunks/min triage pace).
+- Total Phase B+C cost: $0.39 (ceiling $5.00, comfortably under).
 
-**Depends on:** F-320 (schema), F-321.audit (sample-audit gate).
+**Hard exclusions (per audit lock + Decision F1 2026-05-13):**
+- 17 files pre-skipped as `third_party_publisher_DO_NOT_EXTRACT` (filename patterns `*Progressif*` / `*Communication_Progressive*` / `*Niveau_*` + content markers CLE International / Hachette FLE / Claire Miquel / ISBN). Tagged but never sent to Haiku, never extracted.
 
-**Owner:** BE (audit + ingest pipeline or admin authoring UI per branch) + Chadi (artifact archive owner + content review + post-extraction correction).
+**Phase E gate (next dispatch):**
+- Chadi reviews `seeds/vocab/phase1_review.csv` offline. Marks each row `review_status` ∈ {accept, reject, edit}. Re-commits as `seeds/vocab/phase1.csv`.
+- BE writes `scripts/seed_f321_phase1.py` — idempotent upsert (topic-on-slug + chunk-on-(topic_id, normalized chunk_fr)). Supports `--dry-run`.
+- Seed ASK message surfaces per gate #7 (destructive prod DB INSERT): inline script + dry-run output + sample 10 rows + post-seed validation queries + rollback SQL.
+
+**Out of scope (this dispatch):** Phase E seed; F-321.curriculum (60-file L'École redirect — filed separately); Phase 2 topic expansion (subjonctif_emploi / faire_causatif / others); Wiktionary FR + Tatoeba ingests (F-312); exam-specific tagging (F-330.partition).
+
+**Depends on:** F-320 (schema), F-321.audit (sample-audit gate — verified).
+
+**Owner:** BE (pipeline shipped) + Chadi (artifact archive owner + offline `phase1_review.csv` review + post-extraction correction).
+
+---
+
+## F-321.curriculum — Route L'École content out of Le Vocabulaire (BE)
+
+**Filed:** 2026-05-13 (during F-321 implementation — audit identified ~60 `.docx` files as foundation-grammar content that belongs in L'École's 16-lesson surface, not Le Vocabulaire's lexical-chunk catalog).
+**Status:** Queued.
+**Tag:** Post-launch P2 — defer until F-321 Phase E seeds the 3-topic Phase 1 corpus and Le Vocabulaire surface is in production.
+**Parent:** F-330.
+
+**Priority:** Medium (post-launch).
+
+**Scope:**
+Route ~60 L'École curriculum files identified during F-321.audit (foundation grammar — articles, COD/COI, subjonctif, prépositions, faire causatif, conditional, conjugation) to L'École's existing 16-lesson surface (P-053). Decide per-file:
+- **Extends existing lesson:** file content augments a lesson already in the seed (e.g., `cours_articles_*` files → extends the articles lesson; `Phase_3_Pronoms_Relatifs_Egor_COMPLET.docx` → extends the pronouns lesson).
+- **Seeds new lesson:** file is a coherent unit not currently covered (e.g., `Le_Faire_Causatif.docx` → new lesson if Phase 2 Approfondissement has the slot).
+- **Absorbed into module library (F-080):** file is a remediation pattern not a lesson (e.g., L1-interference notes → seed a `RemediationModule` row).
+
+**Inputs:**
+- `data/f321_extraction.csv` already contains the chunks from these files (tagged `source_type='chadi_authored'`, ended up in `phase2_deferred.csv`).
+- The classifier `suggested_topic_slug` field is the per-file topic hint (`subjonctif_emploi`, `articles_french_with_languages_quantifiers`, etc. — anything outside the locked Phase 1 trio).
+- L'École's existing 27-lesson sequence (16 Phase 1 Fondations + 11 Phase 2 Approfondissement per F-087) is the routing target.
+
+**Out of scope:** Le Vocabulaire Phase 2 topic expansion (separate ticket if/when launched). Authored content modifications (Chadi-only).
+
+**Depends on:** F-321 Phase E seed (so we know which chunks landed in Le Vocabulaire vs need routing); F-080 module library; P-053 L'École curriculum.
+
+**Owner:** BE (routing decisions + new-lesson seed scripts) + Chadi (per-file lesson-vs-module decisions).
 
 ---
 
