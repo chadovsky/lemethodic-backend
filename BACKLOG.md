@@ -2992,9 +2992,10 @@ File: data-layer/scripts/ingest/parseme.py
 Status: READY (parallel)
 File: data-layer/scripts/ingest/collfren.py
 
-### D-012 — Implement DBnary ingestion
-Status: READY (parallel)
+### D-012 — Implement DBnary ingestion ✅ DONE
+Status: ✅ DONE
 File: data-layer/scripts/ingest/dbnary.py
+Delivered: streaming Turtle parser (quote-aware subject-block splitter + per-block rdflib parse + cross-subject reference caches) that emits chunks with surface_fr, pos_pattern, English translations, and FR examples — avoids the multi-GB OOM of naive `rdflib.Graph().parse()`.
 
 ### D-013 — Implement Anki ingestion
 Status: READY (parallel)
