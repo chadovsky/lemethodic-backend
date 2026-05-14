@@ -2988,9 +2988,10 @@ Action: make decide
 Status: READY (parallel)
 File: data-layer/scripts/ingest/parseme.py
 
-### D-011 — Implement CollFrEn ingestion
-Status: READY (parallel)
+### D-011 — Implement CollFrEn ingestion ✅ DONE
+Status: ✅ DONE
 File: data-layer/scripts/ingest/collfren.py
+Delivered: openpyxl reader for `FR_disambiguated_SyntagmaticLF_v1b.xlsx` that pairs KEYWORD/VALUE into bilingual FR-EN collocation chunks (6,627 rows ingested), strips `_..._` and `[…]` annotation markers, and uses the postposed-`~` subcategorisation column to decide value-first vs. keyword-first surface order. Lexical function stored in `pos_pattern`; rerun is idempotent.
 
 ### D-012 — Implement DBnary ingestion
 Status: READY (parallel)
