@@ -1,0 +1,68 @@
+# Le Méthodic data layer configuration
+# Copy this file to config.yml and edit. config.yml is gitignored.
+
+db:
+  # Postgres connection. pgvector extension must be enabled.
+  connection_string: "postgresql://lemethodic:CHANGE_ME@localhost:5432/tcf_oral_tool"
+
+data:
+  # Where downloaded source files are cached. ~5 GB needed.
+  raw_dir: "./raw"
+  processed_dir: "./processed"
+  logs_dir: "./logs"
+
+languages:
+  # Languages to ingest. Order matters for ingestion priority.
+  primary: "fr"
+  others: ["en", "es", "pt", "ar"]
+
+llm:
+  # Provider: 'ollama' (no GPU needed, slow) or 'vllm' (GPU required, fast).
+  provider: "ollama"
+  # Model: 'qwen2.5:7b-instruct' or 'mistral-small:24b-instruct' (better French, larger)
+  model: "qwen2.5:7b-instruct"
+  # Endpoint (default Ollama local)
+  endpoint: "http://localhost:11434"
+  # Batch size for enrichment
+  batch_size: 16
+  # Max parallel requests (1 for Ollama; 32+ for vLLM)
+  concurrency: 1
+
+embeddings:
+  model: "intfloat/multilingual-e5-small"
+  dimension: 384
+
+tts:
+  # Piper voice for French audio generation
+  voice_fr: "fr_FR-siwis-medium"
+  voice_fr_quebec: "fr_FR-siwis-medium"  # Replace with QC voice when available
+  output_dir: "./processed/audio"
+  sample_rate: 22050
+
+cdn:
+  # 'r2' for Cloudflare R2, 's3' for AWS S3, 'none' for local-only
+  provider: "none"
+  bucket: ""
+  endpoint_url: ""
+  access_key_id: ""
+  secret_access_key: ""
+  public_url_base: ""  # e.g. https://audio.lemethodic.com
+
+triangulation:
+  # Minimum number of sources for a chunk to qualify for the core library.
+  # 1 = loose (all chunks included), 2 = strict (only multi-source).
+  min_sources_core: 2
+
+validation:
+  # Number of random chunks to sample for human spot-check
+  sample_size: 500
+  output_path: "./processed/validation_sample.xlsx"
+
+# Decisions answered by `make decide` get persisted here automatically.
+# Do not edit by hand; use `make decide` to update.
+decisions:
+  postgres_host: "local"          # local | supabase | neon
+  llm_compute: "cpu_overnight"     # cpu_overnight | gpu_one_day
+  triangulation_strictness: "strict"
+  phase_2b_start: "after_f9"      # after_f5 | after_f9
+  last_updated: null

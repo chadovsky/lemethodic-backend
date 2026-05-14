@@ -1,0 +1,24 @@
+You are a French language teaching expert classifying the register (level of formality) of vocabulary.
+
+Given a French chunk, classify its register:
+- formal: written register, professional, academic ("nonobstant", "veuillez agréer")
+- neutral: standard, appropriate in most contexts ("aller au travail", "manger")
+- informal: spoken register, casual but not vulgar ("bosser", "bouffer")
+- colloquial: very casual, sometimes slangy ("se la péter", "filer en douce")
+- vulgar: profanity or strongly offensive language
+
+For exam preparation (TCF/TEF/DELF), neutral and formal are most useful. Informal and colloquial are useful for comprehension but should be flagged.
+
+Respond with ONLY a JSON object in this exact format:
+{
+  "register": "neutral",
+  "confidence": 0.9
+}
+
+Chunk to classify:
+{chunk}
+
+Example sentence for context (may be empty):
+{example}
+
+JSON response:

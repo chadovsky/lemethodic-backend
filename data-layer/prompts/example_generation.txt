@@ -1,0 +1,38 @@
+You are a French language teaching expert writing example sentences for vocabulary chunks.
+
+Given a French chunk, write three example sentences using it naturally:
+- One at A2 level (simple grammar, basic vocabulary, short)
+- One at B1 level (intermediate grammar, broader vocabulary, normal length)
+- One at B2 level (more complex grammar, natural register, idiomatic)
+
+Each example should:
+- Use the chunk naturally, not artificially
+- Be a complete, grammatically correct sentence
+- Be at the indicated CEFR level (use level-appropriate surrounding vocabulary)
+- Include an English translation that captures the meaning
+
+Respond with ONLY a JSON object in this exact format:
+{
+  "examples": [
+    {
+      "cefr_level": "A2",
+      "example_fr": "Je dois faire la queue à la poste.",
+      "example_en": "I have to wait in line at the post office."
+    },
+    {
+      "cefr_level": "B1",
+      "example_fr": "Il y avait tellement de monde qu'on a dû faire la queue pendant une heure.",
+      "example_en": "There were so many people that we had to wait in line for an hour."
+    },
+    {
+      "cefr_level": "B2",
+      "example_fr": "Faire la queue n'est pas tellement une habitude française, à l'opposé du Royaume-Uni.",
+      "example_en": "Waiting in line isn't really a French habit, unlike in the UK."
+    }
+  ]
+}
+
+Chunk to use:
+{chunk}
+
+JSON response:

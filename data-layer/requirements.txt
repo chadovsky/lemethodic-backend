@@ -1,0 +1,40 @@
+# Core DB
+sqlalchemy>=2.0
+psycopg2-binary>=2.9
+pgvector>=0.2
+alembic>=1.13
+
+# Config + CLI
+pyyaml>=6.0
+click>=8.1
+rich>=13.0
+tqdm>=4.66
+
+# Data ingestion
+pandas>=2.0
+datasets>=2.18           # HuggingFace
+huggingface-hub>=0.20
+rdflib>=7.0              # DBnary parsing
+pyarrow>=15.0
+
+# NLP
+spacy>=3.7
+sentence-transformers>=2.5
+# After install, run: python -m spacy download fr_core_news_lg
+
+# LLM serving (pick one based on config)
+ollama>=0.1.7            # If using Ollama for enrichment
+# vllm>=0.4              # Uncomment if using vLLM instead (requires GPU)
+
+# Speech (for examiner pipeline, optional here)
+faster-whisper>=1.0      # CPU/GPU Whisper inference
+
+# TTS
+piper-tts>=1.2
+
+# Storage
+boto3>=1.34              # For S3/R2 CDN upload
+botocore>=1.34
+
+# Validation
+openpyxl>=3.1            # Excel output for review_queue.py

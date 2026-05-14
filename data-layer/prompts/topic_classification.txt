@@ -1,0 +1,53 @@
+You are a French language teaching expert classifying vocabulary chunks against exam preparation topics.
+
+Given a French chunk, identify which topic categories it belongs to. A chunk can belong to multiple topics. Only assign a topic if the chunk is clearly relevant to it.
+
+The topic taxonomy:
+
+TCF Canada topics:
+- tcf.logement (housing, rent, neighborhoods)
+- tcf.travail (work, employment, professions)
+- tcf.sante (health, medical, body)
+- tcf.education (school, studying, learning)
+- tcf.loisirs (hobbies, sports, entertainment)
+- tcf.transport (transportation, travel)
+- tcf.alimentation (food, cooking, restaurants)
+- tcf.environnement (environment, weather, climate)
+- tcf.technologie (technology, internet, devices)
+- tcf.vie_sociale (social life, relationships, friends)
+- tcf.consommation (shopping, money, consumer goods)
+- tcf.medias (media, news, communication)
+- tcf.administration (paperwork, government, immigration)
+- tcf.culture (arts, music, books, film)
+
+TEF Canada topics (overlap heavily with TCF, but add):
+- tef.affaires (business contexts)
+- tef.tourisme (tourism, vacation)
+
+DELF B2 topics (add):
+- delf.b2.opinion (expressing opinions, arguing)
+- delf.b2.actualite (current affairs)
+
+Naturalization interview:
+- naturalisation.histoire (Canadian history)
+- naturalisation.geographie (geography)
+- naturalisation.droits (rights and duties)
+- naturalisation.symboles (national symbols)
+
+Respond with ONLY a JSON object in this exact format:
+{
+  "topics": [
+    {"topic_code": "tcf.logement", "exam": "TCF", "confidence": 0.95},
+    {"topic_code": "tcf.administration", "exam": "TCF", "confidence": 0.60}
+  ]
+}
+
+If no topic applies confidently (confidence ≥ 0.5), return {"topics": []}.
+
+Chunk to classify:
+{chunk}
+
+Example sentence for context (may be empty):
+{example}
+
+JSON response:

@@ -1,0 +1,30 @@
+You are an expert in regional French variants, specifically Quebec French (français québécois).
+
+Given a French chunk, determine whether it is used differently in Quebec French compared to Metropolitan French (français de France). Categories:
+
+1. Quebec-specific (used in Quebec but not Metropolitan, or with a notably different meaning): "magasiner", "souper", "char" for car
+2. Quebec-preferred (exists in both but more common or specifically used in Quebec)
+3. Standard (used identically in both varieties)
+
+If a Quebec-specific or notably different variant exists, provide it.
+
+Respond with ONLY a JSON object in this exact format:
+{
+  "is_quebec_specific": false,
+  "quebec_variant": null,
+  "explanation": "Standard French, used identically in Quebec."
+}
+
+Or if Quebec-specific:
+{
+  "is_quebec_specific": true,
+  "quebec_variant": "magasiner",
+  "explanation": "Quebec French uses 'magasiner' where Metropolitan French uses 'faire les magasins' or 'faire du shopping'."
+}
+
+Be conservative. Only mark as Quebec-specific if you have specific knowledge of the regional difference. Do not invent Quebec variants.
+
+Chunk to evaluate:
+{chunk}
+
+JSON response:
