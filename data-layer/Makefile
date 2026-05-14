@@ -34,13 +34,13 @@ help:
 	@echo "  nuke            DROP all chunk data (destructive)"
 
 setup:
-	$(PYTHON) $(SCRIPTS)/setup.py --config $(CONFIG)
+	$(PYTHON) -m scripts.setup --config $(CONFIG)
 
 schema:
 	$(PYTHON) -c "from scripts.common import apply_sql; apply_sql('sql/001_schema.sql')"
 
 decide:
-	$(PYTHON) $(SCRIPTS)/decide.py --config $(CONFIG)
+	$(PYTHON) -m scripts.decide --config $(CONFIG)
 
 # Individual ingestion targets
 ingest-universal-cefr:
@@ -71,22 +71,22 @@ ingest: ingest-universal-cefr ingest-lexique3 ingest-parseme \
 	@echo "[ingest] All sources complete."
 
 merge:
-	$(PYTHON) $(SCRIPTS)/merge.py --config $(CONFIG)
+	$(PYTHON) -m scripts.merge --config $(CONFIG)
 
 dedupe:
-	$(PYTHON) $(SCRIPTS)/dedupe.py --config $(CONFIG)
+	$(PYTHON) -m scripts.dedupe --config $(CONFIG)
 
 enrich:
-	$(PYTHON) $(SCRIPTS)/enrich.py --config $(CONFIG)
+	$(PYTHON) -m scripts.enrich --config $(CONFIG)
 
 vectorize:
-	$(PYTHON) $(SCRIPTS)/vectorize.py --config $(CONFIG)
+	$(PYTHON) -m scripts.vectorize --config $(CONFIG)
 
 review-queue:
-	$(PYTHON) $(SCRIPTS)/review_queue.py --config $(CONFIG)
+	$(PYTHON) -m scripts.review_queue --config $(CONFIG)
 
 license-audit:
-	$(PYTHON) $(SCRIPTS)/license_audit.py --config $(CONFIG)
+	$(PYTHON) -m scripts.license_audit --config $(CONFIG)
 
 # Full foundation pipeline. Each stage depends on the previous.
 foundation: ingest merge dedupe enrich vectorize
