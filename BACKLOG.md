@@ -2963,3 +2963,64 @@ Out of scope (filed elsewhere): hero asset polish + per-section illustrations �
 
 ---
 
+## Data Layer (D-tickets)
+
+### D-001 — Step 0 scaffolding ✅ DONE
+Delivered: Makefile, sql/001_schema.sql, scripts/common.py, ingestion
+framework (base.py), 2 full parsers (universal_cefr.py, lexique3.py),
+5 skeleton parsers, enrichment runner, vectorize, review/audit.
+Location: data-layer/
+Reference: data-layer/README.md
+
+### D-002 — Environment setup
+Status: READY TO RUN
+Action: cd data-layer && make setup
+
+### D-003 — Apply schema
+Status: BLOCKED by D-002
+Action: make schema
+
+### D-004 — Capture decisions
+Status: BLOCKED by D-002
+Action: make decide
+
+### D-010 — Implement PARSEME ingestion
+Status: READY (parallel)
+File: data-layer/scripts/ingest/parseme.py
+
+### D-011 — Implement CollFrEn ingestion
+Status: READY (parallel)
+File: data-layer/scripts/ingest/collfren.py
+
+### D-012 — Implement DBnary ingestion
+Status: READY (parallel)
+File: data-layer/scripts/ingest/dbnary.py
+
+### D-013 — Implement Anki ingestion
+Status: READY (parallel)
+File: data-layer/scripts/ingest/anki.py
+
+### D-014 — Validate Tatoeba example-attachment
+Status: READY (parallel)
+File: data-layer/scripts/ingest/tatoeba.py
+
+### D-020 — Run ingest pipeline
+Status: BLOCKED by D-010..D-014
+Action: make ingest (~12h unattended)
+
+### D-021 — Run enrich pipeline
+Status: BLOCKED by D-020
+Action: make enrich (1d GPU or 1wk CPU)
+
+### D-022 — Run vectorize pipeline
+Status: BLOCKED by D-021
+Action: make vectorize (~24h)
+
+### D-030 — Review queue (500 chunks)
+Status: BLOCKED by D-022
+Action: make review-queue + human review ~6h
+
+### D-031 — License audit
+Status: BLOCKED by D-030
+Action: make license-audit + manual sign-off
+
