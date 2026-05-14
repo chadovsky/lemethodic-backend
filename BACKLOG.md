@@ -3001,8 +3001,9 @@ Status: READY (parallel)
 File: data-layer/scripts/ingest/anki.py
 
 ### D-014 — Validate Tatoeba example-attachment
-Status: READY (parallel)
+Status: ✅ DONE
 File: data-layer/scripts/ingest/tatoeba.py
+Summary: validated 8/8 attachments on 5 sample chunks; fixed punctuation-stripping bug in tokenizer; profiled n-gram lookup at 200k×21k scale (21.6s) → prefix tree not warranted, DB insert is the real bottleneck.
 
 ### D-020 — Run ingest pipeline
 Status: BLOCKED by D-010..D-014

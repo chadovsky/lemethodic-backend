@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import bz2
 import csv
+import re
 import shutil
 import tarfile
 from pathlib import Path
@@ -29,6 +30,19 @@ from sqlalchemy import text
 SENTENCES_URL = "https://downloads.tatoeba.org/exports/per_language/fra/fra_sentences.tsv.bz2"
 LINKS_URL = "https://downloads.tatoeba.org/exports/links.tar.bz2"
 ENG_SENTENCES_URL = "https://downloads.tatoeba.org/exports/per_language/eng/eng_sentences.tsv.bz2"
+
+# Strip leading/trailing punctuation while preserving in-word apostrophes
+# and hyphens (so "n'est", "vas-tu" survive intact but "bonjour," → "bonjour").
+_TOKEN_STRIP_RE = re.compile(r"^[^\w]+|[^\w]+$", re.UNICODE)
+
+
+def _tokenize_for_ngrams(normalized_text: str) -> list[str]:
+    out = []
+    for tok in normalized_text.split():
+        tok = _TOKEN_STRIP_RE.sub("", tok)
+        if tok:
+            out.append(tok)
+    return out
 
 
 class TatoebaIngester(Ingester):
@@ -96,10 +110,20 @@ class TatoebaIngester(Ingester):
         with db_session() as session:
             # Pre-load chunk normalized_surfaces → ids for fast lookup
             chunk_map: dict[str, int] = {}
+            max_chunk_tokens = 1
             for row in session.execute(text("SELECT id, normalized_surface FROM chunks WHERE language = 'fr'")):
                 chunk_map[row.normalized_surface] = row.id
-            self.log.info(f"  {len(chunk_map)} candidate FR chunks loaded")
+                tok_count = row.normalized_surface.count(" ") + 1
+                if tok_count > max_chunk_tokens:
+                    max_chunk_tokens = tok_count
+            self.log.info(f"  {len(chunk_map)} candidate FR chunks loaded (max {max_chunk_tokens} tokens)")
 
+            # Per-FR-sentence n-gram hash lookup: O(L * max_n) per sentence,
+            # so total cost is O(total_tokens * max_n) — independent of chunk
+            # count. With 30k chunks × 200k FR-EN pairs × ~10 tokens × max_n=5
+            # that's ~10M dict lookups, ~10 s. The DB INSERT (one per match
+            # with a WHERE NOT EXISTS dedup probe) dominates wall time, not
+            # the lookup — a prefix tree would not move the needle.
             counter = 0
             with open(self.links_path, "r", encoding="utf-8") as f:
                 for row in csv.reader(f, delimiter="\t"):
@@ -111,22 +135,12 @@ class TatoebaIngester(Ingester):
                     fr_text = fr_sentences[src_id]
                     en_text = en_sentences[tgt_id]
 
-                    # TODO: this naive containment match is the bottleneck.
-                    # Consider using spaCy parse to extract candidate chunks
-                    # from the FR sentence, then lookup. For now: scan chunks
-                    # whose normalized surface appears in the normalized
-                    # sentence. With 30k chunks and 200k FR-EN pairs this
-                    # is O(6B) string comparisons — far too slow.
-                    #
-                    # Practical approach: invert. For each FR sentence,
-                    # tokenize and lookup n-grams (1–5 words) against the
-                    # chunk_map keys (which are normalized).
                     normalized_fr = normalize_surface(fr_text)
-                    tokens = normalized_fr.split()
+                    tokens = _tokenize_for_ngrams(normalized_fr)
                     matched_ids: set[int] = set()
-                    for n in (1, 2, 3, 4, 5):
+                    for n in range(1, max_chunk_tokens + 1):
                         for i in range(len(tokens) - n + 1):
-                            ngram = " ".join(tokens[i:i+n])
+                            ngram = " ".join(tokens[i:i + n])
                             cid = chunk_map.get(ngram)
                             if cid:
                                 matched_ids.add(cid)
