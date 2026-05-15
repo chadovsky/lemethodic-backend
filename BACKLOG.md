@@ -2997,7 +2997,7 @@ Delivered: openpyxl reader for `FR_disambiguated_SyntagmaticLF_v1b.xlsx` that pa
 ### D-012 — Implement DBnary ingestion ✅ DONE
 Status: ✅ DONE
 File: data-layer/scripts/ingest/dbnary.py
-Delivered: streaming Turtle parser (quote-aware subject-block splitter + per-block rdflib parse + cross-subject reference caches) that emits chunks with surface_fr, pos_pattern, English translations, and FR examples — avoids the multi-GB OOM of naive `rdflib.Graph().parse()`.
+Delivered: streaming Turtle parser (quote-aware subject-block splitter + per-block rdflib parse + cross-subject reference caches) that emits chunks with surface_fr, pos_pattern, English translations, and FR examples — avoids the multi-GB OOM of naive `rdflib.Graph().parse()`. (Initial implementation shipped only smoke-tested against synthetic Turtle; the real-corpus follow-up is D-022, which made the parser actually emit chunks against the live `fr_dbnary_ontolex.ttl` dump.)
 
 ### D-013 — Implement Anki ingestion ✅ DONE
 Status: DONE (2026-05-15)
@@ -3017,12 +3017,19 @@ Action: make ingest (~12h unattended)
 Status: BLOCKED by D-020
 Action: make enrich (1d GPU or 1wk CPU)
 
-### D-022 — Run vectorize pipeline
-Status: BLOCKED by D-021
-Action: make vectorize (~24h)
+### D-022 — Debug DBnary ingestion (real-corpus streaming) ✅ DONE
+Status: ✅ DONE (2026-05-15)
+File: data-layer/scripts/ingest/dbnary.py
+Bug: prior D-012 implementation only ever ran against a synthetic-Turtle smoke fixture. Against the real 1.2 GB `fr_dbnary_ontolex.ttl` dump it consumed 27 minutes of CPU and yielded zero chunks. Three root causes:
+1. **No incremental yield.** `parse_dbnary_stream` accumulated every entry into a dict and only emitted chunks in a final post-EOF loop. At ~35s per 100k lines (×255 for the full file ≈ 2.5h), the run never reached the yield phase before being killed.
+2. **English-translation linking broken.** Real DBnary points `dbnary:isTranslationOf` at the *entry* URI (e.g. `fra:accueil__nom__1`), not at a sense URI as the synthetic fixture assumed — so `_resolve_english_translation` matched zero translations and `surface_en` would have been null on every chunk anyway.
+3. **Blank-node definitions/examples leaked bnode IDs as text.** Real DBnary wraps `skos:definition` / `skos:example` in `[ rdf:value "..."@fr ]` blank nodes; the parser stored `str(bnode)` (e.g. `'na868ce4a10f145b0af72e4ef7055ecfeb1'`) instead of resolving via `rdf:value`.
+Fix: streaming flush keyed on lemma-group boundaries — when a new `LexicalEntry` subject appears, the previous entry is built into a chunk and its referenced forms/senses/translations are dropped from the caches. Bnode `rdf:value` resolution pre-pass per block. `_resolve_english_translation` now matches both entry-URI and sense-URI translation sources. POS no longer overwritten with `None` when `dbnary:partOfSpeech` succeeds `lexinfo:partOfSpeech`. `_block_is_interesting` short-circuits non-English `dbnary:Translation` blocks (≈95% of all triples) → ~6× parser speedup. Periodic `log.info` every 50k blocks shows pending entries + cache sizes so future regressions surface immediately. Peak tracked memory bounded at ~23 MB across the full run.
+Delivered: 487,590 DBnary chunks in `chunks` (`chunk_sources.source_name='DBnary'`); 119,946 with `surface_en` populated; 639,142 example sentences in `chunk_examples`. Idempotent on re-run (ON CONFLICT upsert). Diagnostic + smoke harnesses retained as `data-layer/tests/diagnose_dbnary.py` and `data-layer/tests/smoke_dbnary_slice.py` against a committed 5k-line slice fixture.
+Follow-up: `D-023 — Run vectorize pipeline` (`make vectorize`, ~24h) is now unblocked.
 
 ### D-030 — Review queue (500 chunks)
-Status: BLOCKED by D-022
+Status: BLOCKED by D-023 (vectorize pipeline)
 Action: make review-queue + human review ~6h
 
 ### D-031 — License audit
