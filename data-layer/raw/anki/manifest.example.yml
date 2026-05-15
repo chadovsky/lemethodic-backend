@@ -1,0 +1,90 @@
+# Anki deck manifest
+# -------------------------------------------------------------------
+# Each .apkg in this directory must be declared here so the ingester
+# knows how to map Anki note fields onto chunk records.
+#
+# Copy this file to manifest.yml (same directory) before running:
+#   python -m scripts.ingest.anki --config config.yml
+#
+# Per-deck keys
+# -------------
+#   file              (required) Path of the .apkg relative to this dir.
+#   name              (required) Human-readable label for logs.
+#   cefr_level        (optional) A1 | A2 | B1 | B2 | C1 | C2.
+#                                Stamped on every chunk emitted by this deck.
+#                                For frequency-ranked vocab decks that span
+#                                multiple levels, pick a coarse midpoint and
+#                                let enrichment (D-021) refine.
+#   field_order       (optional) Deck-level fallback list of field slot names,
+#                                used when a note's model isn't listed in
+#                                `models:` below. Use `[fr, en]` for simple
+#                                single-model decks; omit for multi-model
+#                                decks where every note type is enumerated.
+#   models            (optional) Dict mapping note-model name -> per-model
+#                                config. Required when one .apkg bundles
+#                                several note types with different field
+#                                layouts (very common on AnkiWeb). Models
+#                                not listed AND with no deck-level
+#                                `field_order` fallback are skipped — the
+#                                ingester logs how many notes per model are
+#                                skipped vs. emitted.
+#   field_separator   (optional) Defaults to "" (ASCII Unit Separator,
+#                                Anki's standard between-fields delimiter).
+#                                Override only for decks repacked with a
+#                                non-standard separator.
+#   license           (optional, free-form) Per-deck license note.
+#                                AnkiWeb shared decks are individually
+#                                contributed — capture the original author's
+#                                terms here for the license audit (D-031).
+#
+# field_order semantics
+# ---------------------
+# `field_order` is a positional list. The slot named `fr` becomes
+# `surface_fr` (required, non-empty after HTML strip — empty rows skipped);
+# the slot named `en` (if present) becomes `surface_en`. Any other slot name
+# (`ipa`, `audio`, `notes`, ...) is ignored. Use `_` (or `null`) as a slot
+# placeholder to skip a position, e.g. `[fr, _, _, _, _, en]` for a deck
+# where field 0 is the French word and field 5 is the English gloss.
+#
+# Inspecting a deck before mapping
+# --------------------------------
+# .apkg is a zip; collection.anki2 (or collection.anki21) inside is SQLite.
+# To list the model names + field order for a deck:
+#   python -c "import sqlite3, zipfile, json, tempfile, pathlib; \
+#     ap = 'raw/anki/your_deck.apkg'; td = tempfile.mkdtemp(); \
+#     zipfile.ZipFile(ap).extractall(td); \
+#     c = sqlite3.connect(pathlib.Path(td)/'collection.anki2'); \
+#     models = json.loads(c.execute('SELECT models FROM col').fetchone()[0]); \
+#     [print(m['name'], '->', [f['name'] for f in m['flds']]) for m in models.values()]"
+#
+# HTML / Anki markup is stripped automatically (tags, &entities;,
+# [sound:...] / [image:...] markers, {{c1::cloze}}, <style>/<script> blocks).
+
+decks:
+  # Example 1 — simple single-model deck.
+  - file: my_b2_vocab.apkg
+    name: My B2 vocab
+    cefr_level: B2
+    field_order: [fr, en]
+    license: "Author-credited shared deck (AnkiWeb). Verify before commercial use."
+
+  # Example 2 — multi-model deck (common on AnkiWeb where one .apkg packages
+  # multiple note types). Each model gets its own field_order; unlisted
+  # models are skipped.
+  # - file: french_5000_words.apkg
+  #   name: 5000 French Words
+  #   cefr_level: B1
+  #   models:
+  #     "5000 French Words 2.0 (F to E)":
+  #       field_order: [fr, _, _, _, _, en]   # Word, Article, Idx, IPA, Decl, Meanings
+  #     "5000 French Words 2.0 (E to F)":
+  #       field_order: [fr, _, _, _, _, en]
+  #     "Basic":
+  #       field_order: [fr, en]               # Front, Back
+
+  # Example 3 — deck repacked with a custom separator (rare).
+  # - file: weird_legacy_deck.apkg
+  #   name: Legacy deck (custom sep)
+  #   cefr_level: B1
+  #   field_order: [fr, en]
+  #   field_separator: "|"

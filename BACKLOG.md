@@ -2996,9 +2996,10 @@ File: data-layer/scripts/ingest/collfren.py
 Status: READY (parallel)
 File: data-layer/scripts/ingest/dbnary.py
 
-### D-013 — Implement Anki ingestion
-Status: READY (parallel)
+### D-013 — Implement Anki ingestion ✅ DONE
+Status: DONE (2026-05-15)
 File: data-layer/scripts/ingest/anki.py
+Summary: per-model field-order dispatch over multi-model .apkg decks (one .apkg may bundle 17 note types); robust HTML/cloze/entity/style stripping; validated end-to-end against two AnkiWeb decks (~5k unique B1 chunks ingested, idempotent on re-run).
 
 ### D-014 — Validate Tatoeba example-attachment
 Status: READY (parallel)

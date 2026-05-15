@@ -10,11 +10,14 @@ config in raw/anki/manifest.yml.
 
 from __future__ import annotations
 
+import html
 import json
+import re
 import sqlite3
 import zipfile
+from collections import Counter
 from pathlib import Path
-from typing import Iterator
+from typing import Iterator, Optional
 
 import click
 import yaml
@@ -26,6 +29,13 @@ class AnkiIngester(Ingester):
     source_name = "AnkiWeb"
     source_version = "user_curated"
     batch_size = 200
+
+    def __init__(self) -> None:
+        super().__init__()
+        # Override Ingester's derived raw_dir (raw/ankiweb/) to match the
+        # documented drop path (raw/anki/) used throughout this module.
+        self.raw_dir = Path(self.cfg["data"]["raw_dir"]) / "anki"
+        self.raw_dir.mkdir(parents=True, exist_ok=True)
 
     def download(self) -> None:
         # User manually downloads .apkg files to raw/anki/ before running.
@@ -51,13 +61,11 @@ class AnkiIngester(Ingester):
             yield from self._iter_deck(apkg_path, deck_entry)
 
     def _iter_deck(self, apkg_path: Path, deck_entry: dict) -> Iterator[dict]:
-        # Extract the .apkg (it's a zip)
         extract_dir = self.raw_dir / apkg_path.stem
         extract_dir.mkdir(exist_ok=True)
         with zipfile.ZipFile(apkg_path, "r") as z:
             z.extractall(extract_dir)
 
-        # Open the Anki SQLite collection
         collection_path = extract_dir / "collection.anki2"
         if not collection_path.exists():
             self.log.warning(f"No collection.anki2 in {apkg_path}")
@@ -65,53 +73,109 @@ class AnkiIngester(Ingester):
 
         conn = sqlite3.connect(str(collection_path))
         try:
-            # Anki notes table: `flds` is the field content, separated by \x1f
-            rows = conn.execute("SELECT id, flds FROM notes").fetchall()
+            # col.models is a JSON blob mapping model_id -> model definition.
+            # We need the model name for each note so the manifest can map
+            # per-model field orderings (a single .apkg may bundle several
+            # note types, each with its own field layout).
+            models_json = conn.execute("SELECT models FROM col").fetchone()[0]
+            models = json.loads(models_json)
+            mid_to_name = {int(mid): m.get("name", "") for mid, m in models.items()}
+            rows = conn.execute("SELECT id, mid, flds FROM notes").fetchall()
         finally:
             conn.close()
 
-        self.log.info(f"  {len(rows)} notes in deck")
+        self.log.info(f"  {len(rows)} notes across {len(mid_to_name)} model(s)")
 
-        # Field mapping from manifest
-        # Example deck_entry:
-        # {
-        #   "file": "french_b2.apkg",
-        #   "name": "French B2",
-        #   "cefr_level": "B2",
-        #   "field_order": ["fr", "en", "ipa", "audio"],
-        #   "field_separator": "\x1f"
-        # }
-        field_order = deck_entry.get("field_order", ["fr", "en"])
         cefr_level = deck_entry.get("cefr_level")
         sep = deck_entry.get("field_separator", "\x1f")
+        per_model_cfg = deck_entry.get("models") or {}
+        default_field_order = deck_entry.get("field_order")
 
-        for _id, flds in rows:
-            parts = flds.split(sep)
-            mapped = dict(zip(field_order, parts))
+        skipped_by_model: Counter[str] = Counter()
+        emitted_by_model: Counter[str] = Counter()
 
-            fr = mapped.get("fr", "").strip()
-            if not fr:
+        for _id, mid, flds in rows:
+            model_name = mid_to_name.get(int(mid), "")
+            field_order = _resolve_field_order(
+                model_name, per_model_cfg, default_field_order
+            )
+            if field_order is None:
+                skipped_by_model[model_name] += 1
                 continue
 
-            # TODO: Strip HTML tags (Anki cards often have <div>, <br>, [sound:...]).
-            fr = _strip_html(fr)
-            en = _strip_html(mapped.get("en", ""))
+            mapped = _map_fields(flds.split(sep), field_order)
+            fr = _strip_html(mapped.get("fr", ""))
+            if not fr:
+                skipped_by_model[model_name] += 1
+                continue
+            en = _strip_html(mapped.get("en", "")) or None
 
+            emitted_by_model[model_name] += 1
             yield {
                 "surface_fr": fr,
-                "surface_en": en or None,
+                "surface_en": en,
                 "language": "fr",
                 "cefr_level": cefr_level,
                 "_examples": [],
             }
 
+        for name, n in emitted_by_model.most_common():
+            self.log.info(f"  emitted {n} from model {name!r}")
+        for name, n in skipped_by_model.most_common():
+            self.log.info(f"  skipped {n} from model {name!r} (no mapping or empty fr)")
+
+
+def _resolve_field_order(
+    model_name: str,
+    per_model_cfg: dict,
+    default_field_order: Optional[list],
+) -> Optional[list]:
+    """Return field_order for this model, or None if the model is unmapped.
+
+    Lookup order:
+      1. `models[<model_name>].field_order` (exact match)
+      2. deck-level `field_order` fallback
+      3. None -> skip
+    """
+    model_cfg = per_model_cfg.get(model_name)
+    if model_cfg and model_cfg.get("field_order"):
+        return model_cfg["field_order"]
+    return default_field_order
+
+
+def _map_fields(parts: list, field_order: list) -> dict:
+    """Map field-content slots onto named keys. `_` / null = skip slot."""
+    mapped: dict = {}
+    for slot_name, value in zip(field_order, parts):
+        if not slot_name or slot_name == "_":
+            continue
+        mapped[slot_name] = value
+    return mapped
+
+
+# Anki cards routinely embed: HTML tags, [sound:foo.mp3] / [image:bar.jpg] /
+# [type:fr] markers, {{c1::word::hint}} cloze syntax, named HTML entities
+# (&nbsp;, &amp;), <style>/<script> blocks with CSS or JS, and stray
+# whitespace from the template's <div> wrapping. The stripper handles all of
+# them so the resulting surface form is the bare French text.
+
+_RE_STYLE_SCRIPT = re.compile(r"<(style|script)\b[^>]*>.*?</\1\s*>", re.DOTALL | re.IGNORECASE)
+_RE_MEDIA_MARKER = re.compile(r"\[(?:sound|image|type|anki)[^]]*\]", re.IGNORECASE)
+_RE_CLOZE = re.compile(r"\{\{c\d+::(.*?)(?:::[^}]*)?\}\}", re.DOTALL)
+_RE_TAG = re.compile(r"<[^>]+>")
+_RE_WS = re.compile(r"\s+")
+
 
 def _strip_html(text: str) -> str:
-    """Strip HTML tags and Anki-specific markup."""
-    import re
-    text = re.sub(r"\[sound:[^\]]+\]", "", text)
-    text = re.sub(r"<[^>]+>", "", text)
-    return text.strip()
+    """Strip HTML tags, Anki-specific markup, and collapse whitespace."""
+    if not text:
+        return ""
+    text = _RE_STYLE_SCRIPT.sub(" ", text)
+    text = _RE_MEDIA_MARKER.sub(" ", text)
+    text = _RE_CLOZE.sub(r"\1", text)
+    text = _RE_TAG.sub(" ", text)
+    text = html.unescape(text)
+    return _RE_WS.sub(" ", text).strip()
 
 
 @click.command()
