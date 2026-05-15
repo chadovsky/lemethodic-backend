@@ -3021,6 +3021,23 @@ Action: make enrich (1d GPU or 1wk CPU)
 Status: BLOCKED by D-021
 Action: make vectorize (~24h)
 
+### D-024 — Implement literary / academic French ingester (DALF C1/C2 corpus) ✅ DONE
+Status: ✅ DONE (2026-05-15)
+File: data-layer/scripts/ingest/literary_fr.py
+Goal: seed the C-level vocabulary tier with literary noun-phrase / multi-word-expression chunks for DALF C1/C2 prep. Three sub-sources sharing one spaCy `fr_core_news_lg` extractor (3-15-token noun_chunk + amod-tail expansion + first-`nmod` PP graft):
+- **Project Gutenberg FR** (PD post-1850): 16/17 curated works (Hugo / Flaubert / Maupassant / Zola — Flaubert *L'Éducation sentimentale* #12723 404'd; Balzac / Stendhal intentionally excluded as their oeuvres pre-date the 1850 cutoff). source_name `Gutenberg_FR`.
+- **HuggingFace UniversalCEFR** (`kwiqiz_fr` + `readme_fr`, FR-only datasets discovered via `huggingface_hub.list_datasets(author='UniversalCEFR')` — the existing `universal_cefr.py` was looking for the non-existent `cefr_sp_fr`). Filters to `cefr_level in (C1, C2)`; license CC-BY-NC-4.0 / CC-BY-SA-NC-4.0. source_name `UniversalCEFR` (same bucket; provenance distinguished by `source_version='kwiqiz+readme-c-level'`).
+- **French Wikipedia** (`Catégorie:Article de qualité` + `Catégorie:Bon article` via the MediaWiki API, 597 vetted titles). source_name `Wikipedia_FR_Quality`, license CC-BY-SA-3.0.
+
+Heuristic-removal correction (mid-implementation): the first Gutenberg sweep auto-tagged every extracted phrase as `cefr_level='C1'`; DB diagnostic against the resulting 66,872 rows showed A1 vocabulary like *homme* / *eau* / *vivre* polluting the C1 bucket. Fix: only propagate `cefr_level` when the source itself labels each row's level (UniversalCEFR carries per-row `cefr_level`; Gutenberg + Wikipedia land with `cefr_level=NULL`). Per-chunk levels are now D-021 enrichment's job. The bad C1 labels were stripped in-place via `UPDATE chunks SET cefr_level=NULL WHERE id IN (SELECT chunk_id FROM chunk_sources WHERE source_name='Gutenberg_FR')`. Residual C1/C2-tagged Gutenberg chunks (76 C1 + 5 C2 in spot-check) come from cross-source dedup with UniversalCEFR rows that carry the explicit label — the COALESCE upsert preserves the explicit level.
+
+Delivered chunk counts (2026-05-15 post-revision):
+- `Gutenberg_FR`: 66,872 chunks, all `cefr_level=NULL` (apart from the cross-source overlaps above).
+- `UniversalCEFR` (this run): 4,244 chunks total, 2,500 at C1 + 565 at C2 (source-explicit) — clears the 2,000+ C1 / 500+ C2 ticket target.
+- `Wikipedia_FR_Quality`: 250,542 chunks at the time the BACKLOG entry was written (the per-article phrase pass was still running into a long deduplication tail past that snapshot — re-running is idempotent), all `cefr_level=NULL` (Groq enrichment will score per chunk).
+
+Constraints honoured: pre-1850 works skipped (Balzac / Stendhal corpus filtered out), no modern copyrighted literature, `HF_TOKEN` env var honoured for gated datasets, polite MediaWiki polling (UA + 0.4 s/request, max 300 titles per category).
+
 ### D-030 — Review queue (500 chunks)
 Status: BLOCKED by D-022
 Action: make review-queue + human review ~6h
