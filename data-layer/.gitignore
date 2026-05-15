@@ -1,8 +1,11 @@
 # Personal config (DB credentials, API keys, decisions)
 config.yml
 
-# Downloaded sources and processed artifacts
-raw/
+# Downloaded sources and processed artifacts.
+# `raw/` itself is allowed (so per-source dirs + manifest examples can be
+# committed); only the actual downloaded payloads inside it are ignored.
+raw/*/*
+!raw/*/manifest.example.yml
 processed/
 logs/
 
