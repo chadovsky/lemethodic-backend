@@ -2989,9 +2989,10 @@ Status: ✅ DONE
 File: data-layer/scripts/ingest/parseme.py
 Delivered: .cupt parser that groups tokens by MWE id and yields one chunk per MWE, handles discontinuous spans by sentence-order concatenation, skips multi-word token ranges (`1-2`) and empty nodes (`1.1`), preserves the MWE type across continuation entries, drops 1-token spurious groups, and maps all 8 PARSEME categories (VID/IRV/LVC.*/VPC.*/MVC/IAV) to chunk_type. Verified end-to-end against a synthetic 1,066-row .cupt fixture (`tests/generate_parseme_fixture.py`) — 261 distinct chunks landed in `chunks` across 5 chunk_types; idempotent on re-run. Live gitlab.com clone is auth-blocked; ops to re-run against the real corpus once credentials are provisioned.
 
-### D-011 — Implement CollFrEn ingestion
-Status: READY (parallel)
+### D-011 — Implement CollFrEn ingestion ✅ DONE
+Status: ✅ DONE
 File: data-layer/scripts/ingest/collfren.py
+Delivered: openpyxl reader for `FR_disambiguated_SyntagmaticLF_v1b.xlsx` that pairs KEYWORD/VALUE into bilingual FR-EN collocation chunks (6,627 rows ingested), strips `_..._` and `[…]` annotation markers, and uses the postposed-`~` subcategorisation column to decide value-first vs. keyword-first surface order. Lexical function stored in `pos_pattern`; rerun is idempotent.
 
 ### D-012 — Implement DBnary ingestion ✅ DONE
 Status: ✅ DONE
