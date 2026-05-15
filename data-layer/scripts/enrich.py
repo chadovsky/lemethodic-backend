@@ -17,6 +17,7 @@ With vLLM on a rented GPU it completes overnight.
 from __future__ import annotations
 
 import json
+import os
 import time
 from pathlib import Path
 from typing import Iterator, Optional
@@ -31,6 +32,31 @@ from scripts.common import db_session, get_engine, load_config, setup_logger
 
 console = Console()
 
+
+def _load_dotenv(path: Path) -> None:
+    """Populate os.environ from a .env file. Uses python-dotenv if available,
+    otherwise a minimal KEY=VALUE parser. Existing env vars win."""
+    if not path.exists():
+        return
+    try:
+        from dotenv import load_dotenv  # type: ignore
+        load_dotenv(dotenv_path=str(path), override=False)
+        return
+    except ImportError:
+        pass
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, value = line.partition("=")
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
+_load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
 ENRICHMENT_TYPES = ("topic", "quebec_variant", "register", "examples")
 
 PROMPT_PATHS = {
@@ -42,19 +68,30 @@ PROMPT_PATHS = {
 
 
 class LLMClient:
-    """Provider-agnostic LLM client. Currently supports Ollama; vLLM stub."""
+    """Provider-agnostic LLM client. Supports Ollama, vLLM, and Groq."""
+
+    GROQ_BACKOFF_SCHEDULE = (1, 2, 4, 8, 16, 32, 60)
 
     def __init__(self, cfg: dict, log) -> None:
         self.provider = cfg["llm"]["provider"]
         self.model = cfg["llm"]["model"]
         self.endpoint = cfg["llm"]["endpoint"].rstrip("/")
         self.log = log
+        self._groq_api_key: Optional[str] = None
+        if self.provider == "groq":
+            self._groq_api_key = os.environ.get("GROQ_API_KEY")
+            if not self._groq_api_key:
+                raise RuntimeError(
+                    "GROQ_API_KEY not set. Add it to data-layer/.env."
+                )
 
     def generate(self, prompt: str, timeout: int = 60) -> str:
         if self.provider == "ollama":
             return self._ollama_generate(prompt, timeout)
         elif self.provider == "vllm":
             return self._vllm_generate(prompt, timeout)
+        elif self.provider == "groq":
+            return self._groq_generate(prompt, timeout)
         raise ValueError(f"Unknown provider: {self.provider}")
 
     def _ollama_generate(self, prompt: str, timeout: int) -> str:
@@ -87,6 +124,51 @@ class LLMClient:
         )
         r.raise_for_status()
         return r.json()["choices"][0]["message"]["content"]
+
+    def _groq_generate(self, prompt: str, timeout: int) -> str:
+        """Groq Chat Completions (OpenAI-compatible). Retries on HTTP 429
+        with exponential backoff (1, 2, 4, 8, 16, 32, 60 s)."""
+        url = f"{self.endpoint}/chat/completions"
+        headers = {
+            "Authorization": f"Bearer {self._groq_api_key}",
+            "Content-Type": "application/json",
+        }
+        payload = {
+            "model": self.model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": 0.2,
+            "max_tokens": 800,
+            "response_format": {"type": "json_object"},
+        }
+        last_err: Optional[Exception] = None
+        for attempt, delay in enumerate(self.GROQ_BACKOFF_SCHEDULE, start=1):
+            try:
+                r = requests.post(url, json=payload, headers=headers, timeout=timeout)
+            except requests.RequestException as e:
+                last_err = e
+                self.log.warning(
+                    f"Groq request error (attempt {attempt}): {e}; retrying in {delay}s"
+                )
+                time.sleep(delay)
+                continue
+            if r.status_code == 429:
+                retry_after = r.headers.get("Retry-After")
+                wait = delay
+                if retry_after:
+                    try:
+                        wait = max(delay, int(float(retry_after)))
+                    except ValueError:
+                        pass
+                self.log.warning(
+                    f"Groq 429 rate-limited (attempt {attempt}); retrying in {wait}s"
+                )
+                time.sleep(wait)
+                continue
+            r.raise_for_status()
+            return r.json()["choices"][0]["message"]["content"]
+        if last_err is not None:
+            raise last_err
+        raise requests.HTTPError("Groq: exhausted retries on 429 rate-limit responses")
 
 
 def load_prompts() -> dict[str, str]:

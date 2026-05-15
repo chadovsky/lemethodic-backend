@@ -3028,6 +3028,7 @@ Scaffolded `data-layer/`: Makefile, `sql/001_schema.sql`, `scripts/common.py`, i
 ### D-020 — Run ingest pipeline 🟡 IN PROGRESS
 Status: IN PROGRESS — split by source. `make ingest` is no longer a single unattended run; each source has its own state because of corpus-availability + parser-debug surface area.
 
+ docs/backlog-may15
 | Source | Status | Notes |
 |---|---|---|
 | PARSEME | ✅ | 8,196 chunks (post synthetic-fixture cleanup; from `gitlab.com/parseme/sharedtask-data 1.2/FR` — see NOTES 1 + 3) |
@@ -3047,11 +3048,27 @@ Agent on `d-022/dbnary-debug`. Replaces the original "run vectorize pipeline" pl
 ### D-023 — Wikipedia FR cultural ingester 🟡 IN PROGRESS
 Agent on `d-023/wikipedia-fr-cultural`. Targets DELF + AP coverage (cultural reference base — French-canonical articles, register-rich prose). Source survey + parser scaffold in flight.
 
+### D-021 — Groq LLM provider for enrichment ✅ DONE
+Status: DONE (2026-05-15)
+File: data-layer/scripts/enrich.py, data-layer/scripts/test_groq.py, data-layer/config.example.yml
+Summary: Added "groq" provider to `LLMClient` via Groq's OpenAI-compatible Chat Completions endpoint (`https://api.groq.com/openai/v1/chat/completions`) with `Authorization: Bearer` from `GROQ_API_KEY` (loaded from `data-layer/.env` via python-dotenv with a no-dep fallback parser). Rate-limit handling: HTTP 429 triggers exponential backoff (1, 2, 4, 8, 16, 32, 60 s; honours `Retry-After` header when present) with retry logging. `config.yml` / `config.example.yml` switched to `provider: groq`, `model: llama-3.3-70b-versatile`; Ollama config kept inline as commented fallback. Smoke-tested via `python -m scripts.test_groq` (translates "bonjour" → "hello"); pipeline run itself (`make enrich`) still pending under D-021.run.
+
+### D-021.run — Run enrich pipeline
+Status: BLOCKED by D-020
+Action: make enrich (cloud LLM via Groq per D-021)
+master
+
 ### D-024 — DALF C1/C2 literary ingester 🟡 IN PROGRESS
 Agent on `d-024/dalf-c-level`. Literary-register source for C1/C2 — feeds the DALF exam variant (see E-003).
 
 ### D-025 — Naturalisation source research 🟡 IN PROGRESS
 Agent on `d-025/naturalisation-research`. Source-survey only — identifying licensable corpora for the FR-naturalisation exam variant (E-004). No parser yet.
+
+### D-023 — Wikipedia FR cultural ingestion ✅ DONE
+Status: ✅ DONE (2026-05-15)
+Branch: d-023/wikipedia-fr-cultural
+File: data-layer/scripts/ingest/wikipedia_fr.py
+Summary: French Wikipedia article ingester for cultural / civilizational chunks unlocking DELF (European cultural content) + AP French (Franco-anglophone overlap). MediaWiki action API: per top-level category, BFS depth-1 collects up to 350 page titles via `list=categorymembers` (cmtype=page→subcat fallback), then bulk `prop=extracts|pageprops` (20 titles/call) fetches lead extracts + disambiguation flags + follows redirects. Topic mapping: `culture-fr-europe` for Culture/Littérature/Cuisine/Société française; `culture-fr-anglo` for Histoire/Personnalités/Géographie de la France (first category to claim a title wins on cross-category dedup). Filters: skips disambiguation pages and stubs (lead < 100 chars). Politeness: 1 req/s floor + descriptive User-Agent (Wikipedia API policy); per-category title lists + per-title summaries cache to JSON under raw/wikipediafr/ → re-runs hit zero network. Override `_upsert_row` attaches topic_codes via merge UPDATE (idempotent across re-runs). Result: **1,877 chunks** ingested across both topic codes (1,244 culture-fr-europe / 633 culture-fr-anglo), 1,877 lead-extract examples linked, source_version=2026-05-15, source_license=CC-BY-SA (recorded in chunk_sources for D-031 audit).
 
 ### D-030 — Review queue (500 chunks)
 Status: BLOCKED downstream (waits on D-020 sources completing + D-021 enrichment + a vectorize pass).

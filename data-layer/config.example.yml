@@ -17,16 +17,19 @@ languages:
   others: ["en", "es", "pt", "ar"]
 
 llm:
-  # Provider: 'ollama' (no GPU needed, slow) or 'vllm' (GPU required, fast).
-  provider: "ollama"
-  # Model: 'qwen2.5:7b-instruct' or 'mistral-small:24b-instruct' (better French, larger)
-  model: "qwen2.5:7b-instruct"
-  # Endpoint (default Ollama local)
-  endpoint: "http://localhost:11434"
+  # Provider: 'groq' (cloud, fast, free tier), 'ollama' (local CPU, slow), or 'vllm' (GPU required).
+  # GROQ_API_KEY must be present in data-layer/.env when provider = 'groq'.
+  provider: "groq"
+  model: "llama-3.3-70b-versatile"
+  endpoint: "https://api.groq.com/openai/v1"
   # Batch size for enrichment
   batch_size: 16
-  # Max parallel requests (1 for Ollama; 32+ for vLLM)
+  # Max parallel requests
   concurrency: 1
+  # Ollama fallback (uncomment to use a local Ollama instance instead of Groq):
+  # provider: "ollama"
+  # model: "qwen2.5:7b-instruct"
+  # endpoint: "http://localhost:11434"
 
 embeddings:
   model: "intfloat/multilingual-e5-small"
