@@ -4,7 +4,8 @@
 .PHONY: help setup schema decide ingest merge dedupe enrich vectorize \
         review-queue license-audit foundation clean nuke \
         ingest-universal-cefr ingest-lexique3 ingest-parseme \
-        ingest-collfren ingest-dbnary ingest-anki ingest-tatoeba
+        ingest-collfren ingest-dbnary ingest-anki ingest-tatoeba \
+        ingest-wikipedia-fr
 
 PYTHON := python
 SCRIPTS := scripts
@@ -64,10 +65,14 @@ ingest-anki:
 ingest-tatoeba:
 	$(PYTHON) -m scripts.ingest.tatoeba --config $(CONFIG)
 
+ingest-wikipedia-fr:
+	$(PYTHON) -m scripts.ingest.wikipedia_fr --config $(CONFIG)
+
 # Run all ingestions in order. UniversalCEFR + Lexique3 first because
 # they seed the largest number of chunks; later sources enrich existing rows.
 ingest: ingest-universal-cefr ingest-lexique3 ingest-parseme \
-        ingest-collfren ingest-dbnary ingest-anki ingest-tatoeba
+        ingest-collfren ingest-dbnary ingest-anki ingest-tatoeba \
+        ingest-wikipedia-fr
 	@echo "[ingest] All sources complete."
 
 merge:

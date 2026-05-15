@@ -1,6 +1,6 @@
 # BACKLOG.md
 
-**Last updated:** 2026-05-02 (re-baseline pass + 5-decision follow-up).
+**Last updated:** 2026-05-15 (data-layer sweep — D-001..D-014 closed, D-020..D-025 in flight, Phase 2/3 placeholders added).
 **Phase 1 Architecture Rework** — see `lemethodic-frontend/LEMETHODIC-CURRICULUM.md` v0.2.
 
 Active and deferred work tracking. Tickets are organized by **Tag** —
@@ -11,6 +11,39 @@ slate in priority order; bodies live below.
 
 Re-runnable via `scripts/regen_backlog.py` — change classification
 constants there and regenerate.
+
+---
+
+## NOTES — Data Layer field findings (2026-05-15)
+
+Cross-cutting findings from the D-001..D-025 session. Captured here so future
+agents don't rediscover them the hard way.
+
+1. **PARSEME corpus pivot.** `gitlab.com/parseme/parseme_corpus_fr` does not
+   exist — the live data lives at `gitlab.com/parseme/sharedtask-data` under
+   `1.2/FR/`. The repo also gates anonymous clones in some regions. Workaround:
+   a fake `.git` directory under `data-layer/raw/parseme/fr/` so the auto-clone
+   step is skipped and the manually-fetched `.cupt` files are used in place.
+   8,196 chunks landed after the synthetic-fixture purge.
+
+2. **UniversalCEFR FR dataset.** Earlier agent assumption was that
+   `cefr_sp_fr` was the French slice — it is not. That dataset is English-only
+   (Arase 2022 EMNLP). The actual French resource is `readme_fr` (~1,670 rows).
+   Re-ingest after the swap delivered 1,336 French chunks.
+
+3. **Synthetic fixtures masquerading as real data.** PARSEME (D-010) and
+   Tatoeba (D-014) both shipped with synthetic fixtures wired into the live
+   ingest path, so early row counts were lying. Pattern to watch for: a
+   `tests/generate_*_fixture.py` whose output gets read by the production
+   parser. Fix in both cases was `DELETE FROM chunks WHERE source = '<src>'`
+   followed by a clean re-ingest against the real corpus.
+
+4. **Groq selected as the enrichment LLM.** Llama 3.3 70B via Groq's
+   OpenAI-compatible endpoint — chosen for cost + throughput vs. Claude for
+   the bulk-classification enrichment pass. API key stored in
+   `data-layer/.env` (gitignored). One key was briefly exposed during a
+   diagnostic dump and rotated post-exposure; rotation is captured in the
+   D-021 history.
 
 ---
 
@@ -2966,57 +2999,78 @@ Out of scope (filed elsewhere): hero asset polish + per-section illustrations �
 ## Data Layer (D-tickets)
 
 ### D-001 — Step 0 scaffolding ✅ DONE
-Delivered: Makefile, sql/001_schema.sql, scripts/common.py, ingestion
-framework (base.py), 2 full parsers (universal_cefr.py, lexique3.py),
-5 skeleton parsers, enrichment runner, vectorize, review/audit.
-Location: data-layer/
-Reference: data-layer/README.md
+Scaffolded `data-layer/`: Makefile, `sql/001_schema.sql`, `scripts/common.py`, ingestion framework (`base.py`), 2 full parsers + 5 skeletons, enrichment runner, vectorize, review/audit harness. Reference: `data-layer/README.md`.
 
-### D-002 — Environment setup
-Status: READY TO RUN
-Action: cd data-layer && make setup
+### D-002 — Environment setup ✅ DONE
+`docker-compose up -d` → pgvector/pgvector:pg16 container live on port 5432; `data-layer/.env` populated (DB URL + Groq key).
 
-### D-003 — Apply schema
-Status: BLOCKED by D-002
-Action: make schema
+### D-003 — Apply schema ✅ DONE
+`sql/001_schema.sql` applied via `make schema`; `chunks` table + ancillary tables created with pgvector extension enabled.
 
-### D-004 — Capture decisions
-Status: BLOCKED by D-002
-Action: make decide
+### D-004 — Capture decisions ✅ DONE
+`make decide` ran and persisted the corpus-source decision log (PARSEME / CollFrEn / DBnary / Anki / Lexique3 / UniversalCEFR / Tatoeba in scope) into the run artifacts.
 
 ### D-010 — Implement PARSEME ingestion ✅ DONE
-Status: ✅ DONE
-File: data-layer/scripts/ingest/parseme.py
-Delivered: .cupt parser that groups tokens by MWE id and yields one chunk per MWE, handles discontinuous spans by sentence-order concatenation, skips multi-word token ranges (`1-2`) and empty nodes (`1.1`), preserves the MWE type across continuation entries, drops 1-token spurious groups, and maps all 8 PARSEME categories (VID/IRV/LVC.*/VPC.*/MVC/IAV) to chunk_type. Verified end-to-end against a synthetic 1,066-row .cupt fixture (`tests/generate_parseme_fixture.py`) — 261 distinct chunks landed in `chunks` across 5 chunk_types; idempotent on re-run. Live gitlab.com clone is auth-blocked; ops to re-run against the real corpus once credentials are provisioned.
+`data-layer/scripts/ingest/parseme.py` — `.cupt` parser groups tokens by MWE id (one chunk per MWE), handles discontinuous spans, skips multi-word ranges + empty nodes, maps all 8 PARSEME categories (VID / IRV / LVC.* / VPC.* / MVC / IAV) to chunk_type. Live corpus pivot to `gitlab.com/parseme/sharedtask-data 1.2/FR` documented in NOTES (1).
 
 ### D-011 — Implement CollFrEn ingestion ✅ DONE
-Status: ✅ DONE
-File: data-layer/scripts/ingest/collfren.py
-Delivered: openpyxl reader for `FR_disambiguated_SyntagmaticLF_v1b.xlsx` that pairs KEYWORD/VALUE into bilingual FR-EN collocation chunks (6,627 rows ingested), strips `_..._` and `[…]` annotation markers, and uses the postposed-`~` subcategorisation column to decide value-first vs. keyword-first surface order. Lexical function stored in `pos_pattern`; rerun is idempotent.
+`data-layer/scripts/ingest/collfren.py` — openpyxl reader for `FR_disambiguated_SyntagmaticLF_v1b.xlsx` pairs KEYWORD/VALUE into bilingual FR-EN collocation chunks; strips `_..._` + `[…]` markers; uses postposed `~` subcategorisation column to order value-first vs. keyword-first.
 
 ### D-012 — Implement DBnary ingestion ✅ DONE
+ d-022/dbnary-debug
 Status: ✅ DONE
 File: data-layer/scripts/ingest/dbnary.py
 Delivered: streaming Turtle parser (quote-aware subject-block splitter + per-block rdflib parse + cross-subject reference caches) that emits chunks with surface_fr, pos_pattern, English translations, and FR examples — avoids the multi-GB OOM of naive `rdflib.Graph().parse()`. (Initial implementation shipped only smoke-tested against synthetic Turtle; the real-corpus follow-up is D-022, which made the parser actually emit chunks against the live `fr_dbnary_ontolex.ttl` dump.)
 
+`data-layer/scripts/ingest/dbnary.py` — streaming Turtle parser (quote-aware subject-block splitter + per-block rdflib parse + cross-subject reference caches) emitting surface_fr / pos_pattern / EN translations / FR examples; avoids multi-GB OOM of naive `rdflib.Graph().parse()`. (Debugging follow-on lives in D-022.)
+ master
+
 ### D-013 — Implement Anki ingestion ✅ DONE
+`data-layer/scripts/ingest/anki.py` — per-model field-order dispatch across multi-model `.apkg` decks (one deck may bundle 17 note types); HTML / cloze / entity / style stripping; validated against two AnkiWeb decks.
+
+### D-014 — Validate Tatoeba example-attachment ✅ DONE
+`data-layer/scripts/ingest/tatoeba.py` — validated 8/8 attachments on a 5-chunk sample; fixed punctuation-stripping bug in tokenizer; profiled n-gram lookup at 200k×21k (21.6s) → DB insert is the bottleneck, prefix-tree not warranted.
+
+### D-020 — Run ingest pipeline 🟡 IN PROGRESS
+Status: IN PROGRESS — split by source. `make ingest` is no longer a single unattended run; each source has its own state because of corpus-availability + parser-debug surface area.
+
+ docs/backlog-may15
+| Source | Status | Notes |
+|---|---|---|
+| PARSEME | ✅ | 8,196 chunks (post synthetic-fixture cleanup; from `gitlab.com/parseme/sharedtask-data 1.2/FR` — see NOTES 1 + 3) |
+| CollFrEn | ✅ | 6,627 chunks |
+| AnkiWeb | ✅ | 5,005 chunks |
+| Lexique3 | ✅ | 125,652 chunks |
+| UniversalCEFR | ✅ | 1,336 chunks (French only, post English cleanup — uses `readme_fr` not `cefr_sp_fr`; see NOTES 2) |
+| Tatoeba | ⏳ | in flight, ~728k+ examples attached and counting |
+| DBnary | ❌ | BLOCKED on D-022 debug agent |
+
+### D-021 — Groq enrichment integration 🟡 IN PROGRESS
+Agent on `d-021/groq-enrichment`. Replaces the original "run enrich pipeline" placeholder. Llama 3.3 70B via Groq's OpenAI-compatible endpoint; key in `data-layer/.env` (gitignored); rotation done post-exposure (see NOTES 4). Provider wiring shipped (`feat(D-021): add Groq LLM provider for enrichment`); WIP on universal_cefr enrichment path.
+
+### D-022 — DBnary parser debug 🟡 IN PROGRESS
+Agent on `d-022/dbnary-debug`. Replaces the original "run vectorize pipeline" placeholder. After streaming-parser fixes the parser currently produces ~944 rows / 72s on the diagnostic slice; smoke harness at `data-layer/tests/smoke_dbnary_slice.py` + `tests/diagnose_dbnary.py`. Unblocks the DBnary row in D-020.
+
+### D-023 — Wikipedia FR cultural ingester 🟡 IN PROGRESS
+Agent on `d-023/wikipedia-fr-cultural`. Targets DELF + AP coverage (cultural reference base — French-canonical articles, register-rich prose). Source survey + parser scaffold in flight.
+
+### D-021 — Groq LLM provider for enrichment ✅ DONE
 Status: DONE (2026-05-15)
-File: data-layer/scripts/ingest/anki.py
-Summary: per-model field-order dispatch over multi-model .apkg decks (one .apkg may bundle 17 note types); robust HTML/cloze/entity/style stripping; validated end-to-end against two AnkiWeb decks (~5k unique B1 chunks ingested, idempotent on re-run).
+File: data-layer/scripts/enrich.py, data-layer/scripts/test_groq.py, data-layer/config.example.yml
+Summary: Added "groq" provider to `LLMClient` via Groq's OpenAI-compatible Chat Completions endpoint (`https://api.groq.com/openai/v1/chat/completions`) with `Authorization: Bearer` from `GROQ_API_KEY` (loaded from `data-layer/.env` via python-dotenv with a no-dep fallback parser). Rate-limit handling: HTTP 429 triggers exponential backoff (1, 2, 4, 8, 16, 32, 60 s; honours `Retry-After` header when present) with retry logging. `config.yml` / `config.example.yml` switched to `provider: groq`, `model: llama-3.3-70b-versatile`; Ollama config kept inline as commented fallback. Smoke-tested via `python -m scripts.test_groq` (translates "bonjour" → "hello"); pipeline run itself (`make enrich`) still pending under D-021.run.
 
-### D-014 — Validate Tatoeba example-attachment
-Status: ✅ DONE
-File: data-layer/scripts/ingest/tatoeba.py
-Summary: validated 8/8 attachments on 5 sample chunks; fixed punctuation-stripping bug in tokenizer; profiled n-gram lookup at 200k×21k scale (21.6s) → prefix tree not warranted, DB insert is the real bottleneck.
-
-### D-020 — Run ingest pipeline
-Status: BLOCKED by D-010..D-014
-Action: make ingest (~12h unattended)
-
-### D-021 — Run enrich pipeline
+### D-021.run — Run enrich pipeline
 Status: BLOCKED by D-020
-Action: make enrich (1d GPU or 1wk CPU)
+Action: make enrich (cloud LLM via Groq per D-021)
+master
 
+### D-024 — DALF C1/C2 literary ingester 🟡 IN PROGRESS
+Agent on `d-024/dalf-c-level`. Literary-register source for C1/C2 — feeds the DALF exam variant (see E-003).
+
+### D-025 — Naturalisation source research 🟡 IN PROGRESS
+Agent on `d-025/naturalisation-research`. Source-survey only — identifying licensable corpora for the FR-naturalisation exam variant (E-004). No parser yet.
+
+ d-022/dbnary-debug
 ### D-022 — Debug DBnary ingestion (real-corpus streaming) ✅ DONE
 Status: ✅ DONE (2026-05-15)
 File: data-layer/scripts/ingest/dbnary.py
@@ -3032,7 +3086,64 @@ Follow-up: `D-023 — Run vectorize pipeline` (`make vectorize`, ~24h) is now un
 Status: BLOCKED by D-023 (vectorize pipeline)
 Action: make review-queue + human review ~6h
 
+### D-023 — Wikipedia FR cultural ingestion ✅ DONE
+Status: ✅ DONE (2026-05-15)
+Branch: d-023/wikipedia-fr-cultural
+File: data-layer/scripts/ingest/wikipedia_fr.py
+Summary: French Wikipedia article ingester for cultural / civilizational chunks unlocking DELF (European cultural content) + AP French (Franco-anglophone overlap). MediaWiki action API: per top-level category, BFS depth-1 collects up to 350 page titles via `list=categorymembers` (cmtype=page→subcat fallback), then bulk `prop=extracts|pageprops` (20 titles/call) fetches lead extracts + disambiguation flags + follows redirects. Topic mapping: `culture-fr-europe` for Culture/Littérature/Cuisine/Société française; `culture-fr-anglo` for Histoire/Personnalités/Géographie de la France (first category to claim a title wins on cross-category dedup). Filters: skips disambiguation pages and stubs (lead < 100 chars). Politeness: 1 req/s floor + descriptive User-Agent (Wikipedia API policy); per-category title lists + per-title summaries cache to JSON under raw/wikipediafr/ → re-runs hit zero network. Override `_upsert_row` attaches topic_codes via merge UPDATE (idempotent across re-runs). Result: **1,877 chunks** ingested across both topic codes (1,244 culture-fr-europe / 633 culture-fr-anglo), 1,877 lead-extract examples linked, source_version=2026-05-15, source_license=CC-BY-SA (recorded in chunk_sources for D-031 audit).
+
+### D-025 — Naturalisation source candidates (research) ✅ RESEARCH COMPLETE
+Status: ✅ RESEARCH COMPLETE (2026-05-15)
+Branch: d-025/naturalisation-research
+Document: data-layer/docs/D-025-naturalisation-sources.md
+Summary: surveyed 14 candidate sources for French naturalisation interview prep content (Livret du citoyen, Charte des droits et devoirs, data.gouv.fr examen civique QCM datasets, vie-publique.fr fiches, formation-civique.interieur, Wikipédia FR, INSEE, INED, Élysée, Sénat Junior, Gallica pre-1925 manuels, OpenClassrooms MOOCs, third-party prep sites, HuggingFace). Three P0 sources cleared on license (Etalab Licence Ouverte 2.0): data.gouv.fr QCM × 2 (258 + N official Q&A) and Charte (Décret 2012-127). Livret du citoyen confirmed under etalab-2.0 via Légifrance footer on the approving arrêté (INTV2202117A). Proposed 10-code naturalisation topic taxonomy mirroring the 5 themes of the official examen civique program. No ingestion attempted — blocked on D-031 license audit and a topic-taxonomy schema migration (new `exam_track` discriminator).
+Next: D-031 audit of the 6 P0/P1 sources → ingestion sprint (~2 BE days after green light).
+
+### D-030 — Review queue (500 chunks)
+Status: BLOCKED downstream (waits on D-020 sources completing + D-021 enrichment + a vectorize pass).
+Action: `make review-queue` + human review ~6h.
+ master
+
 ### D-031 — License audit
-Status: BLOCKED by D-030
-Action: make license-audit + manual sign-off
+Status: BLOCKED by D-030.
+Action: `make license-audit` + manual sign-off.
+
+---
+
+## Surface Wiring (W-tickets — Phase 2 placeholders)
+
+Stubs filed 2026-05-15. Each surfaces a slice of the data layer to the FE. Bodies to be authored when D-020..D-022 close and the chunk corpus is review-clean.
+
+### W-001 — Le Vocabulaire surface wiring (placeholder)
+Wire `/vocabulaire` FE surface to the enriched `chunks` table. Depends on D-020 (Tatoeba + DBnary in), D-021 (enrichment labels), D-030 (review pass).
+
+### W-002 — L'École surface wiring (placeholder)
+Wire L'École cluster/lesson surface to curriculum-tagged chunks. Depends on D-021 enrichment label set being finalised.
+
+### W-003 — Le Diagnostic surface wiring (placeholder)
+Wire La Carte / Le Goulet / L'Ordonnance retrieval to the chunk + vector store so diagnostic feedback cites real corpus exemplars rather than the in-prompt placeholder set.
+
+### W-004 — Cross-surface retrieval API (placeholder)
+Shared retrieval endpoint consumed by W-001 / W-002 / W-003 — chunk lookup by `chunk_type`, `cefr_level`, `theme`, and similarity. Defers F-312's RAG layer plumbing.
+
+### W-005 — Review-queue admin surface (placeholder)
+Admin-only surface for clearing D-030's 500-chunk review queue. Depends on W-004's retrieval primitives being stable.
+
+---
+
+## Exam Product Variants (E-tickets — Phase 3 placeholders)
+
+Stubs filed 2026-05-15. Each is a top-of-funnel product variant beyond the TCF Canada beachhead. All depend on the matching ingester (D-023..D-025) plus the surface wiring (W-001..W-005) being live.
+
+### E-001 — DELF variant (placeholder)
+Cultural-reference + register-rich exam variant. Depends on D-023 (Wikipedia FR cultural ingester) + W-001..W-005.
+
+### E-002 — AP French variant (placeholder)
+US high-school AP French exam variant. Depends on D-023 + W-001..W-005.
+
+### E-003 — DALF C1/C2 variant (placeholder)
+Literary-register exam variant. Depends on D-024 (DALF C1/C2 literary ingester) + W-001..W-005.
+
+### E-004 — Naturalisation variant (placeholder)
+FR-naturalisation linguistic-test variant. Depends on D-025 (naturalisation source research) + W-001..W-005.
 
