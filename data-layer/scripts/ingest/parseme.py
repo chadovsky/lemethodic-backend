@@ -4,9 +4,12 @@ PARSEME ingestion.
 Source: https://gitlab.com/parseme/parseme_corpus_fr (+ multilingual companions)
 Verbal MWE corpus with categories: idioms, light verb constructions, etc.
 
-SKELETON — you fill in the .cupt parsing logic.
-The .cupt format is CoNLL-U with extra MWE columns. Each sentence is a block
-of tab-separated lines; MWE annotations appear in column 11.
+.cupt format = CoNLL-U with one extra column (11) carrying the MWE annotation.
+Each sentence is a tab-separated block separated by a blank line. The MWE
+column is '*' for none, 'N:TYPE' for the head token of MWE N, or 'N' for a
+continuation token (potentially with ';' separating multiple MWE memberships).
+Tokens belonging to the same MWE id within a sentence are grouped into a
+single chunk; discontinuous spans are concatenated in sentence order.
 """
 
 from __future__ import annotations
@@ -53,16 +56,22 @@ class PARSEMEIngester(Ingester):
         self.git_clone(repo_url, self.repo_dir)
 
     def iter_rows(self) -> Iterator[dict]:
-        # TODO: locate the .cupt files in the cloned repo.
-        # Typical layout: <repo>/<lang>/train.cupt + dev.cupt + test.cupt
-        # Some repos use uppercase, some lowercase. Check.
+        # Layout varies across PARSEME repos: typically <repo>/<lang>/{train,dev,test}.cupt,
+        # but some ship a flat tree or use uppercase. rglob + a case-insensitive
+        # fallback handles every variant.
         cupt_files = list(self.repo_dir.rglob("*.cupt"))
+        if not cupt_files:
+            cupt_files = [
+                p for p in self.repo_dir.rglob("*")
+                if p.is_file() and p.suffix.lower() == ".cupt"
+            ]
         if not cupt_files:
             self.log.warning(f"No .cupt files found in {self.repo_dir}")
             return
 
         self.log.info(f"Found {len(cupt_files)} .cupt files")
-        for cupt_path in cupt_files:
+        for cupt_path in sorted(cupt_files):
+            self.log.info(f"  parsing {cupt_path.relative_to(self.repo_dir)}")
             yield from self._parse_cupt(cupt_path)
 
     def _parse_cupt(self, path: Path) -> Iterator[dict]:
@@ -88,8 +97,19 @@ class PARSEMEIngester(Ingester):
                 cols = line.split("\t")
                 if len(cols) < 11:
                     continue
+                # Skip multi-word token ranges ("1-2") and empty nodes ("1.1");
+                # only keep real, integer-indexed surface tokens — PARSEME MWE
+                # annotations live on the integer rows.
+                tok_id = cols[0]
+                if "-" in tok_id or "." in tok_id:
+                    continue
+                try:
+                    position = int(tok_id)
+                except ValueError:
+                    continue
                 sentence_tokens.append({
-                    "id": cols[0],
+                    "id": tok_id,
+                    "position": position,
                     "form": cols[1],
                     "lemma": cols[2],
                     "upos": cols[3],
@@ -102,16 +122,23 @@ class PARSEMEIngester(Ingester):
     def _extract_mwes(self, tokens: list[dict]) -> Iterator[dict]:
         """
         Group tokens by their MWE id and yield one chunk per MWE.
-        TODO: Handle discontinuous MWEs more gracefully. Current impl
-        concatenates tokens in order, which produces literal surface
-        strings even when the MWE was split.
+
+        Discontinuous MWEs (e.g. "se ... demander si" with intervening tokens)
+        are reconstructed by concatenating only the tagged member tokens in
+        sentence order. The gap is dropped — chunks are stored as canonical
+        forms, not as sentence-bound spans. The original sentence remains
+        recoverable from the source corpus if a downstream stage needs it.
         """
-        mwe_map: dict[str, dict] = {}  # mwe_id → {tokens, type}
+        # mwe_id -> {"tokens": [tok, ...], "type": str | None}
+        mwe_map: dict[str, dict] = {}
         for tok in tokens:
             mwe_field = tok["mwe"]
             if mwe_field == "*" or not mwe_field:
                 continue
             for entry in mwe_field.split(";"):
+                entry = entry.strip()
+                if not entry:
+                    continue
                 if ":" in entry:
                     mwe_id, mwe_type = entry.split(":", 1)
                 else:
@@ -119,16 +146,26 @@ class PARSEMEIngester(Ingester):
                 if mwe_id not in mwe_map:
                     mwe_map[mwe_id] = {"tokens": [], "type": None}
                 mwe_map[mwe_id]["tokens"].append(tok)
-                if mwe_type:
+                # MWE type lives on the head token; preserve it across
+                # continuation entries that omit it.
+                if mwe_type and not mwe_map[mwe_id]["type"]:
                     mwe_map[mwe_id]["type"] = mwe_type
 
-        for mwe_id, info in mwe_map.items():
-            surface = " ".join(t["form"] for t in info["tokens"])
-            lemma = " ".join(t["lemma"] for t in info["tokens"] if t["lemma"] != "_")
+        for info in mwe_map.values():
+            ordered = sorted(info["tokens"], key=lambda t: t["position"])
+            # Single-token "MWEs" (stray IRV clitics with no verb captured, or
+            # annotation artifacts) are not useful chunks.
+            if len(ordered) < 2:
+                continue
+            surface = " ".join(t["form"] for t in ordered).strip()
+            lemma_parts = [t["lemma"] for t in ordered if t["lemma"] and t["lemma"] != "_"]
+            lemma = " ".join(lemma_parts).strip() if lemma_parts else None
+            if not surface:
+                continue
             chunk_type = MWE_TYPE_MAP.get(info["type"], "fixed_expression")
             yield {
                 "surface_fr": surface,
-                "lemma_fr": lemma if lemma else None,
+                "lemma_fr": lemma,
                 "language": self.language,
                 "chunk_type": chunk_type,
             }
