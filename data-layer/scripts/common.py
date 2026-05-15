@@ -382,6 +382,12 @@ LICENSE_REGISTRY = {
         "url": "https://tatoeba.org",
         "commercial_use": "Yes, with attribution.",
     },
+    "WikipediaFR": {
+        "license": "CC-BY-SA",
+        "attribution": "French Wikipedia article titles + lead extracts (Wikipedia contributors).",
+        "url": "https://fr.wikipedia.org",
+        "commercial_use": "Yes, with attribution + share-alike.",
+    },
 }
 
 

@@ -3026,6 +3026,12 @@ Action: make enrich (cloud LLM via Groq per D-021)
 Status: BLOCKED by D-021
 Action: make vectorize (~24h)
 
+### D-023 — Wikipedia FR cultural ingestion ✅ DONE
+Status: ✅ DONE (2026-05-15)
+Branch: d-023/wikipedia-fr-cultural
+File: data-layer/scripts/ingest/wikipedia_fr.py
+Summary: French Wikipedia article ingester for cultural / civilizational chunks unlocking DELF (European cultural content) + AP French (Franco-anglophone overlap). MediaWiki action API: per top-level category, BFS depth-1 collects up to 350 page titles via `list=categorymembers` (cmtype=page→subcat fallback), then bulk `prop=extracts|pageprops` (20 titles/call) fetches lead extracts + disambiguation flags + follows redirects. Topic mapping: `culture-fr-europe` for Culture/Littérature/Cuisine/Société française; `culture-fr-anglo` for Histoire/Personnalités/Géographie de la France (first category to claim a title wins on cross-category dedup). Filters: skips disambiguation pages and stubs (lead < 100 chars). Politeness: 1 req/s floor + descriptive User-Agent (Wikipedia API policy); per-category title lists + per-title summaries cache to JSON under raw/wikipediafr/ → re-runs hit zero network. Override `_upsert_row` attaches topic_codes via merge UPDATE (idempotent across re-runs). Result: **1,877 chunks** ingested across both topic codes (1,244 culture-fr-europe / 633 culture-fr-anglo), 1,877 lead-extract examples linked, source_version=2026-05-15, source_license=CC-BY-SA (recorded in chunk_sources for D-031 audit).
+
 ### D-030 — Review queue (500 chunks)
 Status: BLOCKED by D-022
 Action: make review-queue + human review ~6h
