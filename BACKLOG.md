@@ -3034,7 +3034,7 @@ Heuristic-removal correction (mid-implementation): the first Gutenberg sweep aut
 Delivered chunk counts (2026-05-15 post-revision):
 - `Gutenberg_FR`: 66,872 chunks, all `cefr_level=NULL` (apart from the cross-source overlaps above).
 - `UniversalCEFR` (this run): 4,244 chunks total, 2,500 at C1 + 565 at C2 (source-explicit) — clears the 2,000+ C1 / 500+ C2 ticket target.
-- `Wikipedia_FR_Quality`: 250,542 chunks at the time the BACKLOG entry was written (the per-article phrase pass was still running into a long deduplication tail past that snapshot — re-running is idempotent), all `cefr_level=NULL` (Groq enrichment will score per chunk).
+- `Wikipedia_FR_Quality`: 295,884 chunks (367,745 raw phrase yields, post-dedup) — 295,524 at `cefr_level=NULL`; 323 C1 + 37 C2 carried over via cross-source dedup with UniversalCEFR rows that hold the explicit label. Groq enrichment will score the NULL-level rows per chunk.
 
 Constraints honoured: pre-1850 works skipped (Balzac / Stendhal corpus filtered out), no modern copyrighted literature, `HF_TOKEN` env var honoured for gated datasets, polite MediaWiki polling (UA + 0.4 s/request, max 300 titles per category).
 
