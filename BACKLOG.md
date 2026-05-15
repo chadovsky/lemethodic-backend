@@ -3013,9 +3013,14 @@ Summary: validated 8/8 attachments on 5 sample chunks; fixed punctuation-strippi
 Status: BLOCKED by D-010..D-014
 Action: make ingest (~12h unattended)
 
-### D-021 — Run enrich pipeline
+### D-021 — Groq LLM provider for enrichment ✅ DONE
+Status: DONE (2026-05-15)
+File: data-layer/scripts/enrich.py, data-layer/scripts/test_groq.py, data-layer/config.example.yml
+Summary: Added "groq" provider to `LLMClient` via Groq's OpenAI-compatible Chat Completions endpoint (`https://api.groq.com/openai/v1/chat/completions`) with `Authorization: Bearer` from `GROQ_API_KEY` (loaded from `data-layer/.env` via python-dotenv with a no-dep fallback parser). Rate-limit handling: HTTP 429 triggers exponential backoff (1, 2, 4, 8, 16, 32, 60 s; honours `Retry-After` header when present) with retry logging. `config.yml` / `config.example.yml` switched to `provider: groq`, `model: llama-3.3-70b-versatile`; Ollama config kept inline as commented fallback. Smoke-tested via `python -m scripts.test_groq` (translates "bonjour" → "hello"); pipeline run itself (`make enrich`) still pending under D-021.run.
+
+### D-021.run — Run enrich pipeline
 Status: BLOCKED by D-020
-Action: make enrich (1d GPU or 1wk CPU)
+Action: make enrich (cloud LLM via Groq per D-021)
 
 ### D-022 — Run vectorize pipeline
 Status: BLOCKED by D-021
