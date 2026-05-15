@@ -3026,6 +3026,13 @@ Action: make enrich (cloud LLM via Groq per D-021)
 Status: BLOCKED by D-021
 Action: make vectorize (~24h)
 
+### D-025 — Naturalisation source candidates (research) ✅ RESEARCH COMPLETE
+Status: ✅ RESEARCH COMPLETE (2026-05-15)
+Branch: d-025/naturalisation-research
+Document: data-layer/docs/D-025-naturalisation-sources.md
+Summary: surveyed 14 candidate sources for French naturalisation interview prep content (Livret du citoyen, Charte des droits et devoirs, data.gouv.fr examen civique QCM datasets, vie-publique.fr fiches, formation-civique.interieur, Wikipédia FR, INSEE, INED, Élysée, Sénat Junior, Gallica pre-1925 manuels, OpenClassrooms MOOCs, third-party prep sites, HuggingFace). Three P0 sources cleared on license (Etalab Licence Ouverte 2.0): data.gouv.fr QCM × 2 (258 + N official Q&A) and Charte (Décret 2012-127). Livret du citoyen confirmed under etalab-2.0 via Légifrance footer on the approving arrêté (INTV2202117A). Proposed 10-code naturalisation topic taxonomy mirroring the 5 themes of the official examen civique program. No ingestion attempted — blocked on D-031 license audit and a topic-taxonomy schema migration (new `exam_track` discriminator).
+Next: D-031 audit of the 6 P0/P1 sources → ingestion sprint (~2 BE days after green light).
+
 ### D-030 — Review queue (500 chunks)
 Status: BLOCKED by D-022
 Action: make review-queue + human review ~6h
