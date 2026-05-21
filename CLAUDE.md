@@ -1,5 +1,25 @@
 # TCF ORAL PRACTICE TOOL — CLAUDE.md
 
+## Execution Source of Truth
+
+**`docs/prd-v1.md` is the execution source of truth as of 2026-05-21.** The old `BACKLOG.md` is superseded but kept in-repo for audit trail — do not add new entries to it.
+
+**Current operating mode:** manual, one micro-feature per session, UI-first sequencing.
+- Plan with Opus (claude.ai) → execute with Sonnet (Claude Code) → `/compact focus on <entry-id>` between sessions.
+- Sequence: Section 1 (UI shells) → Section 2 (mocks + polish) → Section 3 (BE wiring) → Section 4 (content) → Section 5 (AI infra) → Section 6 (legal) → Section 7 (launch).
+- **BE work is paused** until Section 3 (BE-001 to BE-022) opens, after UI shells and mocks ship. During the pause, BE-side activity is limited to discovery notes, schema preservation, and reactive bug fixes — no new feature work.
+
+**Deprecated orchestrator workflow (do not regenerate or reference):**
+- `parse_backlog.py`
+- `dispatch_agent.py`
+- `mark_done.py`
+- `n8n-workflow.json`
+- `setup-orchestrator.md`
+
+These files defined the multi-agent orchestrator path killed on 2026-05-21 (cost projection $200–400/sprint, unaffordable at Y0 revenue). Replaced by Manual Mode above. See `docs/prd-v1.md` §1.1.
+
+---
+
 ## Project Identity
 
 This is **Le Méthodic** (lemethodic.com) — a web app where French learners (primarily English-speaking Canadians preparing for TCF Canada, plus a broader pivot to TCF/TEF/DELF/DALF/FIDE/AP/DCL) record oral responses + submit writing to exam-style prompts and receive instant AI-powered feedback using Chadi's proprietary 5-couche methodology (La Méthode en Couches). Dead names: TCF Oral Practice Tool, FluentPath, FluentPrep, Le Raccourci.
