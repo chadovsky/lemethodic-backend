@@ -381,11 +381,329 @@ Each will be populated with the same template structure (Scope/Out/Acceptance/Te
 
 ## Section 3 — Backend Wiring (BE-001 to BE-022)
 
-**Goal:** replace mock JSON fixtures with real API calls. One surface at a time. Auth first (BE-001), then read endpoints, then write endpoints. F-406 auth hardening (refresh tokens, rate limits, hCaptcha) ships in this section.
+**Goal:** replace mock JSON fixtures with real API calls to the existing FastAPI backend at `chadovsky/lemethodic-backend`. One surface at a time. Auth first (BE-001), then user identity (BE-002), then content surfaces (BE-003 to BE-005).
+
+**Architecture lock (May 23, 2026):** Path A confirmed. The FastAPI backend ships as-is: 47 endpoints, 30 SQLAlchemy models, full AI integration (AssemblyAI STT + Claude 4-couche oral + Claude 5-couche writing + ai_router + TTS cache + argument scaffold), refresh-token JWT auth, email verification, password reset. 53,821 LOC. **This section wires the FE to existing endpoints. It does not create new endpoints, rewrite backend logic, or introduce Prisma / Neon / NextAuth / Supabase.**
 
 **Strategic step:** maps to Step 2b (surface wiring).
 
-**ID range:** BE-001 to BE-022. To be populated in subsequent planning sessions.
+**ID range:** BE-001 to BE-022. BE-001 to BE-005 fully specified below. BE-006 to BE-022 to be populated in subsequent planning sessions.
+
+---
+
+### BE-001 — Wire FE auth forms to existing auth endpoints
+
+**Status:** Not Started
+**Branch:** `feat/be-001-auth-wiring` (FE, from `main`)
+**Effort:** 1–2 sessions (~4–8h)
+
+#### Scope
+**In:**
+- Wire `/signup` form (`components/auth/SignupForm.tsx`) to `POST /api/auth/register`
+- Wire `/login` form to `POST /api/auth/login` — BE sets `access_token` + `refresh_token` as httpOnly cookies on response; FE does not store tokens in JS
+- Wire `/api/auth/refresh` on 401 response in the API client (transparent token refresh, single retry)
+- Wire logout button (in app shell nav) to `POST /api/auth/logout` — clears cookies, redirects to `/`
+- Wire email-verification confirm page to `POST /api/auth/verify-email` — reads `?token=<jwt>` from email link
+- Wire password-reset request form to `POST /api/auth/password-reset/request`
+- Wire password-reset confirm form to `POST /api/auth/password-reset/confirm` — reads `?token=<jwt>` from email link
+- hCaptcha: add `@hcaptcha/react-hcaptcha` client-side widget to `/signup` and `/login`; include the `h-captcha-response` field in the POST body (BE `app/services/captcha.py` already validates it server-side)
+- `middleware.ts`: protect `(app)` routes — redirect unauthenticated requests to `/login`; keep `/dashboard` and `/account` in `EXCLUDED_PREFIXES` so `TopNav` stays hidden on authenticated shell routes (carry-forward from MOCK-006)
+- `lib/api/client.ts`: thin fetch wrapper — base URL from `NEXT_PUBLIC_API_URL` env var, `credentials: "include"` on all requests (required for cookie transport), 401-intercept → call `/api/auth/refresh` → retry original request once
+
+**Out:**
+- OAuth (Google, Apple) — deferred to V1.1
+- Rate-limit UI feedback beyond generic error state — deferred
+- Prisma / Neon / NextAuth / Supabase — **explicitly excluded**; architecture lock May 23 confirms BE auth already exists and ships as-is
+- FE-side token storage (localStorage, sessionStorage) — cookies are set exclusively by BE; FE treats itself as stateless
+
+#### Acceptance (Given/When/Then)
+1. **Given** a new user fills `/signup` with valid email + password + passing hCaptcha, **When** they submit, **Then** `POST /api/auth/register` returns 201, BE sets cookies, and the router navigates to `/onboarding`.
+2. **Given** a returning user fills `/login` with correct credentials, **When** they submit, **Then** `POST /api/auth/login` returns 200, httpOnly cookies are set, and the router navigates to `/(app)/dashboard`.
+3. **Given** the access token is expired and the refresh token is valid, **When** the FE makes any API call, **Then** the client transparently calls `/api/auth/refresh`, receives a new access token cookie, and retries the original request without user interaction.
+4. **Given** an unauthenticated user visits `/(app)/dashboard`, **When** `middleware.ts` evaluates the request, **Then** they are redirected to `/login`.
+5. **Given** a logged-in user clicks Logout, **When** `POST /api/auth/logout` completes, **Then** cookies are cleared and they land on `/`.
+6. **Given** a user clicks the email-verification link, **When** they land on `/verify-email?token=<jwt>`, **Then** `POST /api/auth/verify-email` fires and the page shows "Email confirmed. You can now log in."
+
+#### Tests
+- `tests/unit/auth/AuthApiClient.test.ts` (vitest) — mocked fetch: asserts `credentials: "include"` on every call; asserts 401 triggers refresh then retries; covers register, login, logout, refresh
+- `tests/unit/auth/SignupForm.test.tsx` (vitest) — submits form, calls `register()`, navigates on success, shows inline error on 409 (email already exists)
+- `tests/unit/auth/LoginForm.test.tsx` (vitest) — submits form, calls `login()`, navigates on success, shows "Invalid credentials" on 401
+- `tests/e2e/auth-register.spec.ts` (Playwright) — end-to-end sign-up with test-mode hCaptcha bypass token, lands on `/onboarding`
+- `tests/e2e/auth-login.spec.ts` (Playwright) — logs in with seeded test user, lands on `/(app)/dashboard`
+- `tests/e2e/auth-middleware.spec.ts` (Playwright) — unauthenticated visit to `/dashboard` redirects to `/login`
+- `tests/e2e/auth-logout.spec.ts` (Playwright) — logs in, clicks logout, lands on `/`, verify `/dashboard` redirects again
+
+#### Files Touched (FE repo)
+- `lib/api/client.ts` — new: base fetch wrapper with `credentials: "include"` + 401-intercept + refresh
+- `lib/api/auth.ts` — new: typed wrappers for all 7 auth endpoints
+- `app/login/page.tsx` — replace stub with `<LoginForm />`
+- `components/auth/LoginForm.tsx` — new login form with hCaptcha widget
+- `components/auth/SignupForm.tsx` — add hCaptcha widget, wire to `lib/api/auth.ts`
+- `app/verify-email/page.tsx` — new: reads `?token`, fires `verifyEmail()`, shows result
+- `app/password-reset/request/page.tsx` — new: reset-request form
+- `app/password-reset/confirm/page.tsx` — new: reads `?token`, new-password form
+- `middleware.ts` — protect `(app)` routes; carry-forward `EXCLUDED_PREFIXES` from MOCK-006 unchanged
+- `.env.local.example` — add `NEXT_PUBLIC_API_URL=http://localhost:8000` and `NEXT_PUBLIC_HCAPTCHA_SITE_KEY`
+- 7 test files as listed
+
+#### Dependencies
+- UI-005 must be `Shipped` (`/signup` form shell exists)
+- MOCK-006 must be `Shipped` (`TopNav` + `EXCLUDED_PREFIXES` pattern established; BE-001 carries it forward unchanged)
+- BE FastAPI server running locally at `http://localhost:8000` (`docker-compose up -d` + `alembic upgrade head` + `uvicorn`)
+
+#### Notes
+- hCaptcha test-mode site key (`10000000-ffff-ffff-ffff-000000000001`) returns a valid bypass token for e2e tests; set via `NEXT_PUBLIC_HCAPTCHA_SITE_KEY`.
+- Do not store tokens in JS. Cookies are set by BE exclusively. FE is stateless with respect to auth.
+- In prod, `NEXT_PUBLIC_API_URL` must share origin with the FE (same-site cookie transport) or BE must set `SameSite=None; Secure` with an explicit CORS allow-list. Confirm deployment topology with Chadi before prod deploy.
+
+---
+
+### BE-002 — Wire user identity to dashboard greeting and email-verification banner
+
+**Status:** Shipped — squash-merged 6361b70d84cc60564503c8ee0f6ad79bfcd33ab1
+**Branch:** `feat/be-002-user-identity` (FE, from `main`)
+**Effort:** 1 session (~2–4h)
+
+#### Scope
+**In:**
+- `app/(app)/dashboard/page.tsx` — Server Component: fetch `GET /api/users/me` at render time; render "Bonjour, {first_name}" greeting (fall back to email prefix if `first_name` is null)
+- `app/(app)/dashboard/page.tsx` — also fetch `GET /api/users/me/level` to display the user's current assessed level (B1 / B2 / C1) in the dashboard header widget
+- `app/(app)/layout.tsx` — read `GET /api/users/me` in the authenticated shell layout; if `email_verified === false`, render a dismissible `<EmailVerificationBanner />` above the main content area
+- `lib/api/users.ts` — typed fetch wrappers for `GET /api/users/me` and `GET /api/users/me/level`
+- `types/user.ts` — `UserMe` and `UserLevel` TypeScript interfaces matching BE JSON shapes (derive from `/openapi.json` on the running BE, or `app/schemas/level.py`)
+
+**Out:**
+- Full profile edit page (`/account/profile`) — deferred
+- Level reassessment / re-onboarding flow — separate entry
+- Avatar / profile photo upload — deferred to V1.1
+- `/exam-prep` landing page — **do not touch** `LandingPage.tsx`; it has no auth dependency
+
+#### Acceptance (Given/When/Then)
+1. **Given** a logged-in user with `first_name: "Marie"`, **When** they load `/(app)/dashboard`, **Then** the page renders "Bonjour, Marie" without a client-side loading flash (SSR, no hydration gap).
+2. **Given** a logged-in user with `email_verified: false`, **When** they load any `(app)` route, **Then** the dismissible email-verification banner appears at the top of the layout; dismissal persists for the session (no localStorage required — component state only).
+3. **Given** a logged-in user with `email_verified: true`, **When** they load the dashboard, **Then** no banner is rendered.
+4. **Given** `GET /api/users/me/level` returns `{ level: "B2" }`, **When** the dashboard renders, **Then** the level widget displays "B2".
+
+#### Tests
+- `tests/unit/dashboard/DashboardGreeting.test.tsx` (vitest) — renders "Bonjour, Marie" from mocked `UserMe`; falls back to email prefix when `first_name` is null
+- `tests/unit/dashboard/EmailVerificationBanner.test.tsx` (vitest) — renders when `email_verified === false`; absent when `true`; dismiss button hides it
+- `tests/unit/users/UsersApiClient.test.ts` (vitest) — mocked fetch: correct URLs, `credentials: "include"` on both endpoints
+- `tests/e2e/dashboard-greeting.spec.ts` (Playwright) — logs in as test user, loads dashboard, "Bonjour" greeting visible
+
+#### Files Touched (FE repo)
+- `lib/api/users.ts` — new: `getMe()`, `getMyLevel()` typed wrappers
+- `types/user.ts` — new: `UserMe`, `UserLevel` interfaces
+- `app/(app)/dashboard/page.tsx` — SSR fetch + greeting + level widget
+- `app/(app)/layout.tsx` — email-verification banner fetch + conditional render
+- `components/app/EmailVerificationBanner.tsx` — new dismissible banner
+- `components/dashboard/GreetingHeader.tsx` — new: name + level display
+- 4 test files as listed
+
+#### Dependencies
+- BE-001 must be `Shipped` (auth cookies required for authenticated GET calls)
+- UI-007 must be `Shipped` (dashboard shell exists)
+
+#### Notes
+- These are Server Components. Use `cookies()` from `next/headers` to forward the session cookie: `fetch(url, { headers: { Cookie: cookies().toString() } })`. No `useEffect`, no SWR here.
+- Inspect `app/schemas/level.py` in the BE repo and the running `/openapi.json` to confirm exact field names before writing `UserLevel` — field names may differ from assumptions.
+
+---
+
+### BE-003 — Wire L'École lesson list and reconcile FE fixture with BE schema
+
+**Status:** Not Started
+**Branch:** `feat/be-003-ecole-wiring` (FE, from `main`)
+**Effort:** 1–2 sessions (~4–8h)
+
+#### Scope
+**In:**
+- **Schema reconciliation first (required before writing any code):** run local BE, call `GET /api/ecole/lessons`, capture full JSON response. Document actual field shape in `docs/api-shapes/ecole-lessons.md` (FE repo). Compare against `lib/data/lessons.ts` (27-lesson FE fixture, 16 Fondations + 11 Approfondissement). Identify mismatches. **BE wins — BE is canonical** (real data, Alembic-managed schema). Map BE fields to FE `Lesson` type; update `types/ecole.ts`.
+- Replace `lib/data/lessons.ts` static import in lesson-list Server Component with a `GET /api/ecole/lessons` fetch
+- Lesson detail: fetch `GET /api/ecole/lessons/{lesson_id}` to replace static fixture lookup
+- Quiz: wire `GET /api/ecole/lessons/{lesson_id}/quiz` (returns `EcoleQuizQuestion[]`) to the quiz component
+- Quiz submission: wire `POST /api/ecole/lessons/{lesson_id}/quiz/submit` — optimistic update on answer selection, confirm on submit
+- User progress: fetch `GET /api/ecole/progress`, display completion indicators on lesson cards
+- `lib/api/ecole.ts` — typed wrappers for all 5 L'École endpoints
+
+**Out:**
+- Migrating the lesson route structure — `app/ecole/intro`, `app/ecole/lesson/[id]`, `app/ecole/quiz` currently sit outside the `(app)` authenticated shell; flag as route debt with a comment, do not migrate here
+- Audio player wiring to TTS — deferred to AI infrastructure section
+- Lesson content authoring (admin) — deferred
+- Pagination on lesson list — defer if BE returns all lessons in one response (verify during reconciliation)
+
+#### Acceptance (Given/When/Then)
+1. **Given** a logged-in user visits the L'École lesson list, **When** the page loads, **Then** lessons are fetched from `GET /api/ecole/lessons`; `lib/data/lessons.ts` is no longer imported by any component.
+2. **Given** BE returns `EcoleLesson` objects, **When** the FE maps them to the `Lesson` type, **Then** all lesson titles render correctly and no TypeScript errors exist.
+3. **Given** a user completes a quiz via `POST /api/ecole/lessons/{id}/quiz/submit`, **When** they return to the lesson list, **Then** the completed lesson shows a visual completion indicator sourced from `GET /api/ecole/progress`.
+4. **Given** `GET /api/ecole/lessons` fails (network error), **When** the page renders, **Then** an error state displays — no blank page, no uncaught exception.
+
+#### Tests
+- `tests/unit/ecole/EcoleApiClient.test.ts` (vitest) — correct URLs, method, credentials for all 5 endpoints; `types/ecole.ts` shapes match mocked BE responses
+- `tests/unit/ecole/LessonList.test.tsx` (vitest) — renders lesson cards from mocked API response; renders error state on fetch failure
+- `tests/unit/ecole/LessonDetail.test.tsx` (vitest) — renders lesson content from mocked detail response
+- `tests/e2e/ecole-lesson-list.spec.ts` (Playwright) — logged-in user loads lesson list, ≥1 lesson card rendered
+- `tests/e2e/ecole-quiz.spec.ts` (Playwright) — clicks into lesson, submits quiz answer, completion indicator appears on return to list
+
+#### Files Touched (FE repo)
+- `lib/api/ecole.ts` — new: typed wrappers for all 5 L'École endpoints
+- `types/ecole.ts` — new/updated: `EcoleLesson`, `EcoleQuizQuestion`, `UserEcoleProgress` interfaces (derived from BE schema reconciliation)
+- `docs/api-shapes/ecole-lessons.md` — new: actual JSON response shape captured from running BE
+- `app/ecole/page.tsx` (or equivalent lesson-list page) — replace `lib/data/lessons.ts` import with SSR fetch
+- `app/ecole/lesson/[id]/page.tsx` — replace fixture lookup with `GET /api/ecole/lessons/{id}` fetch
+- `app/ecole/lesson/[id]/quiz/page.tsx` — wire quiz fetch + submit
+- `lib/data/lessons.ts` — **delete** after confirming no remaining imports
+- 5 test files as listed
+
+#### Dependencies
+- BE-001 must be `Shipped` (authenticated fetch)
+- BE-002 must be `Shipped` (user context in layout)
+- UI-008, UI-009 must be `Shipped` (lesson list + detail shells exist)
+
+#### Notes
+- Block at least 1h for reconciliation before writing code: run BE locally, curl `GET /api/ecole/lessons`, compare response to `lib/data/lessons.ts`, resolve naming mismatches (e.g. BE may use `titre` where FE uses `title`).
+- Route debt to flag: `app/ecole/intro`, `app/ecole/lesson/[id]`, `app/ecole/quiz` are outside `(app)` shell — unauthenticated users can currently reach them. Add `// TODO BE-003: move ecole routes inside (app) shell` comment; schedule migration as a separate entry.
+- If `GET /api/ecole/lessons` returns paginated results, implement a page-1 fetch for now and note the limit.
+
+---
+
+### BE-004 — Wire Le Vocabulaire browse and reconcile flat-FE vs hierarchical-BE schema
+
+**Status:** Not Started
+**Branch:** `feat/be-004-vocab-wiring` (FE, from `main`)
+**Effort:** 2 sessions (~6–10h; schema reconciliation adds complexity)
+
+#### Scope
+**In:**
+- **Schema reconciliation first:** call `GET /api/vocab/topics` and `GET /api/vocab/topics/{slug}/chunks` against local BE. Document response shapes in `docs/api-shapes/vocab.md`.
+  - BE hierarchy: `VocabularyTheme → Cluster → Path → Phase → VocabTopic → VocabChunk` + `UserVocabList / UserVocabProgress`
+  - FE fixture: `lib/data/chunks.ts` — flat array of ~60 chunks used for browse-view filtering
+  - **Resolution (default):** flatten BE responses into the FE array shape for V1.0. FE gets `chunks[]` from `GET /api/vocab/topics/{slug}/chunks` with query params for CEFR level filter. Hierarchy exposure scheduled for V1.1.
+- `lib/vocab/filter.ts` — refactor into a pure `buildChunkParams(filters)` helper that maps FE filter state (level, theme) to query params for `GET /api/vocab/topics/{slug}/chunks`
+- `hooks/useChunks.ts` — SWR hook: calls `/api/vocab/topics/{slug}/chunks` with params from `buildChunkParams()`; replaces all direct `lib/data/chunks.ts` imports in browse components
+- `GET /api/clusters/{slug}` — wire to cluster detail view if the UI shell for it exists
+- `lib/api/vocab.ts` — typed wrappers for all 3 vocab endpoints
+- Flag all `components/home/*` consumers that import `lib/data/chunks.ts` — add `// TODO BE-004: migrate to useChunks()` comment; migrate in this entry only if trivial (< 5 lines change per file); otherwise schedule separately
+
+**Out:**
+- `UserVocabList` / `UserVocabProgress` SRS / personal lists — deferred; requires flashcard practice UI (UI-011, UI-012 must ship first)
+- Vocabulary theme admin / bulk import — deferred
+- V1.1 hierarchy exposure (theme → cluster → path → phase navigation) — explicitly out of scope
+
+#### Acceptance (Given/When/Then)
+1. **Given** a logged-in user loads the vocab browse view, **When** the page renders, **Then** chunks are fetched from `GET /api/vocab/topics/{slug}/chunks`; `lib/data/chunks.ts` is no longer imported.
+2. **Given** the user applies a CEFR level filter (e.g. "B2"), **When** `useChunks()` re-fetches, **Then** `buildChunkParams()` maps the filter to the correct query param and the displayed chunks update.
+3. **Given** `GET /api/vocab/topics/{slug}/chunks` fails, **When** the browse view renders, **Then** an error state displays with a retry option.
+4. **Given** BE returns `VocabChunk` objects, **When** the FE flattens them, **Then** no TypeScript errors exist and all fields used in UI (French text, CEFR level, source) map cleanly.
+
+#### Tests
+- `tests/unit/vocab/VocabApiClient.test.ts` (vitest) — correct URLs + query params for all 3 endpoints; credentials included
+- `tests/unit/vocab/buildChunkParams.test.ts` (vitest) — pure function: given filter state → expected query param string; covers level filter, no-filter, multi-filter
+- `tests/unit/vocab/useChunks.test.ts` (vitest + msw) — mock `/api/vocab/topics/test-slug/chunks`, assert hook returns flattened array; assert re-fetches on filter change
+- `tests/e2e/vocab-browse.spec.ts` (Playwright) — logged-in user loads vocab browse, chunks visible; applies B2 filter, list updates
+- `tests/e2e/vocab-cluster.spec.ts` (Playwright, if cluster detail page exists) — navigates to a cluster, content renders
+
+#### Files Touched (FE repo)
+- `lib/api/vocab.ts` — new: typed wrappers for `GET /api/vocab/topics`, `GET /api/vocab/topics/{slug}/chunks`, `GET /api/clusters/{slug}`
+- `types/vocab.ts` — new/updated: `VocabTopic`, `VocabChunk`, `Cluster` interfaces
+- `docs/api-shapes/vocab.md` — new: actual JSON shapes from running BE; records flat-vs-hierarchy decision with V1.1 note
+- `lib/vocab/filter.ts` — refactor to `buildChunkParams()` pure helper
+- `hooks/useChunks.ts` — new SWR hook
+- `lib/data/chunks.ts` — **delete** after confirming no remaining imports
+- `components/home/*` — migrate or add TODO comment per consumer
+- 5 test files as listed
+
+#### Dependencies
+- BE-001 must be `Shipped` (auth)
+- BE-002 must be `Shipped` (user context)
+- UI-010 must be `Shipped` (vocab browse shell)
+- `swr` package present in `package.json` (add if missing)
+
+#### Notes
+- `GET /api/vocab/topics` returns topic-level objects; chunks are under `GET /api/vocab/topics/{slug}/chunks`. Browse view likely needs a default slug or iterates over topics — resolve during reconciliation and document in `docs/api-shapes/vocab.md`.
+- If `components/home/*` consumers are non-trivial to migrate (> 5 lines), add the TODO comment, open a tracked follow-up, and do not let that migration block this branch from merging.
+- Record the flat-vs-hierarchy decision explicitly in `docs/api-shapes/vocab.md`: "V1.0 flattens BE chunks response. V1.1 will expose Theme → Cluster navigation once UI-010 browse view is redesigned for hierarchy."
+
+---
+
+### BE-005 — Wire Les Tâches and reconcile three-model BE vs unified-fixture FE
+
+**Status:** Not Started
+**Branch:** `feat/be-005-taches-wiring` (FE, from `main`)
+**Effort:** 2 sessions (~6–10h; three-source composition adds complexity)
+
+#### Scope
+**In:**
+- **Schema reconciliation first:** call `GET /api/conversations/scenarios` (Tâche 2) and `GET /api/recordings/tache3-topics` (Tâche 3) against local BE. Document both shapes in `docs/api-shapes/taches.md`. Note that Tâche 1 has no pre-fetch — the opening is drawn server-side when `POST /api/conversations/start` fires with `tache_type: "tache1"`.
+  - BE: three separate models — `Tache1Opening`, `Tache2Scenario`, `TestTopic`
+  - FE fixture: `lib/data/taches.ts` — single unified `Tache` type with 3 static entries (one per tache type)
+  - **Resolution:** replace static fixture with a composed fetch. At page load, call the relevant BE endpoint(s) and normalize into the FE `Tache` shape via `lib/taches/normalize.ts`. Preserve the `durationSeconds` prop (carry-forward from MOCK-010 timer).
+- `lib/api/taches.ts` — typed wrappers for:
+  - `GET /api/conversations/scenarios` → Tâche 2 scenario list
+  - `POST /api/conversations/start` → start a session (body: `{ tache_type, topic_id?, scenario_id? }`)
+  - `GET /api/conversations/{id}` → fetch ongoing conversation state
+  - `POST /api/conversations/{id}/turn` → send a user text turn
+  - `GET /api/recordings/tache3-topics` → Tâche 3 topic list for topic selection
+- Tâche 3 topic selector: replace `lib/data/taches.ts` static entry with `GET /api/recordings/tache3-topics` fetch; render real topics
+- Tâche 2 scenario selector: replace static entry with `GET /api/conversations/scenarios` fetch; render real scenarios
+- `POST /api/conversations/start` wiring: on "Start" CTA click, fire with selected scenario/topic; navigate to conversation view with returned `conversation_id` in the URL
+- Conversation turn loop: `POST /api/conversations/{id}/turn` on text submit; `GET /api/conversations/{id}` for turn history
+- `lib/data/taches.ts` — **delete** after confirming no remaining imports
+
+**Out:**
+- `POST /api/conversations/{id}/end` + scoring result display — deferred; requires Le Diagnostic results view (UI-015) to be shipped
+- `POST /api/conversations/{id}/turn/{n}/supersede` — deferred
+- AssemblyAI STT wiring for audio turns — deferred to AI infrastructure section
+- `POST /api/recordings/upload` + `POST /api/recordings/transcribe` — deferred to AI section
+- Real-time streaming of AI examiner turns — deferred
+
+#### Acceptance (Given/When/Then)
+1. **Given** a logged-in user visits the Tâche 2 view, **When** the page loads, **Then** real scenarios are fetched from `GET /api/conversations/scenarios` and rendered; `lib/data/taches.ts` static fixture is not used.
+2. **Given** a logged-in user selects a Tâche 3 topic, **When** they click "Start", **Then** `POST /api/conversations/start` fires with `{ tache_type: "tache3", topic_id: <selected> }` and the router navigates to the conversation view with `conversation_id` in the URL.
+3. **Given** an active conversation, **When** the user submits a text turn, **Then** `POST /api/conversations/{id}/turn` fires and the examiner's response turn renders in the conversation view.
+4. **Given** the timer component, **When** a conversation starts, **Then** `durationSeconds` is sourced from the normalized `Tache` object, not from the deleted static fixture.
+5. **Given** `GET /api/conversations/scenarios` fails, **When** the Tâche 2 view loads, **Then** an error state renders; the static fixture is not used as a fallback.
+
+#### Tests
+- `tests/unit/taches/TachesApiClient.test.ts` (vitest) — correct URLs, methods, request bodies, credentials for all 5 endpoints
+- `tests/unit/taches/normalizeTache.test.ts` (vitest) — pure function: given `Tache2Scenario` BE shape → expected FE `Tache` with `durationSeconds` preserved; covers all 3 tache types
+- `tests/unit/taches/TacheSelector.test.tsx` (vitest) — renders scenario list from mocked BE response; renders error state on failure
+- `tests/e2e/taches-flow.spec.ts` (Playwright) — logged-in user selects Tâche 2 scenario → clicks Start → conversation view opens with `conversation_id` in URL; sends a text turn → examiner response renders
+- `tests/e2e/tache3-topic-selection.spec.ts` (Playwright) — Tâche 3 topic list renders from BE, user selects one, Start fires
+
+#### Files Touched (FE repo)
+- `lib/api/taches.ts` — new: typed wrappers for all 5 endpoints
+- `types/taches.ts` — new/updated: `Tache2Scenario`, `TestTopic`, `Conversation`, `ConversationTurn` interfaces; unified FE `Tache` type with `durationSeconds`
+- `lib/taches/normalize.ts` — new: `normalizeTache(source, type)` pure function mapping BE shapes to FE `Tache`
+- `docs/api-shapes/taches.md` — new: actual JSON shapes from running BE for all 3 tache endpoints; records normalization decisions
+- `app/(app)/diagnostic/tache/[type]/page.tsx` (or equivalent) — replace fixture with composed fetch
+- `lib/data/taches.ts` — **delete** after confirming no remaining imports
+- 5 test files as listed
+
+#### Dependencies
+- BE-001 must be `Shipped` (auth)
+- BE-002 must be `Shipped` (user context)
+- UI-014 must be `Shipped` (Tâche unified shell with timer)
+- Tâche data seeded in local BE: `python -m scripts.seed_tache1_openings`, `python -m scripts.seed_tache2_scenarios`, `python -m scripts.seed_tache3_prompts`
+
+#### Notes
+- `durationSeconds` is load-bearing for MOCK-010 timer behavior. If BE does not store this per scenario, derive it from `target_levels` (B1 = 120s, B2 = 150s, C1 = 180s — confirm exact values against `Tache2Scenario` and `TestTopic` model fields in the BE repo).
+- Tâche 1 has no pre-fetch (opening prompt is drawn server-side at conversation start). FE just fires `POST /api/conversations/start` with `tache_type: "tache1"` and renders whatever the first turn response contains.
+- `POST /api/conversations/{id}/turn` accepts either a text body or an audio file. Wire text-only here. Audio upload wiring is deferred to AI section.
+
+---
+
+### BE-covered features without FE UI surfaces (deferred)
+
+The following FastAPI endpoints are fully implemented in the BE and confirmed functional, but have zero corresponding UI surfaces in the current UI shells (Section 1) or mock layer (Section 2). They are not scoped for BE-001 through BE-005 and are deferred to later PRD sections or V1.1+:
+
+- **`/api/writing/*`** — complete 5-couche writing analysis pipeline (`WritingPrompt`, `WritingSubmission`, `WritingSubmissionJob` with async polling). FE has no writing surface in any current UI shell. Scheduled for a future BE entry once a writing submission UI is designed.
+- **`/api/analytics/{dashboard,progress,coverage,pass}`** — per-user score history and couche-level progress charts. No analytics UI exists yet. Scheduled after Le Diagnostic results view ships and accumulates real data.
+- **`/api/today/me/today`** — daily action recommendation based on recurring weak modules. Will wire into the dashboard once enough session data makes the recommendation meaningful; likely V1.1.
+- **`/api/onboarding/*`** — question-tree → level assignment (`UserLevelAssessment`). Overlaps with the `/onboarding` stub from UI-005; needs onboarding-questions UX designed before wiring; scheduled as a standalone BE entry.
+- **`/api/modules` + `/api/users/me/recurring_modules`** — remediation module suggestions tied to weak couches (session-detected module history). No UI surface yet; scheduled alongside Le Diagnostic results wiring.
+- **`/api/oral/generate-structure`** — argument scaffold (Claude call). Candidate for a pre-recording scaffold widget inside the Tâche shell; deferred to AI infrastructure section.
+
+PRD §3 (Backend Wiring) is intentionally scoped to the surfaces that UI shells currently expose. These deferred endpoints will be picked up as their corresponding UI surfaces ship in later sections.
 
 ---
 
