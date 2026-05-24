@@ -20,7 +20,7 @@ data/
 storage/  # F-078: local-disk fallback for app.services.storage
 
 # Local Claude Code state
-.claude/
+.claude/*
 
 # Manual backups + stray shell-accident dirs
 backup/
@@ -28,3 +28,10 @@ backup/
 
 # Stray empty test artifact at repo root
 _get16.json
+
+
+# Carve out authored Claude Code content
+!.claude/skills/
+!.claude/agents/
+!.claude/commands/
+!.claude/settings.json
