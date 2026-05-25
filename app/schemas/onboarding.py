@@ -145,6 +145,19 @@ class OnboardingSubmitRequest(BaseModel):
         "tcf_canada", "tef_canada", "delf_b1_b2", "another_exam", "not_sure"
     ]
 
+    # F-221 v3 — granular intent for another_exam waitlist users. Free text
+    # from FE q0 picker form. Drives roadmap prioritization. Required
+    # (non-empty after strip) when q0_target_exam='another_exam'; ignored
+    # otherwise.
+    q0_specific_intended_exam: Optional[str] = Field(default=None, max_length=120)
+
+    # F-221 v3 — user explicitly opted to be enrolled on b1_to_b2 proxy
+    # path while waiting for their actual exam. Only honored when
+    # target_exam='another_exam' AND should_offer_b1_to_b2_fallback()
+    # returns True; silently downgraded to waitlist-only otherwise
+    # (graceful degradation when q1/q2 levels don't fit).
+    q0_accept_fallback: bool = False
+
     @model_validator(mode="after")
     def _exam_date_xor_no_exam(self) -> "OnboardingSubmitRequest":
         if not self.q3_no_exam_scheduled and self.q3_exam_date is None:
@@ -164,6 +177,23 @@ class OnboardingSubmitRequest(BaseModel):
         ):
             raise ValueError(
                 "q9_native_language_other is required when q9_native_language='other'"
+            )
+        return self
+
+    @model_validator(mode="after")
+    def _specific_intended_exam_required_for_another_exam(
+        self,
+    ) -> "OnboardingSubmitRequest":
+        # F-221 v3 — capture which unsupported exam the user actually
+        # intends to sit. Required for roadmap signal; empty strings are
+        # treated as absent (whitespace-only is meaningless data).
+        if self.q0_target_exam == "another_exam" and not (
+            self.q0_specific_intended_exam
+            and self.q0_specific_intended_exam.strip()
+        ):
+            raise ValueError(
+                "q0_specific_intended_exam is required (non-empty) "
+                "when q0_target_exam='another_exam'"
             )
         return self
 

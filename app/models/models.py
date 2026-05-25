@@ -61,6 +61,11 @@ class User(Base):
     # requires the field, so any NULL is a legacy-data artifact.
     target_exam = Column(String(20), nullable=True, index=True)
 
+    # F-221 v3 — free-text exam name for users who picked "another_exam"
+    # at q0. Captures DALF/FIDE/AP/DCL/DELF A1-A2/etc. for roadmap
+    # prioritization. NULL for users on supported exams.
+    specific_intended_exam = Column(String(120), nullable=True)
+
     # F-310 Phase B — auth hardening surface. CHECK constraints +
     # grandfather backfill mirrored in Alembic migration
     # h6f7g8e9d0c1_f310_auth_hardening.
