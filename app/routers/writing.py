@@ -47,6 +47,7 @@ def get_prompts(
     tache_level: int = None,
     topic_tag: str = None,
     db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
 ):
     """Get writing prompts, optionally filtered by level, tache_level,
     or topic_tag. Response carries both legacy fields (level, theme,
@@ -227,6 +228,15 @@ def get_writing_job(
         created_at=job.created_at,
         completed_at=job.completed_at,
     )
+
+
+@router.get("/history")
+def get_my_writing_history(
+    db: Session = Depends(get_db),
+    user: User = Depends(get_current_user),
+):
+    """Paramless alias: returns the authenticated user's own writing history."""
+    return get_writing_history(user_id=user.id, db=db, user=user)
 
 
 @router.get("/history/{user_id}")
