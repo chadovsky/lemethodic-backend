@@ -96,15 +96,30 @@ def submit_onboarding(
     # TODO P-220.x: native_language -> detector calibration (Phase 2)
     # TODO P-220.x: prior_french_exam -> credibility-of-self-assessment
 
-    # ── F-221 v2 — exam-level waitlist branch (sits in front of path resolution) ──
-    # 'another_exam' users go to waitlist regardless of q1/q2 since
-    # all non-TCF/TEF/DELF exams bucket under this single slug per the
-    # FE-locked contract. The b1_to_b2 fallback offer is still computed
-    # when q1/q2 imply b1_to_b2 — gives users a "preview the b1_to_b2
-    # path while you wait" path forward.
+    # ── F-221 v2/v3 — exam-level waitlist branch ────────────────────
+    # 'another_exam' users are not on a supported exam. F-221 v2 sent
+    # them straight to a waitlist-only response. F-221 v3 adds two new
+    # paths triggered by the incoming q0_accept_fallback + level pair:
+    #
+    #  (A) waitlist-only (original v2 behavior):
+    #      accept_fallback=False  OR  q1/q2 don't fit b1_to_b2
+    #      → flush+commit user fields, return waitlist=True, no enrollment
+    #
+    #  (B) proxy-enrollment (new v3 path):
+    #      accept_fallback=True  AND  q1/q2 fit b1_to_b2
+    #      → fall through to the active-path enrollment block below, but
+    #        set _is_waitlist_fallback_enrollment=True so the final return
+    #        carries both path_slug='b1_to_b2' AND waitlist=True. The
+    #        user is enrolled for continuity AND on the waitlist for their
+    #        actual exam; these signals are not mutually exclusive.
+    #
+    # users.target_exam='another_exam' is already written above (line 90).
+    # users.specific_intended_exam is written here (F-221 v3).
+    _is_waitlist_fallback_enrollment = False
     if not is_exam_active(payload.q0_target_exam):
-        db.flush()
-        db.commit()
+        # F-221 v3 — persist granular intent for roadmap prioritization.
+        user.specific_intended_exam = payload.q0_specific_intended_exam
+
         fallback = (
             "b1_to_b2"
             if should_offer_b1_to_b2_fallback(
@@ -112,28 +127,42 @@ def submit_onboarding(
             )
             else None
         )
-        return OnboardingSubmitResponse(
-            path_slug=None,
-            persona=None,
-            redirect_to_diagnostic=False,
-            waitlist=True,
-            waitlist_reason="exam_not_active",
-            fallback_path_offered=fallback,
-            user_path_enrollment_id=None,
-        )
 
-    # ── F-221 v2 — exam-driven path resolution ──────────────────
-    # Active exams (tcf_canada / tef_canada / delf_b1_b2 / not_sure)
-    # all route to b1_to_b2 per the FE-locked spec. q1/q2 are captured
-    # on User above for diagnostic placement (P-201) but no longer
-    # drive path routing — the diagnostic does that honestly.
-    #
-    # The legacy q1/q2 path resolver (resolve_path_slug + is_path_active)
-    # remains imported and unit-tested in case future paths land or the
-    # legacy /api/users/onboarding endpoint needs it; it's effectively
-    # dead for /onboarding/submit in the v2 contract.
-    path_slug = "b1_to_b2"
-    persona = derive_persona(payload.q3_exam_date, payload.q3_no_exam_scheduled)
+        if payload.q0_accept_fallback and fallback is not None:
+            # Proxy-enrollment path: user opted in and levels are
+            # pedagogically plausible. Fall through to enrollment block.
+            _is_waitlist_fallback_enrollment = True
+            path_slug = fallback   # "b1_to_b2"
+            persona = derive_persona(
+                payload.q3_exam_date, payload.q3_no_exam_scheduled
+            )
+        else:
+            # Waitlist-only: either user declined fallback, or their
+            # q1/q2 levels don't fit b1_to_b2 (graceful degradation).
+            db.flush()
+            db.commit()
+            return OnboardingSubmitResponse(
+                path_slug=None,
+                persona=None,
+                redirect_to_diagnostic=False,
+                waitlist=True,
+                waitlist_reason="exam_not_active",
+                fallback_path_offered=fallback,
+                user_path_enrollment_id=None,
+            )
+    else:
+        # ── F-221 v2 — exam-driven path resolution ──────────────────
+        # Active exams (tcf_canada / tef_canada / delf_b1_b2 / not_sure)
+        # all route to b1_to_b2 per the FE-locked spec. q1/q2 are captured
+        # on User above for diagnostic placement (P-201) but no longer
+        # drive path routing — the diagnostic does that honestly.
+        #
+        # The legacy q1/q2 path resolver (resolve_path_slug + is_path_active)
+        # remains imported and unit-tested in case future paths land or the
+        # legacy /api/users/onboarding endpoint needs it; it's effectively
+        # dead for /onboarding/submit in the v2 contract.
+        path_slug = "b1_to_b2"
+        persona = derive_persona(payload.q3_exam_date, payload.q3_no_exam_scheduled)
 
     # ── Active path: enroll ─────────────────────────────────────
     path = db.query(PathModel).filter(PathModel.slug == path_slug).first()
@@ -202,6 +231,20 @@ def submit_onboarding(
     )
     capacity_warning = CapacityWarning(**warning_dict) if warning_dict else None
 
+    # F-221 v3 — proxy-enrollment path returns both path_slug AND
+    # waitlist=True: the user is enrolled on b1_to_b2 for continuity
+    # but remains on the waitlist for their actual (unsupported) exam.
+    if _is_waitlist_fallback_enrollment:
+        return OnboardingSubmitResponse(
+            path_slug=path_slug,
+            persona=persona,
+            redirect_to_diagnostic=True,
+            waitlist=True,
+            waitlist_reason="exam_not_active",
+            fallback_path_offered=path_slug,
+            capacity_warning=capacity_warning,
+            user_path_enrollment_id=enrollment.id,
+        )
     return OnboardingSubmitResponse(
         path_slug=path_slug,
         persona=persona,
