@@ -383,7 +383,10 @@ async def password_reset_request(
     return {"message": "If the email is registered, a reset link has been sent"}
 
 
-@router.post("/password-reset/confirm")
+@router.post(
+    "/password-reset/confirm",
+    dependencies=[Depends(auth_rate_limit("password_reset_confirm"))],
+)
 def password_reset_confirm(
     req: PasswordResetConfirm,
     db: Session = Depends(get_db),

@@ -79,7 +79,7 @@ def list_users(db: Session = Depends(get_db), admin: User = Depends(require_admi
 # ═══════════════════════════════════════
 
 @router.get("/themes")
-def list_themes(db: Session = Depends(get_db)):
+def list_themes(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
     """Returns list of themes with topic counts."""
     rows = (
         db.query(TestTopic.theme, func.count(TestTopic.id))
@@ -99,6 +99,7 @@ def list_themes(db: Session = Depends(get_db)):
 def list_topics(
     theme: str = Query(None, description="Filter by theme"),
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
     """List topics, optionally filtered by theme."""
     q = db.query(TestTopic).filter(TestTopic.is_active == True)
@@ -168,6 +169,7 @@ def delete_topic(
 def random_topic(
     theme: str = Query(None, description="Filter by theme"),
     db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
 ):
     """Return a random active topic, optionally filtered by theme."""
     q = db.query(TestTopic).filter(TestTopic.is_active == True)

@@ -548,7 +548,7 @@ async def confirm_transcript(
     recording_id: int,
     req: ConfirmTranscriptRequest,
     db: Session = Depends(get_db),
-    user: User = Depends(get_current_user),
+    user: User = Depends(diagnostic_quota_required),
 ):
     """Step 2 of the correction loop: student submits their confirmed
     transcript (possibly edited). We persist it, run Claude analysis, and
