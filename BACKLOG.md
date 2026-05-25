@@ -102,6 +102,7 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 # Active — Launch Critical (42 tickets, before soft beta launches)
 
 ## F-225 — Desktop verification protocol
+Milestone: DONE
 
 **Filed:** 2026-05-04.
 **Status:** Awaiting Verification (FE-side process gate landed 2026-05-04; protocol now enforced — first FE PRs going forward will exercise the 1440px + 375px screenshot requirement). Pattern (a) per Chadi 2026-05-04: the gate governs the **Awaiting Verification → Shipped** transition, not the push.
@@ -123,6 +124,7 @@ No more shipping mobile-only as "ready."
 ---
 
 ## F-222 — Sign Out bug fix
+Milestone: M1
 
 **Filed:** 2026-05-04.
 **Status:** Awaiting Verification (FE-side fix delivered 2026-05-04; 1440px + 375px screenshots + interactive trace pending per F-225).
@@ -137,6 +139,7 @@ Sign Out flow has a bug — investigate + fix. Specifics TBD on triage; likely c
 ---
 
 ## F-200 — Landing page desktop layout
+Milestone: M1
 
 **Filed:** 2026-05-04 (BACKLOG restructure — soft-beta definition lock).
 **Status:** Queued.
@@ -152,6 +155,7 @@ Landing page (`/`) currently mobile-only with white rails on desktop. Build the 
 ---
 
 ## F-201 — Onboarding flow desktop layout
+Milestone: M1
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
@@ -167,6 +171,7 @@ Landing page (`/`) currently mobile-only with white rails on desktop. Build the 
 ---
 
 ## F-202 — /ecole + L'École intro rebuild (responsive + content + methodology demo)
+Milestone: M1
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
@@ -188,6 +193,7 @@ Required:
 ---
 
 ## F-203 — /progress dashboard desktop + responsive layout
+Milestone: M1
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
@@ -203,6 +209,7 @@ P-230 v1 shipped 2026-05-03 (FE 3-commit set 28bf765) with the structural skelet
 ---
 
 ## P-230.depth — /progress real content for soft beta
+Milestone: M1
 
 **Filed:** 2026-05-04 (split from P-230 v1 ship — depth deemed insufficient for soft-beta).
 **Status:** Queued.
@@ -226,6 +233,7 @@ Pairs with **F-203** (desktop responsive layout for the same surface — differe
 ---
 
 ## F-204 — /cluster/[slug] desktop layout
+Milestone: M1
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
@@ -241,6 +249,7 @@ Cluster detail page consumes the BE endpoints shipped in P-234. FE consumer is i
 ---
 
 ## F-205 — /speaking/* (Tâche surfaces) desktop layout
+Milestone: M1
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
@@ -256,6 +265,7 @@ Cluster detail page consumes the BE endpoints shipped in P-234. FE consumer is i
 ---
 
 ## F-206 — Auxiliary pages desktop (privacy/terms/refund/waitlist/signup)
+Milestone: M1
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
@@ -276,6 +286,7 @@ Reading-width constraint on policy pages; centered cards on auth pages.
 ---
 
 ## F-220 — Onboarding "intro framing" (Block 3 quiz-pop-up entry moment)
+Milestone: M1
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
@@ -292,6 +303,7 @@ Reduces perceived friction at the threshold; sets expectation for the diagnostic
 ---
 
 ## F-221 — Exam-selector in onboarding + brand-layer rewrite
+Milestone: M1
 
 **Filed:** 2026-05-04.
 **Status:** **BE-side Awaiting Verification** — v2 commit `39954b2` (alembic `f3a4b5c6d7e8`) realigns to FE-locked 5-slug domain (commit 21a7edc). Supersedes v1 (`1dda6e9`, alembic `e1f2a3b4c5d6`). **Production v2 deploy + alembic migration landed 2026-05-05**: `q0_target_exam` required with exact 5-slug enum live; old `target_exam` API field cleanly renamed; `/onboarding/questions` returns 12 questions with q0 leading and q2 carrying `helpers_by_target_exam` (3 variants); q8 copy updated. **FE 21a7edc + BE v2 ready for E2E.** Behavioral verification (real onboarding submissions exercising each routing branch) pending Chadi's batch verification pass.
@@ -318,6 +330,7 @@ Marketing layer: TCF/TEF stays as primary entry persona (visa urgency); "all exa
 ---
 
 ## V-009 — CouchesDiagnostic radar: 5-axis + brand labels
+Milestone: M2
 
 **Status:** Active LC
 **Tag:** Active — Launch Critical (before soft beta launches).
@@ -346,6 +359,7 @@ This contradicts the 5-couche model locked 2026-05-05 (F-202 + F-227 surfaced as
 ---
 
 ### V-009.be — Unify oral analysis surface to 5 couches (BE)
+Milestone: M3
 
 **Status:** Queued.
 **Tag:** Active — Launch Critical (before soft beta launches).
@@ -375,6 +389,7 @@ This contradicts the 5-couche model locked 2026-05-05 (F-202 + F-227 surfaced as
 ---
 
 ## V-010 — /ecole phase structure correction
+Milestone: M1
 
 **Status:** Active LC
 **Tag:** Active — Launch Critical (before soft beta launches).
@@ -406,6 +421,7 @@ The current 3-phase structure is residue from the old 16-lesson era with milesto
 ---
 
 ## V-013 — Pre-launch surface completeness
+Milestone: M1
 
 **Status:** Active LC
 **Tag:** Active — Launch Critical (before soft beta launches).
@@ -428,6 +444,7 @@ These are credibility hits for any first-time visitor.
 ---
 
 ### V-013a — Wire /writing frontend to F-224 backend
+Milestone: M1
 
 - Consume `GET /api/writing/prompts` (14 prompts live, queryable by `tache_level` / `level` / `topic_tag` per F-224 endpoint extension)
 - Display prompts library grouped by Tâche level (T1 / T2 / T3 sections; B1 vs B2 within)
@@ -438,6 +455,7 @@ These are credibility hits for any first-time visitor.
 - For Tâche 3 prompts, the `prompt_fr` body contains `**bold**` markers + `\n\n` paragraph breaks; FE rendering needs to handle (markdown render OR strip-and-paragraph)
 
 ### V-013b — Build /more page content
+Milestone: M1
 
 - Profile section (avatar, name, exam target from `q0_target_exam`, exam date from `q3_exam_date`)
 - Settings (language toggle, current locale from `User.ui_language`)
@@ -446,6 +464,7 @@ These are credibility hits for any first-time visitor.
 - Page exists on both mobile + desktop
 
 ### V-013c — Nav system overhaul
+Milestone: M1
 
 - Bottom nav: gate to `<md` breakpoint (mobile-only)
 - Desktop: new `TopNav` component, in-product surfaces
@@ -462,6 +481,7 @@ These are credibility hits for any first-time visitor.
 ---
 
 ## V-015 — Post-V-013 critical fixes + desktop redesign
+Milestone: M1
 
 **Status:** Active LC
 **Tag:** Active — Launch Critical (before soft beta launches).
@@ -473,12 +493,14 @@ Four sub-tickets, all FE-only. Surfaced after V-013 first-pass shipped — two c
 ---
 
 ### V-015a — Writing submit 422 fix (FE payload field rename)
+Milestone: M1
 
 - BE expects `body.student_text`, FE sends `body.text` → 422 on submit
 - One-line fix in `api.writing.submit()` payload — rename `text` → `student_text`
 - Reference: `app/routers/writing.py::submit_writing` consumes `SubmitWritingRequest.student_text`
 
 ### V-015b — Writing submit gate removal
+Milestone: M1
 
 - Currently submit button disabled below `min_words`
 - Chadi feedback: word count is a guideline, not a hard gate
@@ -486,6 +508,7 @@ Four sub-tickets, all FE-only. Surfaced after V-013 first-pass shipped — two c
 - BE accepts any non-empty `student_text` (only validates emptiness, not min/max — confirmed in `submit_writing`)
 
 ### V-015c — /speaking desktop redesign (full product treatment)
+Milestone: M1
 
 - Current state: 3 centered pastel cards (Tâche 1/2/3), narrow mobile-style column
 - Chadi feedback: *"rethink this page from A to Z, it's a desktop website, there has to be tabs, useful options, think from a website product point of view"*
@@ -493,6 +516,7 @@ Four sub-tickets, all FE-only. Surfaced after V-013 first-pass shipped — two c
 - Plan-first with 2-3 layout proposals before implementation
 
 ### V-015d — /progress desktop redesign
+Milestone: M1
 
 - Current state: narrow centered column with Snapshot / Today's Focus / Recent Activity
 - Same desktop product treatment needed as V-015c
@@ -503,6 +527,7 @@ Four sub-tickets, all FE-only. Surfaced after V-013 first-pass shipped — two c
 ---
 
 ## V-016 — Post-V-015 fixes (6 sub-tickets)
+Milestone: M1
 
 **Status:** Active LC
 **Tag:** Active — Launch Critical (before soft beta launches).
@@ -514,6 +539,7 @@ Surfaced after V-015 first-pass shipped. V-016a is a production failure (writing
 ---
 
 ### V-016a — Writing submit timeout (BE) — SHIPPED 2026-05-12
+Milestone: DONE
 
 **Status:** Shipped 2026-05-12 across three commits:
 - `fd54bb8` (2026-05-07) — async writing-job pattern (POST returns 202 + job_id; FE polls GET /api/writing/jobs/{id}) + DO request_timeout stopgap.
@@ -529,30 +555,36 @@ Surfaced after V-015 first-pass shipped. V-016a is a production failure (writing
 **Follow-up:** V-009.be (filed 2026-05-12, queued) — extend oral `analysis.py` to 5 couches, unify writing-local helpers with `couche_labels.py`. Trigger: V-016a validates `methode_en_couches` shape in production.
 
 ### V-016b — La Méthode en Couches copy revision (FE)
+Milestone: M2
 
 Value-statement copy per couche needs revision. FE-side rewrite.
 
 ### V-016c — /ecole desktop redesign (FE — full product treatment, not mobile column)
+Milestone: M1
 
 Apple-product-website tier layout. Same treatment as V-015c/d for /speaking + /progress.
 
 ### V-016d — Hero kicker amendment (FE)
+Milestone: M1
 
 - Bigger size
 - Exam name in `--ed-warm-peach-deep`
 - Continuous cycle 8-10× or infinite (not stop after 3)
 
 ### V-016e — Landing font fix (FE)
+Milestone: M2
 
 Switzer not loading on landing `/` — may be V-005 regression. FE investigation + fix.
 
 ### V-016f — Differentiation card 1 bars rework (FE)
+Milestone: M2
 
 Current 5-bar visualization reads meaningless without labels. Add labels OR replace with alternative typography callout per V-004's spec.
 
 ---
 
 ## F-300 — Platform repositioning + Store
+Milestone: M1
 
 **Status:** Active LC
 **Tag:** Active — Launch Critical (before soft beta launches).
@@ -578,6 +610,7 @@ Strategic Claude drives FE prompts. Most BE work is F-300e (checkout), comes lat
 ---
 
 ### F-300b — Current landing → `/exam-prep` (FE only)
+Milestone: M1
 
 - Create `/exam-prep` route
 - Copy current `/` page content verbatim to `/exam-prep`
@@ -585,6 +618,7 @@ Strategic Claude drives FE prompts. Most BE work is F-300e (checkout), comes lat
 - Existing `/` preserved temporarily during transition
 
 ### F-300a — New `/` platform landing (FE only)
+Milestone: M1
 
 - Hero: locked tagline above ("Stop translating. Start producing French.")
 - Hero CTA: "Start free diagnostic" → `/onboarding` (preserves existing funnel)
@@ -598,6 +632,7 @@ Strategic Claude drives FE prompts. Most BE work is F-300e (checkout), comes lat
 - Apple-product-website polish (per V-013c TopNav language)
 
 ### F-300c — `/library` store surface (FE)
+Milestone: M1
 
 - Grid of product cards (books + free resources mixed)
 - Filters: format (epub / pdf / print), level (A1 / A2 / B1 / B2), topic
@@ -606,6 +641,7 @@ Strategic Claude drives FE prompts. Most BE work is F-300e (checkout), comes lat
 - Empty state: "Catalog launching soon — pre-order to be notified"
 
 ### F-300d — Product detail pages `/library/[slug]` (FE)
+Milestone: M1
 
 - Cover image, title, author, description
 - Format options + price
@@ -613,6 +649,7 @@ Strategic Claude drives FE prompts. Most BE work is F-300e (checkout), comes lat
 - Related items
 
 ### F-300e — Cart + LemonSqueezy checkout (FE + BE)
+Milestone: M6
 
 - Cart state (localStorage + persisted)
 - LemonSqueezy checkout integration
@@ -621,12 +658,14 @@ Strategic Claude drives FE prompts. Most BE work is F-300e (checkout), comes lat
 - **B-100 reconciliation pending** — see flag above; F-300e wiring depends on which MoR is canonical at build time
 
 ### F-300f — Free resources flow (FE + BE minor)
+Milestone: M1
 
 - $0 items: skip cart, direct download
 - Email gate optional (capture user for marketing)
 - **BE:** signed download URLs (likely DO Spaces presigned URLs — same pattern as TTS audio cache)
 
 ### F-300g — Pre-order / waitlist (FE + BE)
+Milestone: M1
 
 - Books not ready: "Notify me when available" CTA
 - Email capture, persist to BE
@@ -635,6 +674,7 @@ Strategic Claude drives FE prompts. Most BE work is F-300e (checkout), comes lat
 ---
 
 ## V-005 — Font system upgrade
+Milestone: M2
 
 **Status:** Active LC
 **Tag:** Active — Launch Critical (before soft beta launches).
@@ -663,6 +703,7 @@ Sequencing: Ship V-005 first. V-003 and V-004 inherit the new typographic system
 ---
 
 ## V-001 — Hero H1 + rotating kicker sizing
+Milestone: M1
 
 **Status:** Active LC
 **Tag:** Active — Launch Critical (before soft beta launches).
@@ -680,6 +721,7 @@ Hero H1 ("The French speaking exam doesn't reward what you know...") overflows v
 ---
 
 ## V-002 — Em-dash strip across FE copy
+Milestone: M2
 
 **Status:** Active LC
 **Tag:** Active — Launch Critical (before soft beta launches).
@@ -703,6 +745,7 @@ Affects: components/landing/copy.ts (heavy), components/ecole/intro/EcoleIntro.t
 ---
 
 ## V-003 — Hero atmospheric typographic animation
+Milestone: M2
 
 **Status:** Active LC
 **Tag:** Active — Launch Critical (before soft beta launches).
@@ -727,6 +770,7 @@ Brand-aligned (French language = accent marks). Editorial (not playful). Premium
 ---
 
 ## V-004 — Differentiation cards rebuild (Codersera-grade)
+Milestone: M2
 
 **Status:** Active LC
 **Tag:** Active — Launch Critical (before soft beta launches).
@@ -750,6 +794,7 @@ Reference: Codersera's "Why Codersera" 6-card grid uses different micro-imagery 
 ---
 
 ## V-011 — FinalCTA centering + color refresh
+Milestone: M2
 
 **Status:** Active LC
 **Tag:** Active — Launch Critical (before soft beta launches).
@@ -781,6 +826,7 @@ May ship in stages: centering fix today as quick-win; color refresh as V-011.col
 ---
 
 ## F-210 — Icon system + custom LeMethodic icons
+Milestone: M2
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
@@ -799,6 +845,7 @@ Custom icon set replacing generics:
 ---
 
 ## F-211 — Loading states overhaul
+Milestone: M2
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
@@ -816,6 +863,7 @@ Today many flows have silent waits or spinners with no context. Replace with:
 ---
 
 ## F-212 — Micro-animations + interaction feedback
+Milestone: M2
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
@@ -833,6 +881,7 @@ Today many flows have silent waits or spinners with no context. Replace with:
 ---
 
 ## F-213 — Page transitions + motion design
+Milestone: M2
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
@@ -850,6 +899,7 @@ Today many flows have silent waits or spinners with no context. Replace with:
 ---
 
 ## F-214 — Visual depth + design system extension
+Milestone: M2
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
@@ -867,6 +917,7 @@ Today many flows have silent waits or spinners with no context. Replace with:
 ---
 
 ## P-234 — Cluster detail view
+Milestone: DONE
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** BE shipped 2026-05-03 (commit `7f54b88`); **FE consumer in progress.** Stays in active queue until FE ships their side.
@@ -914,6 +965,7 @@ When FE ships, this entry flips to fully Shipped and moves to the SHIPPED sectio
 ---
 
 ## P-105 — 7-day free trial logic
+Milestone: M6
 
 **Filed:** 2026-04-30; **scope clarified 2026-05-03** (post Stripe → LemonSqueezy pivot); rescoped 2026-05-04 (LemonSqueezy → Paddle per B-100 Path B); **rescoped 2026-05-12 → Stripe trial mechanics (per B-100 Path C).**
 **Status:** Queued (blocked on P-106 / B-100 — Stripe Atlas LLC + integration must land first).
@@ -936,6 +988,7 @@ Backend scope:
 ---
 
 ## P-106 — Stripe integration (subscription + one-time + Premium SKU)
+Milestone: M6
 
 **Filed:** 2026-04-30; rescoped 2026-05-03 (Stripe → LemonSqueezy — Morocco constraint); rescoped 2026-05-04 (LemonSqueezy → Paddle, per B-100 Path B); **rescoped 2026-05-12 → Stripe SDK (Path C via US LLC, per B-100 Path C).**
 **Status:** Queued (blocked on B-100 — Stripe Atlas LLC formation + activation).
@@ -961,6 +1014,7 @@ Integrate Stripe SDK as the payment + subscription provider:
 ---
 
 ## B-100 — Stripe via US LLC formation (Stripe Atlas)
+Milestone: M6
 
 **Filed:** 2026-04-30 (Stripe account setup); renamed 2026-05-03 Stripe → LemonSqueezy (Morocco constraint); reframed 2026-05-04 to MoR provider selection (LemonSqueezy approval stalled); decided 2026-05-04 Path B — Paddle; **rescoped 2026-05-12 → Path C: Stripe via US LLC formation (Stripe Atlas).**
 **Status:** In Progress — Chadi to initiate Stripe Atlas application (Path C locked 2026-05-12).
@@ -997,6 +1051,7 @@ Integrate Stripe SDK as the payment + subscription provider:
 ---
 
 ## M-103 — YouTube anchor video — French exam prep for English speakers
+Milestone: polish-defer
 
 **Filed:** 2026-04-30; scope-reduced 2026-05-02; **rescoped 2026-05-04** (TCF-only → all-exams positioning to match brand-layer pivot).
 **Status:** Queued.
@@ -1013,6 +1068,7 @@ Integrate Stripe SDK as the payment + subscription provider:
 ---
 
 ## M-104 — Reddit community engagement (broadened subreddit list)
+Milestone: polish-defer
 
 **Filed:** 2026-04-30; **rescoped 2026-05-04** (broader subreddit roster to match all-exams brand pivot).
 **Status:** Queued.
@@ -1036,6 +1092,7 @@ Reddit-as-acquisition: helpful comments on relevant threads with low-key LeMetho
 ---
 
 ## F-310 — Auth hardening (BE + FE) — BE SHIPPED 2026-05-12
+Milestone: DONE
 
 **Filed:** 2026-05-12 (strategic session — Decision 4).
 **Status:** **BE Shipped 2026-05-12** across 6 commits (Phases A-E + F-310.1).
@@ -1112,6 +1169,7 @@ BACKLOG as the cross-ref from FE-side F-072 supersede.
 ---
 
 ### F-310.1 — X-Forwarded-For client IP fix — SHIPPED 2026-05-12
+Milestone: DONE
 
 **Filed:** 2026-05-12 (pulled forward from "post-Phase-E" to "ship before any cohort onboarding").
 **Status:** Shipped 2026-05-12 (commit `a999a5f`).
@@ -1133,6 +1191,7 @@ BACKLOG as the cross-ref from FE-side F-072 supersede.
 ---
 
 ## F-311 — Token control infrastructure (BE) — SHIPPED 2026-05-12
+Milestone: DONE
 
 **Filed:** 2026-05-12 (strategic session — Decision 4).
 **Status:** **BE Shipped 2026-05-12** across 5 phases / commits. No FE
@@ -1217,6 +1276,7 @@ component (purely BE infrastructure). Production-ready.
 ---
 
 ## F-312 — RAG retrieval layer (BE) — CC corpus + Chadi-authored content
+Milestone: TBD
 
 **Filed:** 2026-05-12 (strategic session — Decision 2). **Rescoped 2026-05-12 (Path C locked):** dropped OQLF + Académie sources entirely; corpus now sourced from CC-licensed corpora + Chadi's tutoring artifacts.
 **Status:** Queued — F-312.0 sign-off received (Path C). No remaining licensing gate; engineering can start on Chadi's go-ahead.
@@ -1246,6 +1306,7 @@ component (purely BE infrastructure). Production-ready.
 ---
 
 ### F-312.0 — RAG licensing pre-flight (HARD GATE on F-312) — CLOSED
+Milestone: DONE
 
 **Filed:** 2026-05-12 (strategic session — Decision 2).
 **Status:** **Closed 2026-05-12 — Path C selected by Chadi.** Decision memo at `docs/F-312-licensing-decision.md`. F-312 + F-321 unblocked. F-312.1 filed as parallel low-priority Path-A track.
@@ -1274,6 +1335,7 @@ component (purely BE infrastructure). Production-ready.
 ---
 
 ### F-312.1 — Parallel Path-A authorization-request track (OQLF + Académie)
+Milestone: polish-defer
 
 **Filed:** 2026-05-12 (Chadi sign-off on Path C with parallel Path-A track).
 **Status:** Queued — Chadi-owned, asynchronous. **Not a launch gate.** F-312 + F-321 ship without this.
@@ -1326,6 +1388,7 @@ If neither ever responds: zero impact. F-312 ships and runs forever on CC + Chad
 ---
 
 ## F-320 — Le Vocabulaire DB schema (BE)
+Milestone: M4
 
 **Filed:** 2026-05-12 (strategic session — Decision 3, MVP).
 **Status:** Queued.
@@ -1353,6 +1416,7 @@ If neither ever responds: zero impact. F-312 ships and runs forever on CC + Chad
 ---
 
 ## F-321 — Le Vocabulaire Phase 1 seed (BE) — Chadi tutoring artifacts
+Milestone: M4
 
 **Filed:** 2026-05-12 (strategic session — Decision 3, MVP). **Rescoped 2026-05-12 (Path C locked):** dropped OQLF as ingest source; corpus now sourced from Chadi's `.docx` tutoring archive in `C:\Users\pc\Downloads`. **Audit verified 2026-05-13** — 35-file sample, verdict `mixed` (29% HIGH / 29% PARTIAL / 17% NEEDS_MANUAL / 26% SKIP); F-321 implementation = hybrid pipeline.
 **Status:** Phases B/C/D shipped 2026-05-13 (commit history). Phase E (seed) BLOCKED on Chadi review of `seeds/vocab/phase1_review.csv`.
@@ -1399,6 +1463,7 @@ If neither ever responds: zero impact. F-312 ships and runs forever on CC + Chad
 ---
 
 ## F-321.curriculum — Route L'École content out of Le Vocabulaire (BE)
+Milestone: M4
 
 **Filed:** 2026-05-13 (during F-321 implementation — audit identified ~60 `.docx` files as foundation-grammar content that belongs in L'École's 16-lesson surface, not Le Vocabulaire's lexical-chunk catalog).
 **Status:** Queued.
@@ -1429,6 +1494,7 @@ Route ~60 L'École curriculum files identified during F-321.audit (foundation gr
 # Post-launch P1 (2-4 weeks after launch)
 
 ## F-061.1 — Tache2Picker reads live BE catalog instead of hardcoded literal (FE)
+Milestone: M3
 
 **Filed:** 2026-05-13 (during F-BUGS-001-BE-A — Tâche 2 production-drift incident).
 **Status:** Queued.
@@ -1452,6 +1518,7 @@ Route ~60 L'École curriculum files identified during F-321.audit (foundation gr
 ---
 
 ## F-BUGS-001-BE-A.content — Tâche 2 placeholder content replacement (BE seed + Chadi authoring)
+Milestone: M3
 
 **Filed:** 2026-05-13 (during F-BUGS-001-BE-A — first-ever prod execution of F-049 seeder exposed that the seed payload is placeholder text).
 **Status:** Queued.
@@ -1478,6 +1545,7 @@ Each of the 5 scenarios (`ami_demenagement`, `agence_voyages`, `bibliotheque`, `
 ---
 
 ## F-322 — Le Vocabulaire practice UI (FE)
+Milestone: M4
 
 **Filed:** 2026-05-12 (strategic session — Decision 3, MVP).
 **Status:** Queued.
@@ -1497,6 +1565,7 @@ Each of the 5 scenarios (`ami_demenagement`, `agence_voyages`, `bibliotheque`, `
 ---
 
 ## F-323 — Le Vocabulaire test UI (FE)
+Milestone: M4
 
 **Filed:** 2026-05-12 (strategic session — Decision 3, MVP).
 **Status:** Queued.
@@ -1516,6 +1585,7 @@ Each of the 5 scenarios (`ami_demenagement`, `agence_voyages`, `bibliotheque`, `
 ---
 
 ## F-324 — Diagnostic ↔ Vocab link (BE + FE)
+Milestone: M4
 
 **Filed:** 2026-05-12 (strategic session — Decision 3, MVP / Sprint 2).
 **Status:** Queued.
@@ -1536,6 +1606,7 @@ Each of the 5 scenarios (`ami_demenagement`, `agence_voyages`, `bibliotheque`, `
 ---
 
 ## F-325 — Le Vocabulaire vocab browse (BE + FE)
+Milestone: M4
 
 **Filed:** 2026-05-12 (operating-contract dispatch — fills the BE endpoint gap left implicit at F-320 ship-time per BACKLOG line 1369).
 **Status:** BE shipped (Phase B/C/D + commit). FE pending (filed as F-325.fe under separate dispatch).
@@ -1565,6 +1636,7 @@ Each of the 5 scenarios (`ami_demenagement`, `agence_voyages`, `bibliotheque`, `
 ---
 
 ## P-107 — Soft satisfaction guarantee copy + refund flow
+Milestone: TBD
 
 **Filed:** 2026-04-30.
 **Status:** Queued.
@@ -1577,6 +1649,7 @@ Stub — spec TBD.
 ---
 
 ## P-108 — Pronunciation feedback (basic)
+Milestone: TBD
 
 **Filed:** 2026-04-30.
 **Status:** Queued.
@@ -1589,6 +1662,7 @@ Stub — spec TBD.
 ---
 
 ## P-110 — Onboarding refinement (TCF-specific)
+Milestone: TBD
 
 **Filed:** 2026-04-30.
 **Status:** Queued.
@@ -1601,6 +1675,7 @@ Stub — spec TBD.
 ---
 
 ## P-211b — Render-time student-facing filter for cluster lesson body
+Milestone: TBD
 
 **Filed:** 2026-05-02.
 **Status:** Queued.
@@ -1618,6 +1693,7 @@ P-211 ingests cluster `lesson_markdown` verbatim from the authored docs, includi
 ---
 
 ## P-213 — Dialogue Box template authoring
+Milestone: TBD
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Queued.
@@ -1630,6 +1706,7 @@ Stub migrated from FE. Author 30-50 Dialogue Box templates (Block 5) varied by c
 ---
 
 ## P-220.z — Onboarding per-question illustrations and pastels (Phase 1 polish)
+Milestone: polish-defer
 
 **Filed:** 2026-05-02.
 **Status:** Queued.
@@ -1648,6 +1725,7 @@ Stub migrated from FE. Author 30-50 Dialogue Box templates (Block 5) varied by c
 ---
 
 ## P-231 — Speaking dashboard
+Milestone: TBD
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Queued.
@@ -1660,6 +1738,7 @@ Stub migrated from FE. Implement §7.5 — new surface drilled down from Speakin
 ---
 
 ## P-232 — Per-Tâche dashboards
+Milestone: TBD
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Queued.
@@ -1672,6 +1751,7 @@ Stub migrated from FE. Three dashboards (T1, T2, T3). Block 3 reused. Depends on
 ---
 
 ## P-233 — Curriculum view (path surface)
+Milestone: TBD
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Queued.
@@ -1684,6 +1764,7 @@ Stub migrated from FE. New surface accessible from main nav. Includes Block 4 (P
 ---
 
 ## P-235 — Ceiling Marker Map
+Milestone: TBD
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Queued.
@@ -1696,6 +1777,7 @@ Stub migrated from FE. Implement Block 1. Surfaceable from Overall Progress (met
 ---
 
 ## P-236 — Mistake Repository
+Milestone: TBD
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Queued.
@@ -1708,6 +1790,7 @@ Stub migrated from FE. Standalone tab inside Progress. Reads `user_cluster_event
 ---
 
 ## P-237 — Time-Adaptive UI (lean version)
+Milestone: TBD
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Queued.
@@ -1720,6 +1803,7 @@ Stub migrated from FE. Implement Block 6 lean version. `daysUntilExam` reads + c
 ---
 
 ## P-240b — Today's focus prose layer (Dialogue Box rendering)
+Milestone: TBD
 
 **Filed:** 2026-05-02 (split from P-240 plan-first scope).
 **Status:** Queued.
@@ -1745,6 +1829,7 @@ Out of scope: Claude API call for prose generation. Templates are authored conte
 ---
 
 ## P-241 — Cluster-level prescription
+Milestone: TBD
 
 **Filed:** 2026-05-01.
 **Status:** Queued.
@@ -1758,6 +1843,7 @@ Backend scope: engine logic for cluster-level prescriptions feeding P-240. Stub 
 ---
 
 ## P-250 — Threshold calibration
+Milestone: TBD
 
 **Filed:** 2026-05-01.
 **Status:** Queued.
@@ -1771,6 +1857,7 @@ Backend scope: calibration tooling for tuning detector / scoring thresholds agai
 ---
 
 ## P-251 — Lesson content delivery infrastructure
+Milestone: TBD
 
 **Filed:** 2026-05-01.
 **Status:** Queued.
@@ -1784,6 +1871,7 @@ Backend scope: storage + serve endpoints for lesson content. Stub — full spec 
 ---
 
 ## P-260.5 — Author 3 TCF Canada mock exams for Sprint product
+Milestone: TBD
 
 **Filed:** 2026-05-02; **deferred 2026-05-03** to month-2 post-soft-beta launch event (Sprint product is not on the soft-beta surface).
 **Status:** Deferred — month 2 launch event, ~12-18h authoring post-soft-beta.
@@ -1811,6 +1899,7 @@ Backend scope: storage + serve endpoints for lesson content. Stub — full spec 
 ---
 
 ## F-226 — FR voice audit + full-app sweep (tu-form vs vous-form)
+Milestone: M2
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
@@ -1846,6 +1935,7 @@ Surfaces to audit:
 ---
 
 ## B-101 — Legal entity decision
+Milestone: M6
 
 **Filed:** 2026-04-30.
 **Status:** Queued.
@@ -1858,6 +1948,7 @@ Stub — spec TBD.
 ---
 
 ## B-104 — Email marketing infrastructure
+Milestone: TBD
 
 **Filed:** 2026-04-30.
 **Status:** Queued.
@@ -1870,6 +1961,7 @@ Stub — spec TBD.
 ---
 
 ## B-105 — Analytics setup
+Milestone: TBD
 
 **Filed:** 2026-04-30.
 **Status:** Queued.
@@ -1882,6 +1974,7 @@ Stub — spec TBD.
 ---
 
 ## B-106 — BACKLOG architecture consolidation
+Milestone: TBD
 
 **Filed:** 2026-05-02.
 **Status:** Queued.
@@ -1907,6 +2000,7 @@ Recommended path (per BE's drift report 2026-05-02): **D**. Reasoning: BE's tag-
 ---
 
 ## C-100 — Clean up test user id=5 from production DB
+Milestone: TBD
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Queued.
@@ -1919,6 +2013,7 @@ Stub migrated from FE. A test user (id=5) and any orphaned data it owns linger i
 ---
 
 ## F-109 — Full name not preserved end-to-end
+Milestone: M1
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Queued.
@@ -1931,6 +2026,7 @@ Stub migrated from FE. Full-name field set during signup gets dropped or truncat
 ---
 
 ## M-101.z — Landing page custom hero asset + per-section icons
+Milestone: polish-defer
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Queued.
@@ -1943,6 +2039,7 @@ Stub migrated from FE. Author or commission the landing page's custom hero asset
 ---
 
 ## M-102 — Convert Preply reviews to social proof
+Milestone: polish-defer
 
 **Filed:** 2026-04-30.
 **Status:** Queued.
@@ -1955,6 +2052,7 @@ Stub — spec TBD.
 ---
 
 ## M-107 — Express Entry Discord/Telegram outreach
+Milestone: polish-defer
 
 **Filed:** 2026-04-30.
 **Status:** Queued.
@@ -1967,6 +2065,7 @@ Stub — spec TBD.
 ---
 
 ## M-108 — Beta user testimonial pipeline
+Milestone: M8
 
 **Filed:** 2026-04-30.
 **Status:** Queued.
@@ -1981,6 +2080,7 @@ Stub — spec TBD.
 # Post-launch P2 — signal-driven
 
 ## P-102 — Visual quality pass
+Milestone: TBD
 
 **Filed:** 2026-04-30.
 **Status:** Queued.
@@ -1993,6 +2093,7 @@ Tailwind UI template, ~$300 budget. Stub — spec TBD.
 ---
 
 ## P-103.1 — Optional: tighter audio cap + duration enforcement
+Milestone: TBD
 
 **Filed:** 2026-05-01.
 **Status:** Queued.
@@ -2012,6 +2113,7 @@ Validate with usage data before tightening. Premature tightening risks 413-ing l
 ---
 
 ## P-103.2 — Deferred: authenticated candidate-audio serve endpoint
+Milestone: TBD
 
 **Filed:** 2026-05-01.
 **Status:** Deferred — build only when a playback feature is specified.
@@ -2035,6 +2137,7 @@ The invariant statement lives in `app/services/storage.py`'s module docstring; h
 ---
 
 ## P-104.x — Wall-clock setTimeout cap fallback for deep-throttle edge case
+Milestone: TBD
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Queued.
@@ -2048,6 +2151,7 @@ Stub migrated from FE. Sub-ticket of P-104 (background tab timer drift fix). Whe
 ---
 
 ## P-109 — TCF Canada speaking simulator MVP
+Milestone: TBD
 
 **Filed:** 2026-04-30.
 **Status:** Queued.
@@ -2060,6 +2164,7 @@ Stub — spec TBD.
 ---
 
 ## P-210.1 — Per-persona path forking
+Milestone: TBD
 
 **Filed:** 2026-05-01.
 **Status:** Queued (deferred until validated demand).
@@ -2077,6 +2182,7 @@ Currently the schema has one `b1_to_b2` path serving the visa-urgent persona (se
 ---
 
 ## P-211a — Normalize marker_id format in source cluster docs
+Milestone: TBD
 
 **Filed:** 2026-05-02.
 **Status:** Queued.
@@ -2094,6 +2200,7 @@ The 4-segment canonical format `{level}.{phase_num}.C{cluster_num}.{letter}` is 
 ---
 
 ## P-211c — Vocabulary theme assignment pass
+Milestone: TBD
 
 **Filed:** 2026-05-02.
 **Status:** Queued.
@@ -2111,6 +2218,7 @@ P-210 (path seed) and P-211 (content ingest) both leave `cluster.vocabulary_them
 ---
 
 ## P-220.x — Onboarding routing engine (full)
+Milestone: TBD
 
 **Filed:** 2026-05-02.
 **Status:** Queued.
@@ -2138,6 +2246,7 @@ This ticket concretizes routing for the remaining 6 effects:
 ---
 
 ## P-220.y — Notification scheduling (Q12 reminder time)
+Milestone: TBD
 
 **Filed:** 2026-05-02.
 **Status:** Queued.
@@ -2161,6 +2270,7 @@ When notifications ship as a feature, this ticket adds:
 ---
 
 ## EX-100 — Evaluate execution tooling for ticket-by-ticket efficiency
+Milestone: TBD
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Queued — review needed.
@@ -2173,6 +2283,7 @@ Stub migrated from FE. Cross-cutting tooling evaluation — review whether the c
 ---
 
 ## M-106 — Blog launch
+Milestone: polish-defer
 
 **Filed:** 2026-04-30; deferred 2026-05-02.
 **Status:** Queued (deferred with explicit trigger).
@@ -2191,6 +2302,7 @@ Stub — full spec TBD when trigger fires.
 # Phase 2 / deferred indefinitely
 
 ## P-260 — Writing analysis pipeline
+Milestone: TBD
 
 **Filed:** 2026-05-01.
 **Status:** Deferred — Phase 2 (post-launch).
@@ -2204,6 +2316,7 @@ Backend scope: writing-track analysis pipeline. Stub — full spec in `lemethodi
 ---
 
 ## P-261 — Writing dashboard
+Milestone: TBD
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Deferred — Phase 2 (post-launch).
@@ -2216,6 +2329,7 @@ Stub migrated from FE. Phase 2 dashboard surface for the writing track. Pairs wi
 ---
 
 ## P-262 — Cross-modal prescription
+Milestone: TBD
 
 **Filed:** 2026-05-01.
 **Status:** Deferred — Phase 2 (post-launch).
@@ -2229,6 +2343,7 @@ Backend scope: prescription that draws across modalities (oral + writing). Stub 
 ---
 
 ## P-263 — A2 path full content
+Milestone: TBD
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Deferred — Phase 2 (post-launch).
@@ -2241,6 +2356,7 @@ Stub migrated from FE. Author the full A2→B1 path content (Phase A2.1 through 
 ---
 
 ## P-264 — B2→C1 path full content
+Milestone: TBD
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Deferred — Phase 2 (post-launch).
@@ -2253,6 +2369,7 @@ Stub migrated from FE. Author the full B2→C1 path content. Phase 2. Owner: Cha
 ---
 
 ## P-265 — C1→C2 path
+Milestone: TBD
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Deferred — Phase 2 (post-launch).
@@ -2265,6 +2382,7 @@ Stub migrated from FE. Author the C1→C2 path. Phase 2 — out of scope for the
 ---
 
 ## P-266 — Tense + conjugation + idiomaticity detectors
+Milestone: TBD
 
 **Filed:** 2026-05-01.
 **Status:** Deferred — Phase 2 (post-launch).
@@ -2290,6 +2408,7 @@ Renumbered 2026-05-01 to free P-200..P-269 for Phase 1 Architecture Rework. See 
 ---
 
 ## P-268 — Audio-synced playback for Recording Replay
+Milestone: polish-defer
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Deferred — Phase 2 (post-launch).
@@ -2302,6 +2421,7 @@ Stub migrated from FE. Sync audio playback with transcript word-level timing for
 ---
 
 ## P-269 — Streak system
+Milestone: polish-defer
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Deferred — Phase 2 (post-launch).
@@ -2314,6 +2434,7 @@ Stub migrated from FE. Daily streak tracking + UI surface. Needs persistence (BE
 ---
 
 ## P-300 — Writing pedagogy build
+Milestone: TBD
 
 **Filed:** 2026-04-30 (renumbered from P-200 on 2026-05-01).
 **Status:** Queued.
@@ -2327,6 +2448,7 @@ writing track. Stub — spec TBD. Scope overlaps with curriculum P-260 (Writing 
 ---
 
 ## P-301 — TEF exam support
+Milestone: polish-defer
 
 **Filed:** 2026-04-30 (renumbered from P-201 on 2026-05-01).
 **Status:** Queued.
@@ -2340,6 +2462,7 @@ rubric. Stub — spec TBD.
 ---
 
 ## P-302 — DELF exam support
+Milestone: polish-defer
 
 **Filed:** 2026-04-30 (renumbered from P-202 on 2026-05-01).
 **Status:** Queued.
@@ -2352,6 +2475,7 @@ Stub — spec TBD.
 ---
 
 ## P-303 — Italian-audience expansion
+Milestone: polish-defer
 
 **Filed:** 2026-04-30 (renumbered from P-203 on 2026-05-01).
 **Status:** Queued.
@@ -2365,6 +2489,7 @@ Stub — spec TBD.
 ---
 
 ## F-077.x — Convert JSON-as-Text columns to JSONB
+Milestone: TBD
 
 **Filed:** F-077 (PostgreSQL local-dev parity), 2026-04-27.
 **Status:** post-launch.
@@ -2386,6 +2511,7 @@ The codebase stores JSON-shaped data in `Column(Text)` with `json.dumps()` / `js
 ---
 
 ## F-078.x — Async storage migration (`aioboto3`)
+Milestone: TBD
 
 **Filed:** F-078 (production deploy + Spaces), 2026-04-28.
 **Status:** post-launch.
@@ -2407,6 +2533,7 @@ Replace `boto3` synchronous calls in `app/services/storage.py` with `aioboto3` a
 ---
 
 ## F-111 — Investigate DO Spaces Limited Access key `InvalidArgument`
+Milestone: TBD
 
 **Filed:** 2026-04-30.
 **Status:** post-launch.
@@ -2432,6 +2559,7 @@ The Limited Access scope is supposed to grant per-bucket `s3:*` equivalent permi
 ---
 
 ## B-103 — Trademark research on "LeMethodic"
+Milestone: TBD
 
 **Filed:** 2026-04-30.
 **Status:** Queued.
@@ -2444,6 +2572,7 @@ Stub — spec TBD.
 ---
 
 ## B-200 — Book-Lab store surface
+Milestone: TBD
 
 **Filed:** 2026-05-04.
 **Status:** Queued.
@@ -2462,6 +2591,7 @@ Out of scope for soft beta. Trigger: Book-Lab product catalogue stabilized **and
 # Closed
 
 ## M-105 — LinkedIn long-form content
+Milestone: DONE
 
 **Filed:** 2026-04-30; closed 2026-05-02.
 **Status:** Closed — decided not to pursue. LinkedIn is the wrong audience for the visa-urgent persona; the B2B angle (immigration consultants / employer-sponsored TCF prep) is not a current channel and not a priority.
@@ -2476,6 +2606,7 @@ Original priority was Medium. Decided not to pursue per 2026-05-02 marketing tri
 # Shipped
 
 ## F-BUGS-001-BE-A — Tâche 2 agence_voyages production drift — SHIPPED 2026-05-13
+Milestone: DONE
 
 **Filed:** 2026-05-13 (Chadi flagged via FE-side 404 trace — every Tâche 2 conversation-start was returning `HTTP 404 "Unknown or inactive scenario_code 'agence_voyages'"`).
 **Status:** Shipped 2026-05-13. Prod fix executed by Chadi via DO console + verified.
@@ -2520,6 +2651,7 @@ No code change, no migration, no DB write from BE this commit. Prod fix already 
 ---
 
 ## B-102 — Privacy policy + ToS + Refund
+Milestone: DONE
 
 **Filed:** 2026-04-30; **scope expanded 2026-05-03** to include the Refund page (originally just Privacy + ToS).
 **Status:** Shipped 2026-05-03 (FE-side, `lemethodic-frontend` commit `3216d4d`). Three pages live at `/privacy`, `/terms`, `/refund` with footer integration on the landing page.
@@ -2538,6 +2670,7 @@ Footer links on the landing page surface all three. Authoring owned by Chadi; re
 ---
 
 ## F-079 — Custom domain wiring (lemethodic.com → Vercel)
+Milestone: DONE
 
 **Filed:** 2026-04-28; reframed 2026-05-02 (Vercel deploy already shipped).
 **Status:** Shipped 2026-05-03 (DNS at Namecheap, A record `@` → `216.198.79.1`, Vercel auto-provisioned SSL via Let's Encrypt). Valid configuration verified end-to-end.
@@ -2558,6 +2691,7 @@ Shipped:
 ---
 
 ## F-110 — Recordings list endpoint
+Milestone: DONE
 
 **Filed:** 2026-04-30.
 **Status:** shipped 2026-04-30 (commit `b25298e`).
@@ -2598,6 +2732,7 @@ Shipped:
 ---
 
 ## F-110.1 — Reconcile couches `internal_key` → `key` across older endpoints
+Milestone: DONE
 
 **Filed:** 2026-04-30.
 **Status:** Shipped 2026-05-01. Backend dual-emission landed 2026-04-30 (commit `ca993d1`); frontend migration landed 2026-05-01 (`lemethodic-frontend` commit `c5f9b45`); backend `internal_key` removal in F-110.2.
@@ -2639,6 +2774,7 @@ Goal: a single `key` name across every endpoint that returns couches.
 ---
 
 ## F-110.2 — Drop `internal_key` from `couches_array`
+Milestone: DONE
 
 **Filed:** 2026-04-30.
 **Status:** Shipped 2026-05-01.
@@ -2659,6 +2795,7 @@ Cleanup of the F-110.1 dual-emission window. Once `fluentpath-frontend/lib/api.t
 ---
 
 ## F-223 — "Le raccourci" copy bleed cleanup
+Milestone: DONE
 
 **Filed:** 2026-05-04.
 **Status:** **Shipped 2026-05-06** — both FE-side (delete in `lemethodic-frontend` landed 2026-05-04) and BE-side (delete commit `e7d0ea1` 2026-05-06) complete. Per Chadi 2026-05-06: log-pull verification skipped — Jinja templates dead by architecture (Next.js FE on Vercel handles all user-facing pages from `lemethodic.com`; BE FastAPI serves API endpoints only). Production verification 2026-05-06: `GET /` + `GET /admin` + `GET /writing` all return 404 (was 200 with Jinja); `/health` + `/api/writing/prompts` + `/onboarding/questions` + `/api/users/me` all unchanged. 5,358 lines of pre-rebrand HTML retired plus 23 lines of handler code in `main.py` + the unused `HTMLResponse` import.
@@ -2674,6 +2811,7 @@ Cleanup of the F-110.1 dual-emission window. Once `fluentpath-frontend/lib/api.t
 ---
 
 ## F-224 — Writing Dashboard build (FE consumer + prompt seed)
+Milestone: DONE
 
 **Filed:** 2026-05-04.
 **Status:** **Shipped 2026-05-06** — v1 pack landed end-to-end with **real Claude-based 4-layer analysis** (not placeholder). BE schema migration `f4d5e6c7b8a9` (commit `ae785a4`) added 5 canonical columns + 2 CHECK constraints; legacy columns retained with auto-backfill. 14 v1 prompts seeded to prod DB by Chadi 2026-05-06; distribution verified `(1,B1)=6 / (2,B1)=4 / (2,B2)=1 / (3,B2)=3`. API-side independent confirmation 2026-05-06: `/api/writing/prompts` returns 14 rows with all 13 fields (8 legacy + 5 canonical). FE consumer is the next leg — strategic Claude drafts the FE prompt under the reverted protocol.
@@ -2717,6 +2855,7 @@ Build the `/writing` dashboard consuming existing BE endpoints. Decisions to sur
 ---
 
 ## P-103 — Audio upload security hardening (user_id-prefixed storage keys)
+Milestone: DONE
 
 **Filed:** 2026-04-30.
 **Status:** Shipped 2026-05-01 — sub-item 2 (user_id-prefixed keys + helper). Sub-items 1 and 3 closed during scoping.
@@ -2733,6 +2872,7 @@ Originally three sub-items (size cap, user_id ownership, auth-checked serve). Au
 ---
 
 ## P-104 — Background tab timer drift fix
+Milestone: DONE
 
 **Filed:** 2026-04-30.
 **Status:** Shipped 2026-05-01 (FE-side, commit `fluentpath-frontend@48b61a1`).
@@ -2752,6 +2892,7 @@ P-104.x (deep-throttle setTimeout fallback for the 5+ min unattended case) remai
 ---
 
 ## P-200 — Diagnostic engine: detector implementation
+Milestone: DONE
 
 **Filed:** 2026-05-01.
 **Status:** Shipped 2026-05-02 (BE only — no FE consumer yet; the dashboard reads will land with §7 dashboard work).
@@ -2771,6 +2912,7 @@ Backend scope shipped: one Claude call per recording (Q2 decision), filtered to 
 ---
 
 ## P-201 — Diagnostic engine: level assignment + confidence
+Milestone: DONE
 
 **Filed:** 2026-05-01.
 **Status:** Shipped 2026-05-02 (BE only — FE consumer is the §7 dashboard work). **P-201.x follow-up shipped 2026-05-03** (commit `2b13b01`) — adds `total_clusters_in_path` to `AssignedBlock` so the FE can render "8 of 13 areas evaluated" without deriving the denominator from `n_clusters_evaluated / coverage`.
@@ -2792,6 +2934,7 @@ Backend scope shipped: trigger fires `recording_count >= 3` (any Tâche distribu
 ---
 
 ## P-202 — Cluster data model
+Milestone: DONE
 
 **Filed:** 2026-05-01.
 **Status:** Shipped 2026-05-01 (commit `d5595b3`).
@@ -2803,6 +2946,7 @@ Backend scope: SQLAlchemy + Alembic schema for the cluster concept. Migration `a
 ---
 
 ## P-203 — Path data model
+Milestone: DONE
 
 **Filed:** 2026-05-01.
 **Status:** Shipped 2026-05-01 (commit `d5595b3`).
@@ -2814,6 +2958,7 @@ Backend scope: SQLAlchemy + Alembic schema for the path concept (sequence of clu
 ---
 
 ## P-204 — User progress model
+Milestone: DONE
 
 **Filed:** 2026-05-01.
 **Status:** Shipped 2026-05-01 (commit `d5595b3`).
@@ -2825,6 +2970,7 @@ Backend scope: SQLAlchemy + Alembic schema tracking per-user progress through cl
 ---
 
 ## P-210 — B1→B2 path seed (1 path, 5 phases, 22 cluster slots)
+Milestone: DONE
 
 **Filed:** 2026-05-01.
 **Status:** Shipped 2026-05-01 (commit `79cd629`); production seeded same-day via `scripts/seed_b1_b2_path.py` against the prod DB.
@@ -2835,6 +2981,7 @@ Idempotent one-shot seed. Cluster slugs follow the 4-segment marker convention (
 ---
 
 ## P-211 — Cluster content authoring
+Milestone: DONE
 
 **Filed:** 2026-05-01.
 **Status:** Shipped 2026-05-01 (commit `d862794`); production ingested same-day via `scripts/ingest_b1_b2_cluster_content.py` against the prod DB.
@@ -2846,6 +2993,7 @@ Backend scope: data ingestion infrastructure for authoring cluster content. Pars
 ---
 
 ## P-212 — Starter cluster seed
+Milestone: DONE
 
 **Filed:** 2026-05-01; superseded 2026-05-02.
 **Status:** Superseded by P-210 + P-211 (shipped 2026-05-01). The 22-cluster B1→B2 path is in production with 13 clusters fully authored and 9 placeholders pending Les Moules content. Nothing in P-212's original scope remains uncovered.
@@ -2858,6 +3006,7 @@ Original scope (preserved for history): backend seed script populating the start
 ---
 
 ## P-220 — Onboarding questionnaire rebuild
+Milestone: DONE
 
 **Filed:** 2026-05-01.
 **Status:** Shipped 2026-05-02 (BE + FE + production verification complete).
@@ -2877,6 +3026,7 @@ Backend scope shipped: schema migration `b3a55c1e0001` (7 new User columns + `Us
 ---
 
 ## P-221 — Diagnostic flow integration
+Milestone: DONE
 
 **Filed:** 2026-05-01.
 **Status:** Shipped 2026-05-02 (single commit `c475bb7`).
@@ -2901,6 +3051,7 @@ FE follow-up (P-221.fe — file when needed): `/ecole` banner consuming `/api/di
 ---
 
 ## P-222 — Waitlist UX for A2 and B2+ paths
+Milestone: DONE
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** Shipped 2026-05-03 (FE-side, `lemethodic-frontend` commits `59fb2c6` + `deff02b` + `820d788`). Production verified on `lemethodic.com/onboarding/waitlist`.
@@ -2918,6 +3069,7 @@ When a user's diagnostic places them on a not-yet-built path (A2→B1, B2→C1, 
 ---
 
 ## P-230 — Overall Progress dashboard rebuild
+Milestone: DONE
 
 **Filed:** 2026-05-02 (migrated from chadovsky/lemethodic-frontend BACKLOG).
 **Status:** v1 shipped 2026-05-03 (FE-side, `lemethodic-frontend` 3-commit set ending `28bf765`); **deemed insufficient for soft-beta 2026-05-04** — sections render but feel placeholder-y. Real content + depth rebuild filed as **P-230.depth** (Active LC). v1 entry preserved here for ship-history; depth work tracked in the new ticket.
@@ -2938,6 +3090,7 @@ When a user's diagnostic places them on a not-yet-built path (A2→B1, B2→C1, 
 ---
 
 ## P-240 — Today's recommended action
+Milestone: DONE
 
 **Filed:** 2026-05-01.
 **Status:** Shipped 2026-05-02 (single commit `6b8ee43` — action layer). Prose layer deferred as **P-240b** (Post-launch P1, blocked on P-213).
@@ -2973,6 +3126,7 @@ FE follow-up (P-240.fe — file when needed): replace `DailyActionCard` hardcode
 ---
 
 ## M-100 — Past Preply student outreach
+Milestone: DONE
 
 **Filed:** 2026-04-30.
 **Status:** Shipped 2026-05-03 (re-engagement outreach to past Preply students completed by Chadi).
@@ -2984,6 +3138,7 @@ Re-engagement angle, not first contact. Outreach delivered.
 ---
 
 ## M-101 — Landing page copy in LeMethodic voice
+Milestone: DONE
 
 **Filed:** 2026-04-30.
 **Status:** Shipped 2026-05-03 (landing page on `lemethodic.com` renders the LeMethodic-voice copy from the authored doc; M-101a delivered the FE implementation).
@@ -2999,24 +3154,31 @@ Out of scope (filed elsewhere): hero asset polish + per-section illustrations �
 ## Data Layer (D-tickets)
 
 ### D-001 — Step 0 scaffolding ✅ DONE
+Milestone: DONE
 Scaffolded `data-layer/`: Makefile, `sql/001_schema.sql`, `scripts/common.py`, ingestion framework (`base.py`), 2 full parsers + 5 skeletons, enrichment runner, vectorize, review/audit harness. Reference: `data-layer/README.md`.
 
 ### D-002 — Environment setup ✅ DONE
+Milestone: DONE
 `docker-compose up -d` → pgvector/pgvector:pg16 container live on port 5432; `data-layer/.env` populated (DB URL + Groq key).
 
 ### D-003 — Apply schema ✅ DONE
+Milestone: DONE
 `sql/001_schema.sql` applied via `make schema`; `chunks` table + ancillary tables created with pgvector extension enabled.
 
 ### D-004 — Capture decisions ✅ DONE
+Milestone: DONE
 `make decide` ran and persisted the corpus-source decision log (PARSEME / CollFrEn / DBnary / Anki / Lexique3 / UniversalCEFR / Tatoeba in scope) into the run artifacts.
 
 ### D-010 — Implement PARSEME ingestion ✅ DONE
+Milestone: DONE
 `data-layer/scripts/ingest/parseme.py` — `.cupt` parser groups tokens by MWE id (one chunk per MWE), handles discontinuous spans, skips multi-word ranges + empty nodes, maps all 8 PARSEME categories (VID / IRV / LVC.* / VPC.* / MVC / IAV) to chunk_type. Live corpus pivot to `gitlab.com/parseme/sharedtask-data 1.2/FR` documented in NOTES (1).
 
 ### D-011 — Implement CollFrEn ingestion ✅ DONE
+Milestone: DONE
 `data-layer/scripts/ingest/collfren.py` — openpyxl reader for `FR_disambiguated_SyntagmaticLF_v1b.xlsx` pairs KEYWORD/VALUE into bilingual FR-EN collocation chunks; strips `_..._` + `[…]` markers; uses postposed `~` subcategorisation column to order value-first vs. keyword-first.
 
 ### D-012 — Implement DBnary ingestion ✅ DONE
+Milestone: DONE
  d-022/dbnary-debug
 Status: ✅ DONE
 File: data-layer/scripts/ingest/dbnary.py
@@ -3026,12 +3188,15 @@ Delivered: streaming Turtle parser (quote-aware subject-block splitter + per-blo
  master
 
 ### D-013 — Implement Anki ingestion ✅ DONE
+Milestone: DONE
 `data-layer/scripts/ingest/anki.py` — per-model field-order dispatch across multi-model `.apkg` decks (one deck may bundle 17 note types); HTML / cloze / entity / style stripping; validated against two AnkiWeb decks.
 
 ### D-014 — Validate Tatoeba example-attachment ✅ DONE
+Milestone: DONE
 `data-layer/scripts/ingest/tatoeba.py` — validated 8/8 attachments on a 5-chunk sample; fixed punctuation-stripping bug in tokenizer; profiled n-gram lookup at 200k×21k (21.6s) → DB insert is the bottleneck, prefix-tree not warranted.
 
 ### D-020 — Run ingest pipeline 🟡 IN PROGRESS
+Milestone: TBD
 Status: IN PROGRESS — split by source. `make ingest` is no longer a single unattended run; each source has its own state because of corpus-availability + parser-debug surface area.
 
  docs/backlog-may15
@@ -3046,32 +3211,40 @@ Status: IN PROGRESS — split by source. `make ingest` is no longer a single una
 | DBnary | ❌ | BLOCKED on D-022 debug agent |
 
 ### D-021 — Groq enrichment integration 🟡 IN PROGRESS
+Milestone: DONE
 Agent on `d-021/groq-enrichment`. Replaces the original "run enrich pipeline" placeholder. Llama 3.3 70B via Groq's OpenAI-compatible endpoint; key in `data-layer/.env` (gitignored); rotation done post-exposure (see NOTES 4). Provider wiring shipped (`feat(D-021): add Groq LLM provider for enrichment`); WIP on universal_cefr enrichment path.
 
 ### D-022 — DBnary parser debug 🟡 IN PROGRESS
+Milestone: DONE
 Agent on `d-022/dbnary-debug`. Replaces the original "run vectorize pipeline" placeholder. After streaming-parser fixes the parser currently produces ~944 rows / 72s on the diagnostic slice; smoke harness at `data-layer/tests/smoke_dbnary_slice.py` + `tests/diagnose_dbnary.py`. Unblocks the DBnary row in D-020.
 
 ### D-023 — Wikipedia FR cultural ingester 🟡 IN PROGRESS
+Milestone: TBD
 Agent on `d-023/wikipedia-fr-cultural`. Targets DELF + AP coverage (cultural reference base — French-canonical articles, register-rich prose). Source survey + parser scaffold in flight.
 
 ### D-021 — Groq LLM provider for enrichment ✅ DONE
+Milestone: DONE
 Status: DONE (2026-05-15)
 File: data-layer/scripts/enrich.py, data-layer/scripts/test_groq.py, data-layer/config.example.yml
 Summary: Added "groq" provider to `LLMClient` via Groq's OpenAI-compatible Chat Completions endpoint (`https://api.groq.com/openai/v1/chat/completions`) with `Authorization: Bearer` from `GROQ_API_KEY` (loaded from `data-layer/.env` via python-dotenv with a no-dep fallback parser). Rate-limit handling: HTTP 429 triggers exponential backoff (1, 2, 4, 8, 16, 32, 60 s; honours `Retry-After` header when present) with retry logging. `config.yml` / `config.example.yml` switched to `provider: groq`, `model: llama-3.3-70b-versatile`; Ollama config kept inline as commented fallback. Smoke-tested via `python -m scripts.test_groq` (translates "bonjour" → "hello"); pipeline run itself (`make enrich`) still pending under D-021.run.
 
 ### D-021.run — Run enrich pipeline
+Milestone: TBD
 Status: BLOCKED by D-020
 Action: make enrich (cloud LLM via Groq per D-021)
 master
 
 ### D-024 — DALF C1/C2 literary ingester 🟡 IN PROGRESS
+Milestone: TBD
 Agent on `d-024/dalf-c-level`. Literary-register source for C1/C2 — feeds the DALF exam variant (see E-003).
 
 ### D-025 — Naturalisation source research 🟡 IN PROGRESS
+Milestone: TBD
 Agent on `d-025/naturalisation-research`. Source-survey only — identifying licensable corpora for the FR-naturalisation exam variant (E-004). No parser yet.
 
  d-022/dbnary-debug
 ### D-022 — Debug DBnary ingestion (real-corpus streaming) ✅ DONE
+Milestone: DONE
 Status: ✅ DONE (2026-05-15)
 File: data-layer/scripts/ingest/dbnary.py
 Bug: prior D-012 implementation only ever ran against a synthetic-Turtle smoke fixture. Against the real 1.2 GB `fr_dbnary_ontolex.ttl` dump it consumed 27 minutes of CPU and yielded zero chunks. Three root causes:
@@ -3083,6 +3256,7 @@ Delivered: 487,590 DBnary chunks in `chunks` (`chunk_sources.source_name='DBnary
 Follow-up: `D-023 — Run vectorize pipeline` (`make vectorize`, ~24h) is now unblocked.
 
 ### D-024 — Implement literary / academic French ingester (DALF C1/C2 corpus) ✅ DONE
+Milestone: TBD
 Status: ✅ DONE (2026-05-15)
 File: data-layer/scripts/ingest/literary_fr.py
 Goal: seed the C-level vocabulary tier with literary noun-phrase / multi-word-expression chunks for DALF C1/C2 prep. Three sub-sources sharing one spaCy `fr_core_news_lg` extractor (3-15-token noun_chunk + amod-tail expansion + first-`nmod` PP graft):
@@ -3100,16 +3274,19 @@ Delivered chunk counts (2026-05-15 post-revision):
 Constraints honoured: pre-1850 works skipped (Balzac / Stendhal corpus filtered out), no modern copyrighted literature, `HF_TOKEN` env var honoured for gated datasets, polite MediaWiki polling (UA + 0.4 s/request, max 300 titles per category).
 
 ### D-030 — Review queue (500 chunks)
+Milestone: TBD
 Status: BLOCKED by D-023 (vectorize pipeline)
 Action: make review-queue + human review ~6h
 
 ### D-023 — Wikipedia FR cultural ingestion ✅ DONE
+Milestone: TBD
 Status: ✅ DONE (2026-05-15)
 Branch: d-023/wikipedia-fr-cultural
 File: data-layer/scripts/ingest/wikipedia_fr.py
 Summary: French Wikipedia article ingester for cultural / civilizational chunks unlocking DELF (European cultural content) + AP French (Franco-anglophone overlap). MediaWiki action API: per top-level category, BFS depth-1 collects up to 350 page titles via `list=categorymembers` (cmtype=page→subcat fallback), then bulk `prop=extracts|pageprops` (20 titles/call) fetches lead extracts + disambiguation flags + follows redirects. Topic mapping: `culture-fr-europe` for Culture/Littérature/Cuisine/Société française; `culture-fr-anglo` for Histoire/Personnalités/Géographie de la France (first category to claim a title wins on cross-category dedup). Filters: skips disambiguation pages and stubs (lead < 100 chars). Politeness: 1 req/s floor + descriptive User-Agent (Wikipedia API policy); per-category title lists + per-title summaries cache to JSON under raw/wikipediafr/ → re-runs hit zero network. Override `_upsert_row` attaches topic_codes via merge UPDATE (idempotent across re-runs). Result: **1,877 chunks** ingested across both topic codes (1,244 culture-fr-europe / 633 culture-fr-anglo), 1,877 lead-extract examples linked, source_version=2026-05-15, source_license=CC-BY-SA (recorded in chunk_sources for D-031 audit).
 
 ### D-025 — Naturalisation source candidates (research) ✅ RESEARCH COMPLETE
+Milestone: TBD
 Status: ✅ RESEARCH COMPLETE (2026-05-15)
 Branch: d-025/naturalisation-research
 Document: data-layer/docs/D-025-naturalisation-sources.md
@@ -3117,11 +3294,13 @@ Summary: surveyed 14 candidate sources for French naturalisation interview prep 
 Next: D-031 audit of the 6 P0/P1 sources → ingestion sprint (~2 BE days after green light).
 
 ### D-030 — Review queue (500 chunks)
+Milestone: TBD
 Status: BLOCKED downstream (waits on D-020 sources completing + D-021 enrichment + a vectorize pass).
 Action: `make review-queue` + human review ~6h.
  master
 
 ### D-031 — License audit
+Milestone: TBD
 Status: BLOCKED by D-030.
 Action: `make license-audit` + manual sign-off.
 
@@ -3132,18 +3311,23 @@ Action: `make license-audit` + manual sign-off.
 Stubs filed 2026-05-15. Each surfaces a slice of the data layer to the FE. Bodies to be authored when D-020..D-022 close and the chunk corpus is review-clean.
 
 ### W-001 — Le Vocabulaire surface wiring (placeholder)
+Milestone: M4
 Wire `/vocabulaire` FE surface to the enriched `chunks` table. Depends on D-020 (Tatoeba + DBnary in), D-021 (enrichment labels), D-030 (review pass).
 
 ### W-002 — L'École surface wiring (placeholder)
+Milestone: M1
 Wire L'École cluster/lesson surface to curriculum-tagged chunks. Depends on D-021 enrichment label set being finalised.
 
 ### W-003 — Le Diagnostic surface wiring (placeholder)
+Milestone: M3
 Wire La Carte / Le Goulet / L'Ordonnance retrieval to the chunk + vector store so diagnostic feedback cites real corpus exemplars rather than the in-prompt placeholder set.
 
 ### W-004 — Cross-surface retrieval API (placeholder)
+Milestone: TBD
 Shared retrieval endpoint consumed by W-001 / W-002 / W-003 — chunk lookup by `chunk_type`, `cefr_level`, `theme`, and similarity. Defers F-312's RAG layer plumbing.
 
 ### W-005 — Review-queue admin surface (placeholder)
+Milestone: TBD
 Admin-only surface for clearing D-030's 500-chunk review queue. Depends on W-004's retrieval primitives being stable.
 
 ---
@@ -3153,14 +3337,55 @@ Admin-only surface for clearing D-030's 500-chunk review queue. Depends on W-004
 Stubs filed 2026-05-15. Each is a top-of-funnel product variant beyond the TCF Canada beachhead. All depend on the matching ingester (D-023..D-025) plus the surface wiring (W-001..W-005) being live.
 
 ### E-001 — DELF variant (placeholder)
+Milestone: polish-defer
 Cultural-reference + register-rich exam variant. Depends on D-023 (Wikipedia FR cultural ingester) + W-001..W-005.
 
 ### E-002 — AP French variant (placeholder)
+Milestone: polish-defer
 US high-school AP French exam variant. Depends on D-023 + W-001..W-005.
 
 ### E-003 — DALF C1/C2 variant (placeholder)
+Milestone: polish-defer
 Literary-register exam variant. Depends on D-024 (DALF C1/C2 literary ingester) + W-001..W-005.
 
 ### E-004 — Naturalisation variant (placeholder)
+Milestone: polish-defer
 FR-naturalisation linguistic-test variant. Depends on D-025 (naturalisation source research) + W-001..W-005.
+
+---
+
+## Mapping notes — M0 milestone tagging (2026-05-25)
+
+TBD tickets below have ambiguous milestone assignments. One-line questions for Chadi.
+
+- **B-104 — Email marketing infrastructure** — Conflicts with FE B-104 = Paywall (M6); recommend renumbering this BE ticket to B-110: what is the correct milestone for email marketing infrastructure?
+- **F-312** — RAG retrieval layer: M3 prerequisite for scorer quality or a separate infrastructure track outside V1.0 milestones?
+- **P-107, P-108, P-110** — Soft satisfaction guarantee, pronunciation feedback, onboarding refinement: M7 soft-gate items or polish-defer?
+- **P-211b, P-211a, P-211c** — Cluster content sub-tickets: M4 (La Bibliothèque corpus) or M3 (L'Examen content authoring)?
+- **P-213** — Dialogue Box template authoring: M4 (Bibliothèque) or M1 (L'École surface)?
+- **P-240b** — Today's focus prose layer (Dialogue Box rendering): M1 dashboard completeness or post-launch?
+- **P-260.5** — Author 3 TCF Canada mock exams: M3 (L'Examen) prerequisite or post-launch content work?
+- **P-231, P-232, P-233, P-235, P-236, P-237, P-241** — Post-launch P1 dashboard + prescription surfaces: any required for soft-beta sign-off (M7) or all polish-defer?
+- **P-250, P-251** — Threshold calibration + lesson content delivery: M4 or post-launch?
+- **P-260, P-261, P-262, P-263, P-264, P-265, P-266** — Phase 2 writing + expansion: all polish-defer?
+- **P-300** — Writing pedagogy: confirmed polish-defer (writing deferred to V1.1+ per CLAUDE.md)?
+- **B-105** — Analytics setup: M6 (revenue infrastructure) or M7/M8 (pre-beta ops)?
+- **B-106** — BACKLOG architecture consolidation: ops task — which session should run this?
+- **B-103, B-200** — Trademark research + Book-Lab store: polish-defer / V1.1+?
+- **C-100** — Clean up test user id=5 from production DB: M7 pre-ship housekeeping or run now?
+- **P-102** — Visual quality pass: M2 (visual coherence) or M7 (satisfaction gate quality review)?
+- **P-103.1, P-103.2** — Deferred audio cap + authenticated-audio-serve: M1 edge case or polish-defer?
+- **P-104.x** — Wall-clock setTimeout cap fallback: M1 pre-launch blocker or polish-defer?
+- **P-109** — TCF Canada speaking simulator MVP: M3 (L'Examen scope) or post-launch standalone?
+- **P-210.1** — Per-persona path forking: M1 (onboarding/path) or post-launch routing?
+- **P-211b** — Render-time student-facing filter for cluster lesson body: M1 (L'École surface) or M4?
+- **P-220.x, P-220.y** — Onboarding routing engine full + notification scheduling: M1 (onboarding harden) or post-launch?
+- **F-077.x, F-078.x, F-111** — JSONB migration, async storage, DO Spaces debug: M6 pre-revenue tech debt or polish-defer?
+- **EX-100** — Execution tooling evaluation: not milestone-gated — close as ops or defer to M7?
+- **D-020** — Run ingest pipeline: M4 prerequisite (vocab corpus) — which D-tickets must close first?
+- **D-021.run** — Run enrichment pipeline (blocked on D-020): M4 prerequisite?
+- **D-023, D-024, D-025** — Wikipedia FR cultural, DALF C1/C2, naturalisation ingesters: all polish-defer (feed E-001..E-004) or any of these in M4 scope?
+- **D-030, D-031** — Corpus review pass + post-ingest QA: M4 prerequisite for vocab corpus quality?
+- **W-004** — Cross-surface retrieval API: M3 (diagnostic) or M4 (vocab) prerequisite?
+- **W-005** — Review-queue admin surface: M4 prerequisite or polish-defer?
 
