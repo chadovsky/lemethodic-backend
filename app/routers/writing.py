@@ -8,6 +8,7 @@ from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 from sqlalchemy.orm import Session, joinedload
+from app.services.rate_limit import ai_rate_limit
 from app.database import get_db
 from app.models.models import User
 from app.models.writing import (
@@ -93,6 +94,7 @@ def get_prompts(
     "/submit",
     status_code=http_status.HTTP_202_ACCEPTED,
     response_model=WritingSubmitResponse,
+    dependencies=[Depends(ai_rate_limit("writing_submit", short_max=5, long_max=30))],
 )
 async def submit_writing(
     req: SubmitWritingRequest,

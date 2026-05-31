@@ -1,32 +1,45 @@
 """F-310 Phase C — Redis-backed dual-window rate limiter for /auth routes.
+F-401 — same limiter extended to AI endpoints, keyed by user_id.
 
-Pattern: fixed-window counter (per IP × per endpoint × per window-start
-timestamp). Two windows in series — both must pass:
+Pattern: fixed-window counter (per key × per window-start timestamp).
+Two windows in series — both must pass:
 
-  short window: 5 attempts / 15 min  → first-line throttle
-  long window:  10 attempts / 1 hour → lockout-tier (catches slow spray)
+  Auth endpoints (IP-keyed):
+    short window: 5 attempts / 15 min  → first-line throttle
+    long window:  10 attempts / 1 hour → lockout-tier (catches slow spray)
+
+  AI endpoints (user_id-keyed, configurable per endpoint):
+    short window: X / 1 min  → burst protection
+    long window:  Y / 1 hour → abuse ceiling
 
 On exceed → HTTP 429 with `Retry-After` header = remaining seconds of the
 exceeded window.
 
 Fail-open on Redis unreachable: if get_redis() / INCR raise, we log at
 WARNING and allow the request. The trade-off is: never lock everyone out
-of auth when Redis is down (auth-flow availability > rate-limit
-strictness). The DB-side credentials check is the next line of defense.
+when Redis is down. The DB-side credentials check (auth) or the
+diagnostic quota (AI) is the next line of defense.
 
-Usage:
+Usage (auth, IP-keyed):
 
     from app.services.rate_limit import auth_rate_limit
 
     @router.post("/login", dependencies=[Depends(auth_rate_limit("login"))])
     def login(...): ...
 
-The dependency reads the client IP from `request.client.host`. Behind a
-proxy, App Platform / Vercel populate `X-Forwarded-For`; that's not used
-here — FastAPI's `request.client.host` reflects the last hop. Acceptable
-for soft beta (single tier of proxying). When we add a CDN with multiple
-hops, switch to a TrustedHostMiddleware + parse `X-Forwarded-For` last
-entry.
+Usage (AI, user_id-keyed):
+
+    from app.services.rate_limit import ai_rate_limit
+
+    @router.post("/transcribe", dependencies=[Depends(ai_rate_limit(
+        "transcribe", short_max=20, long_max=200,
+    ))])
+    async def transcribe(...): ...
+
+The auth dependency reads the client IP from `request.client.host`.
+AI dependency reads user_id via get_current_user (FastAPI caches the
+dependency per-request, so no double auth check when the endpoint also
+declares user: User = Depends(get_current_user)).
 """
 from __future__ import annotations
 
@@ -183,5 +196,81 @@ def auth_rate_limit(
                 endpoint_key, ip, e,
             )
             return
+
+    return _dep
+
+
+# ── F-401: per-user rate limiter for AI endpoints ─────────────────────────────
+
+def ai_rate_limit(
+    endpoint_key: str,
+    *,
+    short_max: int,
+    short_window: int = 60,       # 1 minute default
+    long_max: int,
+    long_window: int = 3600,      # 1 hour default
+) -> Callable:
+    """FastAPI dependency factory for per-user dual-window rate limits on
+    AI endpoints. Keys by user_id so the ceiling is per-account, not
+    per-IP (a shared IP like a corporate NAT must not block all users).
+
+    On exceed: 429 with Retry-After = remaining seconds of the window.
+    On Redis-down: fail-open (logs WARNING; request proceeds).
+
+    Usage:
+
+        @router.post("/transcribe", dependencies=[Depends(ai_rate_limit(
+            "transcribe", short_max=20, long_max=200,
+        ))])
+        async def transcribe(...): ...
+    """
+    from app.models.models import User  # local import avoids module-load cycle
+    from app.services.auth import get_current_user  # same reason
+
+    async def _dep(user: User = Depends(get_current_user)) -> None:
+        key_base = f"f401:ai:{endpoint_key}:u:{user.id}"
+        try:
+            redis = get_redis()
+            short_ok, short_retry = await _check_window(
+                redis,
+                key=f"{key_base}:s",
+                max_attempts=short_max,
+                window_seconds=short_window,
+            )
+            if not short_ok:
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail={
+                        "code": "ai_rate_limit_exceeded",
+                        "window": "short",
+                        "endpoint": endpoint_key,
+                        "retry_after_seconds": short_retry,
+                    },
+                    headers={"Retry-After": str(short_retry)},
+                )
+            long_ok, long_retry = await _check_window(
+                redis,
+                key=f"{key_base}:l",
+                max_attempts=long_max,
+                window_seconds=long_window,
+            )
+            if not long_ok:
+                raise HTTPException(
+                    status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                    detail={
+                        "code": "ai_rate_limit_lockout",
+                        "window": "long",
+                        "endpoint": endpoint_key,
+                        "retry_after_seconds": long_retry,
+                    },
+                    headers={"Retry-After": str(long_retry)},
+                )
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.warning(
+                "F-401 ai_rate_limit: fail-open on %s (user_id=%s) due to %s",
+                endpoint_key, user.id, e,
+            )
 
     return _dep

@@ -24,6 +24,7 @@ from app.database import get_db
 from app.models.models import User
 from app.services import storage
 from app.services.auth import get_current_user
+from app.services.rate_limit import ai_rate_limit
 from app.services.fluency import compute_fluency
 from app.services.stt import transcribe_audio
 
@@ -35,7 +36,9 @@ router = APIRouter(prefix="/api/audio", tags=["audio"])
 # os.makedirs needed.
 
 
-@router.post("/upload")
+@router.post("/upload", dependencies=[Depends(ai_rate_limit(
+    "transcribe", short_max=20, long_max=200,
+))])
 async def upload_and_transcribe(
     audio: UploadFile = File(...),
     duration_seconds: float = Form(default=0),

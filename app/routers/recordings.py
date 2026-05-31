@@ -15,6 +15,7 @@ from app.models.models import (
 )
 from app.services.auth import get_current_user
 from app.services.diagnostic_rate_limit import diagnostic_quota_required
+from app.services.rate_limit import ai_rate_limit
 from app.services.prompt_safety import contains_injection_signal
 from app.services.stt import transcribe_audio
 from app.services import storage
@@ -311,7 +312,9 @@ async def _run_analysis_and_persist(
         raise HTTPException(500, f"Analysis failed: {str(e)}")
 
 
-@router.post("/upload")
+@router.post("/upload", dependencies=[Depends(ai_rate_limit(
+    "analyze", short_max=20, long_max=200,
+))])
 async def upload_and_analyze(
     audio: UploadFile = File(...),
     topic_id: int = Form(default=0),
@@ -423,7 +426,9 @@ async def upload_and_analyze(
 _RE_RECORD_THRESHOLD = 0.30  # low_conf_ratio above which we prompt re-record
 
 
-@router.post("/transcribe")
+@router.post("/transcribe", dependencies=[Depends(ai_rate_limit(
+    "transcribe", short_max=20, long_max=200,
+))])
 async def transcribe_only(
     audio: UploadFile = File(...),
     topic_id: int = Form(default=0),
@@ -543,7 +548,9 @@ class ConfirmTranscriptRequest(BaseModel):
     exam_profile: str = "tcf_canada"
 
 
-@router.post("/{recording_id}/confirm-transcript")
+@router.post("/{recording_id}/confirm-transcript", dependencies=[Depends(ai_rate_limit(
+    "analyze", short_max=20, long_max=200,
+))])
 async def confirm_transcript(
     recording_id: int,
     req: ConfirmTranscriptRequest,

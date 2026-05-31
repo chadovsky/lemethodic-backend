@@ -40,6 +40,7 @@ from app.models.models import (
 )
 from app.services.auth import get_current_user
 from app.services.diagnostic_rate_limit import diagnostic_quota_required
+from app.services.rate_limit import ai_rate_limit
 from app.services.fluency import compute_fluency
 from app.services.pattern_catalog import log_unknown_pattern_keys
 from app.services.ecole_gating import is_above_a2 as _ecole_is_above_a2
@@ -598,7 +599,9 @@ async def list_scenarios(
     }
 
 
-@router.post("/start")
+@router.post("/start", dependencies=[Depends(ai_rate_limit(
+    "conversations_turn", short_max=60, long_max=1000,
+))])
 async def start_conversation(
     req: StartConversationRequest,
     db: Session = Depends(get_db),
@@ -701,7 +704,9 @@ async def get_conversation(
     return _serialize_conversation(conv)
 
 
-@router.post("/{conversation_id}/turn")
+@router.post("/{conversation_id}/turn", dependencies=[Depends(ai_rate_limit(
+    "conversations_turn", short_max=60, long_max=1000,
+))])
 async def append_turn(
     conversation_id: str,
     audio: UploadFile | None = File(default=None),
