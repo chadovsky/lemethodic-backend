@@ -973,7 +973,7 @@ When FE ships, this entry flips to fully Shipped and moves to the SHIPPED sectio
 Milestone: M5.5
 
 **Filed:** 2026-04-30 (orig.: 7-day trial logic); rescoped 2026-05-31 to standalone tier enforcement per M5.5 BE audit.
-**Status:** Queued.
+**Status:** SHIPPED (master TBD_SHA)
 **Tag:** Active -- Launch Critical (before soft beta launches).
 
 **Priority:** P0 (required before any user is charged).
@@ -994,6 +994,8 @@ Milestone: M5.5
 **Branch:** master
 
 **History:** Original P-105 Stripe trial mechanics scope (trial_started_at, trial_ends_at, subscription_status, stripe_customer_id, has_active_access) absorbed into P-106 [M6].
+
+Resolver fix in app/services/tiers.py; enforcement test in tests/test_p105_tier_enforcement.py.
 
 ---
 

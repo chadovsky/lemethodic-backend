@@ -1,4 +1,4 @@
-"""F-310 Phase A — opt-in subscription-tier gate via FastAPI DI.
+"""F-310 / P-105 -- subscription-tier gate via FastAPI DI.
 
 Usage on protected routes:
 
@@ -7,11 +7,6 @@ Usage on protected routes:
     @router.get("/premium-feature")
     def premium_only(user = Depends(require_tier("premium"))):
         ...
-
-Phase A placeholder: returns "free" for ALL users until P-105 populates
-User.subscription_tier. The DI shape stays stable so per-route adoption
-is incremental — when P-105 lands and entitlement.py owns the resolution,
-the resolver swaps to a real DB / Redis read with zero call-site changes.
 
 Tier hierarchy (locked in B-100 + P-105 scope):
     free < subscription < sprint < premium
@@ -43,12 +38,11 @@ _TIER_RANK: dict[str, int] = {
 def _resolve_user_tier(user: User) -> str:
     """Resolve the effective tier for a user.
 
-    Phase A placeholder: returns "free" for all users. P-105 will swap
-    this to `getattr(user, "subscription_tier", "free")` once the
-    column is populated and entitlement.has_active_access() owns the
-    trial-state logic. No call-site changes when that swap happens.
+    Reads subscription_tier from the User row. Defaults to "free" if
+    the attribute is absent (guards against model schema lag during
+    migrations).
     """
-    return "free"
+    return getattr(user, "subscription_tier", "free")
 
 
 def enforce_min_tier(user: User, min_tier: Tier) -> None:
