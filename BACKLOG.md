@@ -1065,7 +1065,7 @@ Indexes to create:
 Milestone: M5.5
 
 **Filed:** 2026-05-31 per BE audit (Section 1 -- N+1 Query Audit).
-**Status:** Queued.
+**Status:** SHIPPED (master a487799).
 **Tag:** Active -- Launch Critical (before soft beta launches).
 
 **Priority:** HIGH for analytics and recordings/history paths (a user with 50 recordings triggers 51+ queries per dashboard load today).
