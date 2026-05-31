@@ -83,20 +83,25 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 28 | **F-213** | Page transitions + motion design |
 | 29 | **F-214** | Visual depth + design system extension |
 | 30 | **P-234** | Cluster detail view |
-| 31 | **P-105** | 7-day free trial logic |
-| 32 | **P-106** | Paddle integration with subscription + one-time SKU |
-| 33 | **B-100** | Stripe via US LLC formation (Stripe Atlas) — rescoped 2026-05-12 |
-| 34 | **M-103** | YouTube anchor video — French exam prep for English speakers |
-| 35 | **M-104** | Reddit community engagement (broadened subreddit list) |
-| 36 | **F-310** | Auth hardening (BE + FE) — BE SHIPPED 2026-05-12; FE work remains |
-| 37 | **F-311** | Token control infrastructure (BE) — SHIPPED 2026-05-12 |
-| 38 | **F-312** | RAG retrieval layer (BE) — CC corpus + Chadi-authored (Path C, rescoped 2026-05-12) |
-| 39 | **F-312.0** | RAG licensing pre-flight — CLOSED 2026-05-12 (Path C selected) |
-| 40 | **F-330** | Le Vocabulaire system (parent + V2 enumeration) (added 2026-05-12) |
-| 41 | **F-320** | Le Vocabulaire DB schema (BE) (added 2026-05-12) |
-| 42 | **F-321** | Le Vocabulaire Phase 1 seed — Chadi tutoring artifacts (Path C, rescoped 2026-05-12) |
+| 31 | **P-105** | [M5.5] [P0] Server-side tier enforcement |
+| 32 | **F-401** | [M5.5] [HIGH] Rate limiting on AI endpoints |
+| 33 | **F-402** | [M5.5] [PERF] FK indexes |
+| 34 | **F-403** | [M5.5] [SCALING] N+1 fixes |
+| 35 | **P-106** | Stripe integration (subscription + one-time + Premium SKU) |
+| 36 | **B-100** | Stripe via US LLC formation (Stripe Atlas) |
+| 37 | **M-103** | YouTube anchor video -- French exam prep for English speakers |
+| 38 | **M-104** | Reddit community engagement (broadened subreddit list) |
+| 39 | **F-310** | Auth hardening (BE + FE) -- BE SHIPPED 2026-05-12; FE work remains |
+| 40 | **F-311** | Token control infrastructure (BE) -- SHIPPED 2026-05-12 |
+| 41 | **F-312** | RAG retrieval layer (BE) -- CC corpus + Chadi-authored (Path C, rescoped 2026-05-12) |
+| 42 | **F-312.0** | RAG licensing pre-flight -- CLOSED 2026-05-12 (Path C selected) |
+| 43 | **F-330** | Le Vocabulaire system (parent + V2 enumeration) (added 2026-05-12) |
+| 44 | **F-320** | Le Vocabulaire DB schema (BE) (added 2026-05-12) |
+| 45 | **F-321** | Le Vocabulaire Phase 1 seed -- Chadi tutoring artifacts (Path C, rescoped 2026-05-12) |
 
-**Tickets 36-42 (added 2026-05-12 strategic session):** slot positions pending Chadi triage. F-310 + F-311 are pre-launch blockers per Decision 4 — should reorder toward the top of the queue when triage runs. F-322 / F-323 / F-324 (Le Vocabulaire FE + Diagnostic-Vocab link) filed under Post-launch P1 with Sprint-2 priority.
+**Tickets 31-34 (added 2026-05-31 M5.5 BE audit):** P-105 rescoped from 7-day trial logic to standalone tier enforcement; F-401/402/403 newly filed. Slot positions reflect pre-revenue priority order.
+
+**Tickets 39-45 (added 2026-05-12 strategic session):** slot positions pending Chadi triage. F-310 + F-311 are pre-launch blockers per Decision 4 -- should reorder toward the top of the queue when triage runs. F-322 / F-323 / F-324 (Le Vocabulaire FE + Diagnostic-Vocab link) filed under Post-launch P1 with Sprint-2 priority.
 
 ---
 # Active — Launch Critical (42 tickets, before soft beta launches)
@@ -964,26 +969,125 @@ When FE ships, this entry flips to fully Shipped and moves to the SHIPPED sectio
 
 ---
 
-## P-105 — 7-day free trial logic
-Milestone: M6
+## P-105 [M5.5] [P0] -- Server-side tier enforcement
+Milestone: M5.5
 
-**Filed:** 2026-04-30; **scope clarified 2026-05-03** (post Stripe → LemonSqueezy pivot); rescoped 2026-05-04 (LemonSqueezy → Paddle per B-100 Path B); **rescoped 2026-05-12 → Stripe trial mechanics (per B-100 Path C).**
-**Status:** Queued (blocked on P-106 / B-100 — Stripe Atlas LLC + integration must land first).
-**Tag:** Active — Launch Critical (before soft beta launches).
+**Filed:** 2026-04-30 (orig.: 7-day trial logic); rescoped 2026-05-31 to standalone tier enforcement per M5.5 BE audit.
+**Status:** Queued.
+**Tag:** Active -- Launch Critical (before soft beta launches).
 
-**Priority:** High (pre-launch).
+**Priority:** P0 (required before any user is charged).
 
-7-day free trial gating new-user access to the paid feature set. Implementation uses Stripe's native trial mechanics (`subscription.create(trial_period_days=7)`; `customer.subscription.trial_will_end` webhook fires 3 days before expiry; `customer.subscription.updated` fires on transition to active-paid or `customer.subscription.deleted` on lapse).
+`_resolve_user_tier()` in `app/services/tiers.py` returns `"free"` for all users unconditionally (Phase A placeholder). Every `require_tier()` dependency and every `enforce_min_tier()` call sees the user as free tier regardless of `users.subscription_tier`. Any registered user currently has full access to all premium endpoints. This is intentional during the pre-payment soft-launch window, but must be wired before charging users.
 
-Backend scope:
-- New entitlement state on User: `trial_started_at`, `trial_ends_at`, `subscription_status` (trialing | active | lapsed | canceled | none), `stripe_customer_id`, `stripe_subscription_id` — alembic migration.
-- Trial-start trigger: first authenticated session post-signup auto-creates a Stripe customer + subscription in trialing state (no card required for trial entry via Stripe's `payment_behavior=default_incomplete` flow; card collected at trial-end transition via Customer Portal redirect).
-- Gating decision lives in a single helper `app/services/entitlement.py::has_active_access(user) -> bool`. Callers: recording upload, conversation start, /api/users/me/today, writing submit, vocab access. Consumed via F-310's FastAPI DI tier-check layer.
-- Lapsed-user UX: read-only access to past recordings + diagnostic; new recordings blocked with paywall redirect.
+**Scope:** Wire `_resolve_user_tier()` to read `user.subscription_tier` from the User row. The DI shape is stable; the fix is `return getattr(user, "subscription_tier", "free")` in `_resolve_user_tier`. Smoke every endpoint that gates on `require_tier()` or `enforce_min_tier()` to confirm 402/403 is returned on under-tier tokens.
 
-**Depends on:** P-106 (Stripe integration), B-100 (Stripe Atlas LLC + activation), F-310 (DI layer for tier-check).
+**Acceptance:**
+- A free-tier token is rejected (402 or 403) from a subscription-gated endpoint.
+- A subscription-tier token (manual DB fixture for the test) passes the same endpoint.
+- Verified by pytest, not by FE gating.
 
-**Owner:** Engineering. Trial copy + paywall wording owned by M-101 / Chadi.
+**Dependencies:** None. Does not depend on Stripe, P-106, or B-100. Unblocks M6.
+
+**Files:** `app/services/tiers.py` (resolver one-liner), `app/routers/vocab.py` (confirmed enforce_min_tier caller per audit), all other routers using `require_tier()` or `enforce_min_tier()` (confirm via grep before shipping).
+
+**Branch:** master
+
+**History:** Original P-105 Stripe trial mechanics scope (trial_started_at, trial_ends_at, subscription_status, stripe_customer_id, has_active_access) absorbed into P-106 [M6].
+
+---
+
+## F-401 [M5.5] [HIGH] -- Rate limiting on AI endpoints
+Milestone: M5.5
+
+**Filed:** 2026-05-31 per BE audit (Section 5 -- Security Checklist, finding 4).
+**Status:** Queued.
+**Tag:** Active -- Launch Critical (before soft beta launches).
+
+**Priority:** HIGH (cost-runaway risk before paid launch).
+
+Existing rate limiting in `app/services/rate_limit.py` covers 5 auth endpoints only. No per-user limits are applied to the metered AI-calling endpoints. A single authenticated user can drain the Claude, AssemblyAI, and ElevenLabs budgets in minutes.
+
+**Scope:** Per-user rate limits on the four AI-calling endpoints below. Redis-backed (same infra as F-310 / F-311 rate limiter). Limit values configurable per endpoint via env var. Breach returns 429.
+
+Endpoints to gate:
+- `POST /api/recordings/{id}/transcribe` (AssemblyAI call)
+- `POST /api/recordings/{id}/analyze` (Claude call)
+- `POST /api/conversations/{id}/turns` (Claude call per turn)
+- `POST /api/writing/submit` (Claude async job)
+
+**Acceptance:**
+- Exceeding the per-user limit on any of the four endpoints above returns 429.
+- Limit is configurable per endpoint via env var without code change.
+- Verified by pytest with a mocked Redis counter.
+
+**Dependencies:** Redis available in BE runtime (same instance provisioned for F-310).
+
+**Files:** `app/services/rate_limit.py` (extend limiter), `app/routers/recordings.py`, `app/routers/conversations.py`, `app/routers/writing.py`.
+
+**Branch:** master
+
+---
+
+## F-402 [M5.5] [PERF] -- FK indexes
+Milestone: M5.5
+
+**Filed:** 2026-05-31 per BE audit (Section 3 -- Index Audit).
+**Status:** Queued.
+**Tag:** Active -- Launch Critical (before soft beta launches).
+
+**Priority:** HIGH for the top two; every analytics request is currently a full table scan compounded by N+1 full table scans on feedbacks.
+
+**Scope:** Additive Alembic migration adding the five critical missing indexes confirmed by the 2026-05-31 audit. All five are CREATE INDEX only (no ALTER TABLE on existing columns). Migration qualifies for the OPTIONAL pg_dump tier per the production migration protocol: 100% additive, zero existing row mutations, clean downgrade.
+
+Indexes to create:
+- `ix_recordings_user_id` on `recordings(user_id)` -- HIGH: every analytics + history query filters on this column
+- `ix_feedbacks_recording_id` on `feedbacks(recording_id)` -- HIGH: every lazy-load of r.feedback fires a full table scan without this index
+- `ix_writing_submissions_user_id` on `writing_submissions(user_id)` -- MEDIUM
+- `ix_writing_submissions_prompt_id` on `writing_submissions(prompt_id)` -- LOW-MEDIUM
+- `ix_recordings_topic_id` on `recordings(topic_id)` -- LOW-MEDIUM
+
+**Acceptance:**
+- Migration applies clean: `alembic upgrade head`, `alembic downgrade -1`, re-upgrade all succeed.
+- `EXPLAIN` on the analytics/dashboard query shows index usage for recordings.user_id and feedbacks.recording_id.
+
+**Dependencies:** None. Coordinates with F-403 (indexes amplify the N+1 fix benefit but are not a sequencing requirement).
+
+**Files:** New Alembic revision in `alembic/versions/`.
+
+**Branch:** master
+
+---
+
+## F-403 [M5.5] [SCALING] -- N+1 fixes
+Milestone: M5.5
+
+**Filed:** 2026-05-31 per BE audit (Section 1 -- N+1 Query Audit).
+**Status:** Queued.
+**Tag:** Active -- Launch Critical (before soft beta launches).
+
+**Priority:** HIGH for analytics and recordings/history paths (a user with 50 recordings triggers 51+ queries per dashboard load today).
+
+**Scope:** Add eager loading (selectinload or joinedload as appropriate) to the 7 endpoints the audit flagged as HIGH or MEDIUM risk. `GET /api/recordings` already uses joinedload correctly -- use that as the reference pattern.
+
+Flagged endpoints (from the 2026-05-31 audit, Section 1):
+- `GET /api/analytics/dashboard` -- HIGH: `.options(selectinload(Recording.feedback))` on the recording query
+- `GET /api/analytics/progress` -- HIGH: selectinload(Recording.feedback)
+- `GET /api/analytics/pass` -- HIGH: selectinload(Recording.feedback)
+- `GET /api/admin/dashboard` -- MEDIUM: joinedload or selectinload on Feedback
+- `GET /api/admin/users` -- HIGH (2N+1 compound): replace per-user recording + avg subquery loop with a single GROUP BY aggregate query across all users
+- `GET /api/recordings/history` -- HIGH: `.options(joinedload(Recording.feedback))` to match the pattern already in the lean list endpoint
+- `GET /api/writing/history` -- HIGH: `.options(joinedload(WritingSubmission.prompt))` to replace the explicit per-row subquery loop
+
+**Acceptance:**
+- Query count on each flagged endpoint drops to constant with respect to result size (assert or log-inspect).
+- Existing response shapes unchanged.
+
+**Dependencies:** None. Coordinates with F-402 (indexes amplify the benefit but are not a prerequisite).
+
+**Files:** `app/routers/analytics.py`, `app/routers/admin.py`, `app/routers/recordings.py`, `app/routers/writing.py`.
+
+**Branch:** master
 
 ---
 
@@ -1004,10 +1108,11 @@ Integrate Stripe SDK as the payment + subscription provider:
 - **Customer Portal** link for self-serve billing management (Stripe-hosted; deep-link from settings).
 - Test-mode + production-mode key separation via env (mirror of existing `ANTHROPIC_API_KEY` / `ASSEMBLYAI_API_KEY` pattern).
 - Subscription tier → FastAPI dependency-injection layer (consumed by F-310 auth-hardening's per-route gating).
+- **7-day trial mechanics (absorbed from P-105 rescope 2026-05-31):** `subscription.create(trial_period_days=7)`; `customer.subscription.trial_will_end` webhook fires 3 days before expiry; `customer.subscription.updated` fires on transition to active-paid or deleted on lapse. User fields: `trial_started_at`, `trial_ends_at`, `subscription_status` (trialing | active | lapsed | canceled | none), `stripe_customer_id`, `stripe_subscription_id` -- alembic migration. Trial-start trigger: first authenticated session post-signup auto-creates a Stripe customer + subscription in trialing state. Entitlement helper `app/services/entitlement.py::has_active_access(user) -> bool` consumed by the tier-check DI layer. Lapsed-user UX: read-only access to past recordings + diagnostic; new recordings blocked with paywall redirect.
 
 **Why Stripe (post-Paddle):** US LLC formation via Stripe Atlas (B-100 Path C) routes around the Morocco merchant constraint that originally blocked Stripe. Net wins over Paddle: ~7% fee delta (2.9% + $0.30 vs ~5% + $0.50), cleaner subscription API, native trial mechanics, better-documented webhook lifecycle, mature TypeScript SDK.
 
-**Depends on:** B-100 (Stripe Atlas LLC formation + activation — application pending Chadi 2026-05-12+).
+**Depends on:** B-100 (Stripe Atlas LLC formation + activation -- application pending Chadi 2026-05-12+). P-105 [M5.5] must be live before trial gates are enforced (tier enforcement is a P-105 pre-requisite, not a P-106 scope item).
 
 **Out of scope:** geographic price differentiation (the original "dual + geographic pricing" framing) — Phase 1 ships with single global $29/$199/$499 pricing. Stripe's native Tax + multi-currency support revisits post-launch if conversion data warrants.
 
@@ -1020,7 +1125,7 @@ Milestone: M6
 **Status:** In Progress — Chadi to initiate Stripe Atlas application (Path C locked 2026-05-12).
 **Tag:** Active — Launch Critical (before soft beta launches).
 
-**Priority:** HIGH (pre-launch — unblocks P-106 + P-105).
+**Priority:** HIGH (pre-launch -- unblocks P-106).
 
 **Path C rationale:** Stripe at 2.9% + $0.30 vs Paddle ~5% + $0.50 = ~7% fee delta. Breakeven on LLC setup cost (~$500 Stripe Atlas + registered agent year 1) lands at ~250 paying subs. At Chadi's projected scale (5,000+ Y1 users with even modest paid-conversion), the savings recover the slip within the first month. The 2-6 week Stripe Atlas processing slip is acceptable because the product isn't ready to charge anyone yet — payment timeline is no longer the launch critical path. Quality-gated launch (per F-300 framing) means payments can land alongside or after first paid feature, not before.
 
