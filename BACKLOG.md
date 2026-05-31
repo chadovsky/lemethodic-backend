@@ -1059,6 +1059,8 @@ Indexes to create:
 
 **Branch:** master
 
+**Prod:** Migration applied 2026-05-31; alembic_version at f40200000001; 14 ix_* indexes verified (confirmed via DO App Platform Console alembic current).
+
 ---
 
 ## F-403 [M5.5] [SCALING] -- N+1 fixes
