@@ -973,7 +973,7 @@ When FE ships, this entry flips to fully Shipped and moves to the SHIPPED sectio
 Milestone: M5.5
 
 **Filed:** 2026-04-30 (orig.: 7-day trial logic); rescoped 2026-05-31 to standalone tier enforcement per M5.5 BE audit.
-**Status:** SHIPPED (master TBD_SHA)
+**Status:** SHIPPED (master 8b59c07)
 **Tag:** Active -- Launch Critical (before soft beta launches).
 
 **Priority:** P0 (required before any user is charged).
