@@ -99,7 +99,7 @@ In stated priority order. Full ticket bodies live below in the "Active — Launc
 | 44 | **F-320** | Le Vocabulaire DB schema (BE) (added 2026-05-12) |
 | 45 | **F-321** | Le Vocabulaire Phase 1 seed -- Chadi tutoring artifacts (Path C, rescoped 2026-05-12) |
 
-**Tickets 31-34 (added 2026-05-31 M5.5 BE audit):** P-105 rescoped from 7-day trial logic to standalone tier enforcement; F-401/402/403 newly filed. Slot positions reflect pre-revenue priority order.
+**Tickets 31-34 (added 2026-05-31 M5.5 BE audit):** P-105 rescoped from 7-day trial logic to standalone tier enforcement; F-401/402/403 newly filed. Slot positions reflect pre-revenue priority order. **M5.5 fully SHIPPED 2026-05-31** (P-105 8b59c07, F-402 a18c0dc, F-403 a487799, F-401 e32f36e).
 
 **Tickets 39-45 (added 2026-05-12 strategic session):** slot positions pending Chadi triage. F-310 + F-311 are pre-launch blockers per Decision 4 -- should reorder toward the top of the queue when triage runs. F-322 / F-323 / F-324 (Le Vocabulaire FE + Diagnostic-Vocab link) filed under Post-launch P1 with Sprint-2 priority.
 
@@ -1003,7 +1003,7 @@ Resolver fix in app/services/tiers.py; enforcement test in tests/test_p105_tier_
 Milestone: M5.5
 
 **Filed:** 2026-05-31 per BE audit (Section 5 -- Security Checklist, finding 4).
-**Status:** Queued.
+**Status:** SHIPPED (master e32f36e).
 **Tag:** Active -- Launch Critical (before soft beta launches).
 
 **Priority:** HIGH (cost-runaway risk before paid launch).
