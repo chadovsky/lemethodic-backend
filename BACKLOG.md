@@ -1035,7 +1035,7 @@ Endpoints to gate:
 Milestone: M5.5
 
 **Filed:** 2026-05-31 per BE audit (Section 3 -- Index Audit).
-**Status:** Queued.
+**Status:** SHIPPED (master TBD_SHA)
 **Tag:** Active -- Launch Critical (before soft beta launches).
 
 **Priority:** HIGH for the top two; every analytics request is currently a full table scan compounded by N+1 full table scans on feedbacks.
