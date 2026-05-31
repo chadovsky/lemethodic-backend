@@ -1,7 +1,7 @@
 import os, json, logging
 from fastapi import APIRouter, Depends, HTTPException, Query, UploadFile, File, Form
 from pydantic import BaseModel
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 
 logger = logging.getLogger(__name__)
 from app.database import get_db
@@ -727,6 +727,7 @@ def get_history(
     # for a 24-48h recovery window — TODO: add a cleanup job in a later ticket.
     recs = (
         db.query(Recording)
+        .options(selectinload(Recording.feedback), joinedload(Recording.topic))
         .filter(Recording.user_id == user.id)
         .filter(Recording.status == "done")
         .order_by(Recording.created_at.desc())

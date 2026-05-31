@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status as http_status
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.database import get_db
 from app.models.models import User
 from app.models.writing import (
@@ -252,6 +252,7 @@ def get_writing_history(
 
     submissions = (
         db.query(WritingSubmission)
+        .options(joinedload(WritingSubmission.prompt))
         .filter(WritingSubmission.user_id == user_id)
         .order_by(WritingSubmission.submitted_at.desc())
         .limit(50)
@@ -260,7 +261,7 @@ def get_writing_history(
 
     results = []
     for s in submissions:
-        prompt = db.query(WritingPrompt).filter(WritingPrompt.id == s.prompt_id).first()
+        prompt = s.prompt
         profile_summary = _writing_profile_summary(s)
         entry = {
             "id": s.id,

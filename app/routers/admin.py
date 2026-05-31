@@ -1,6 +1,6 @@
 import random as _random
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import func
 from app.database import get_db
 from app.models.models import User, Recording, Feedback, TestTopic
@@ -21,6 +21,7 @@ def dashboard(db: Session = Depends(get_db), admin: User = Depends(require_admin
 
     recent = (
         db.query(Recording, User)
+        .options(selectinload(Recording.feedback))
         .join(User, Recording.user_id == User.id)
         .order_by(Recording.created_at.desc())
         .limit(20)
@@ -51,27 +52,41 @@ def dashboard(db: Session = Depends(get_db), admin: User = Depends(require_admin
 # ═══════════════════════════════════════
 
 @router.get("/users")
-def list_users(db: Session = Depends(get_db), admin: User = Depends(require_admin)):
-    users = db.query(User).order_by(User.created_at.desc()).all()
-    result = []
-    for u in users:
-        # Calculate average score for this user
-        avg = (
-            db.query(func.avg(Feedback.overall_score))
-            .join(Recording, Recording.id == Feedback.recording_id)
-            .filter(Recording.user_id == u.id)
-            .scalar()
+def list_users(
+    limit: int = Query(default=50, ge=1, le=100),
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+):
+    # Single aggregate subquery: recording count + avg score per user.
+    agg = (
+        db.query(
+            Recording.user_id,
+            func.count(Recording.id).label("rec_count"),
+            func.avg(Feedback.overall_score).label("avg_score"),
         )
-        result.append({
+        .outerjoin(Feedback, Feedback.recording_id == Recording.id)
+        .group_by(Recording.user_id)
+        .subquery()
+    )
+    rows = (
+        db.query(User, agg.c.rec_count, agg.c.avg_score)
+        .outerjoin(agg, agg.c.user_id == User.id)
+        .order_by(User.created_at.desc())
+        .limit(limit)
+        .all()
+    )
+    return [
+        {
             "id": u.id,
             "email": u.email,
             "full_name": u.full_name,
             "is_admin": u.is_admin,
-            "recordings_count": len(u.recordings),
-            "avg_score": round(avg, 1) if avg else None,
+            "recordings_count": rec_count or 0,
+            "avg_score": round(avg_score, 1) if avg_score else None,
             "created_at": u.created_at.isoformat() if u.created_at else "",
-        })
-    return result
+        }
+        for u, rec_count, avg_score in rows
+    ]
 
 
 # ═══════════════════════════════════════

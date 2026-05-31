@@ -11,7 +11,7 @@ Endpoints:
 import json
 from collections import Counter
 from fastapi import APIRouter, Depends, Query
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 from sqlalchemy import func
 from app.database import get_db
 from app.models.models import User, Recording, Feedback, TestTopic
@@ -37,6 +37,7 @@ PASS_THRESHOLDS = {
 
 @router.get("/dashboard")
 def analytics_dashboard(
+    limit: int = Query(default=50, ge=1, le=100),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -50,8 +51,10 @@ def analytics_dashboard(
     """
     recs = (
         db.query(Recording)
+        .options(selectinload(Recording.feedback))
         .filter(Recording.user_id == user.id, Recording.status == "done")
         .order_by(Recording.created_at.asc())
+        .limit(limit)
         .all()
     )
 
@@ -147,6 +150,7 @@ def progress_over_time(
     """
     recs = (
         db.query(Recording)
+        .options(selectinload(Recording.feedback))
         .filter(Recording.user_id == user.id, Recording.status == "done")
         .order_by(Recording.created_at.desc())
         .limit(last_n)
@@ -226,6 +230,7 @@ def recurring_problems(
     """
     recs = (
         db.query(Recording)
+        .options(selectinload(Recording.feedback))
         .filter(Recording.user_id == user.id, Recording.status == "done")
         .order_by(Recording.created_at.desc())
         .limit(last_n)
@@ -263,6 +268,7 @@ def topic_coverage(
 @router.get("/pass")
 def pass_probability(
     target_level: str = Query(default="B2"),
+    limit: int = Query(default=50, ge=1, le=100),
     db: Session = Depends(get_db),
     user: User = Depends(get_current_user),
 ):
@@ -271,8 +277,10 @@ def pass_probability(
     """
     recs = (
         db.query(Recording)
+        .options(selectinload(Recording.feedback))
         .filter(Recording.user_id == user.id, Recording.status == "done")
         .order_by(Recording.created_at.asc())
+        .limit(limit)
         .all()
     )
     scores = [r.feedback.note_globale for r in recs if r.feedback]
