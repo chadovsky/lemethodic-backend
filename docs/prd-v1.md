@@ -709,13 +709,15 @@ PRD §3 (Backend Wiring) is intentionally scoped to the surfaces that UI shells 
 
 ## Section 4 — Content Pipeline (CON-001 to CON-014)
 
-**Goal:** real content lives behind the surfaces. F-321 vocab review (1,684 Phase 1 chunks awaiting Chadi triage) lands here. L'École 27 lessons get methodology-visible content. Le Diagnostic Tâche library expands to 50 scenarios (F-061.2 Livraison 2/2).
+**Goal:** real content lives behind the surfaces. F-321 vocab review (Phase 1 CSV regen complete 2026-06-01; row count updated post-reclassification) lands here. L'École 27 lessons get methodology-visible content. Le Diagnostic Tâche library expands to 50 scenarios (F-061.2 Livraison 2/2).
 
 **Strategic step:** maps to Step 2b → Step 3.
 
 **ID range:** CON-001 to CON-014. To be populated in subsequent planning sessions.
 
 **Critical note:** F-321 vocab CSV review is the highest-leverage Chadi-bottlenecked work right now. CON-001 will be the entry that absorbs that workstream into the PRD.
+
+**F-321 corpus-completeness limitation (discovery note 2026-06-01):** The Phase 1 CSV regen (per-chunk reclassification dispatch) works from the 1,684 rows already in `phase1_review.csv`. Chunks from source .docx files that the original per-file classifier (Phase B) tagged with a non-Phase-1 topic slug are absent from the 1,684 and cannot be recovered without re-running Phase B and C extraction. In practice this means any true faux_amis or calques_anglais content that lived in files the Phase B Haiku classified as "other/grammar" topics was silently excluded. Scope of the gap is unknown without re-running Phase B. This is a known limitation accepted for this pass; full corpus completeness is an M4 follow-up scoped as CON-001 pre-work. No action required before Chadi's Phase 1 triage.
 
 ---
 

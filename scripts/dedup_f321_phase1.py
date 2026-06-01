@@ -271,8 +271,8 @@ def main() -> int:
     ]
     for path, rows in [(PHASE1_OUTPUT, phase1_rows), (PHASE2_OUTPUT, phase2_rows)]:
         path.parent.mkdir(parents=True, exist_ok=True)
-        with path.open("w", encoding="utf-8", newline="") as fh:
-            writer = csv.DictWriter(fh, fieldnames=fieldnames)
+        with path.open("w", encoding="utf-8-sig", newline="") as fh:
+            writer = csv.DictWriter(fh, fieldnames=fieldnames, quoting=csv.QUOTE_ALL)
             writer.writeheader()
             for row in rows:
                 writer.writerow(row)

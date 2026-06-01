@@ -1,6 +1,6 @@
-# F-321 — phase2_deferred.csv is the deferred-content overflow from
-# the Phase D dedup + split. Per Chadi's 2026-05-13 Phase D refinement,
-# this stays uncommitted until a future Phase 2 dispatch revisits the
-# Le Vocabulaire topic universe. Reproducible from the Phase B/C
-# scripts + .docx archive.
-phase2_deferred.csv
+# F-321 — phase2_deferred.csv was previously gitignored as a pipeline artifact
+# (reproducible from Phase B/C + .docx archive). As of 2026-06-01 reclassify
+# dispatch, intermediate pipeline files (extraction.csv, classification.csv) are
+# gone and phase2_deferred.csv is no longer reproducible from scratch without a
+# full Phase B/C re-run. It now contains classified OTHER_IN_SCOPE_TEACHABLE
+# content and is committed as a content deliverable.
