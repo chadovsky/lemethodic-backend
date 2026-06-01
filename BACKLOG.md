@@ -366,7 +366,7 @@ This contradicts the 5-couche model locked 2026-05-05 (F-202 + F-227 surfaced as
 ### V-009.be — Unify oral analysis surface to 5 couches (BE)
 Milestone: M3
 
-**Status:** Queued.
+**Status:** Shipped 2026-06-01.
 **Tag:** Active — Launch Critical (before soft beta launches).
 **Filed:** 2026-05-12 (parallel BE follow-up to V-009 FE; trigger met by V-016a shipping).
 **Type:** BE methodology-surface alignment.

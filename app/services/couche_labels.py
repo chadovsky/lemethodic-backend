@@ -13,27 +13,27 @@
 
 from __future__ import annotations
 
-# Locked order: Étendue, Cohérence, Correction, Aisance — matches the
-# internal couche order le_fond → les_moules_des_idees → les_moules →
-# les_reflexes_anglais. Frontend consumers can re-sort (the diagnostic
-# page sorts worst-first to surface the bottleneck); this is the
-# canonical authoring order.
+# Locked order: Étendue, Cohérence, Correction, Aisance, Voix — matches
+# the internal couche order le_fond → les_moules_des_idees → les_moules →
+# les_reflexes_anglais → la_voix. V-009.be (2026-06-01) adds la_voix as
+# couche 5. Legacy Feedback rows without a la_voix score return 0 via the
+# scores dict default in couches_array(); frontend renders this as 0/5.
 COUCHE_ORDER: tuple[str, ...] = (
     "le_fond",
     "les_moules_des_idees",
     "les_moules",
     "les_reflexes_anglais",
+    "la_voix",
 )
 
-# Display labels are identical across en/fr/es — TCF uses the same
-# French words across language tracks. Kept as separate keys anyway so
-# a future divergence (e.g. a market-specific localization) doesn't
-# need a schema change.
+# Display labels across en/fr/es. TCF uses the same French words across
+# language tracks; la_voix student label follows the V-009 lock (2026-05-05).
 COUCHE_DISPLAY_LABELS: dict[str, dict[str, str]] = {
     "le_fond":              {"en": "Étendue",   "fr": "Étendue"},
     "les_moules_des_idees": {"en": "Cohérence", "fr": "Cohérence"},
     "les_moules":           {"en": "Correction", "fr": "Correction"},
     "les_reflexes_anglais": {"en": "Aisance",   "fr": "Aisance"},
+    "la_voix":              {"en": "Voix",      "fr": "Voix"},
 }
 
 

@@ -711,6 +711,7 @@ def list_recordings(
                 "les_moules_des_idees": r.feedback.score_les_moules_des_idees,
                 "les_moules": r.feedback.score_les_moules,
                 "les_reflexes_anglais": r.feedback.score_les_reflexes_anglais,
+                "la_voix": _get_la_voix_score(r.feedback),
             })
 
         out.append({
@@ -765,6 +766,7 @@ def get_history(
                 "les_moules_des_idees": r.feedback.score_les_moules_des_idees,
                 "les_moules": r.feedback.score_les_moules,
                 "les_reflexes_anglais": r.feedback.score_les_reflexes_anglais,
+                "la_voix": _get_la_voix_score(r.feedback),
             })
             entry["score_prononciation"] = r.feedback.score_prononciation
             entry["goulet_nom"] = r.feedback.goulet_nom
@@ -966,6 +968,7 @@ def _format_recording(rec: Recording) -> dict:
                 "les_moules_des_idees": fb.score_les_moules_des_idees,
                 "les_moules": fb.score_les_moules,
                 "les_reflexes_anglais": fb.score_les_reflexes_anglais,
+                "la_voix": _get_la_voix_score(fb),
             }),
             "le_goulet": {
                 "couche": fb.goulet_couche,
@@ -1061,6 +1064,25 @@ def _safe_json_load(raw: str | None, default):
         return json.loads(raw)
     except (json.JSONDecodeError, TypeError):
         return default
+
+
+def _get_la_voix_score(fb: Feedback) -> float:
+    """V-009.be: extract the la_voix score from raw_llm_response.
+
+    La_voix has no dedicated DB column (avoided migration per V-009.be
+    design). The score lives inside the full analysis dict stored in
+    raw_llm_response under la_carte.la_voix. Legacy rows that predate
+    V-009.be return 0.0 (la_voix absent from their la_carte).
+    """
+    raw = fb.raw_llm_response or ""
+    if not raw:
+        return 0.0
+    try:
+        data = json.loads(raw)
+        val = (data.get("la_carte") or {}).get("la_voix")
+        return float(val) if val is not None else 0.0
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return 0.0
 
 
 def _resolve_exam_profile_block(fb: Feedback) -> dict:

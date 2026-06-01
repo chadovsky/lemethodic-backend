@@ -7,12 +7,13 @@ from app.services.exam_profiles import ExamProfile, get_profile
 #  FluentPath — La Méthode en Couches Diagnostic Engine v3.0
 #  Framework propriétaire par Chadi Bakhay
 #
-#  4 Couches + Prononciation :
-#    1. Le Fond           — Arguments, pertinence, exemples
-#    2. Les Moules des Idées  — Architecture rhétorique du discours
-#    3. Les Moules            — Architecture de la phrase
-#    4. Les Réflexes Anglais  — Interférences anglais→français
-#    +  Prononciation         — Mots mal prononcés détectés par STT
+#  5 Couches + Prononciation (V-009.be 2026-06-01) :
+#    1. Le Fond              — Arguments, pertinence, exemples
+#    2. Les Moules des Idées — Architecture rhétorique du discours
+#    3. Les Moules           — Architecture de la phrase
+#    4. Les Réflexes Anglais — Interférences anglais->francais
+#    5. La Voix              — Rythme discursif, registre, phrase oral natif
+#    +  Prononciation        — Mots mal prononces detectes par STT
 #
 #  Output :
 #    Le Diagnostic  — bilingual (FR + user language)
@@ -231,6 +232,36 @@ ORDRE DES MOTS (C1) :
 - ordre_rigide : Toujours S-V-O → utiliser l'inversion : "Encore faut-il que..." """
 
 # ═══════════════════════════════════════════════════════════════
+# COUCHE 5 — LA VOIX
+# ═══════════════════════════════════════════════════════════════
+
+LA_VOIX = """
+COUCHE 5 — LA VOIX
+Ce qui distingue un discours qui "sonne français" d'un discours qui ressemble à de l'anglais en français.
+Dimension prosodique-textuelle : rythme discursif, marqueurs oraux, registre, phrasé idiomatique.
+Ne pas confondre avec Couche 2 (architecture des idées) ni Couche 4 (réflexes anglais structurels).
+La Voix capture la couleur et le flavor natif du français parlé.
+
+MARQUEURS ORAUX NATURELS :
+- [B1+] jalons_rythmiques : "Alors,", "Donc,", "Voilà,", "Bon," — ponctuation orale française, jalons de narration
+- [B2+] reformulations_orales : "C'est-à-dire que...", "En gros,", "Disons que..." — reformulation sans rupture de flux
+- [B2+] focus_francophone : "Ce qui m'intéresse, c'est...", "C'est ça qui est important...", "Moi, ce que je pense..." — focalisation typique du français oral
+- [B2+] autodialogie : Se poser des questions à soi-même : "Mais comment ? En faisant..." — procédé oral typiquement français
+- [C1+] clausulaire : Alternance naturelle de longues et courtes phrases pour créer du rythme oral
+
+REGISTRE ET COHÉRENCE VOCALE :
+- [B1+] registre_stable : Pas de rupture abrupte entre familier et soutenu au sein du même discours
+- [B2+] registre_adapte : Registre approprié au contexte de l'examen (soutenu sans être artificiel)
+- [B2+] voix_consistante : La "voix" de l'orateur reste reconnaissable du début à la fin
+- [C1+] voix_engagee : L'orateur s'implique rhétoriquement — emphase, variations de débit textuel apparent
+
+PHRASÉ QUI SONNE FRANÇAIS :
+- [B1+] oral_naturel : Utilise des expressions naturelles à l'oral en français ("j'ai du mal à", "ça me plaît que")
+- [B2+] non_traduit : Évite le phrasé plat-anglophone — les phrases sonnent françaises et non traduites
+- [B2+] idiomatic_oral : Formules idiomatiques orales françaises ("du coup", "à vrai dire", "en fait")
+- [C1+] couleur_culturelle : Ancrage culturel francophone naturel dans le discours (références, tournures cultivées)"""
+
+# ═══════════════════════════════════════════════════════════════
 # GRILLES D'ÉVALUATION
 # ═══════════════════════════════════════════════════════════════
 
@@ -240,6 +271,7 @@ COUCHE 1: 2-3 arguments basiques. Progression linéaire acceptée.
 COUCHE 2: cadrage_contextuel, exemple_ancre, prise_de_position seulement.
 COUCHE 3: Patterns [B1+] seulement. Connecteurs basiques. Erreurs tolérées.
 COUCHE 4: Faux-amis majeurs et boucles évidentes uniquement.
+COUCHE 5: Voix anglophone tolérée. Jalons rythmiques basiques (alors, donc) bienvenus. Registre globalement stable.
 SEUILS: 10-12/20 = attendu. 14+/20 = excellent.""",
 
     "B2": """GRILLE B2 : Tolérance MODÉRÉE.
@@ -247,6 +279,7 @@ COUCHE 1: 2-3 arguments développés. Exemples concrets. Concession attendue.
 COUCHE 2: Tous [B1+] et [B2+]. Thèse-antithèse. Synthèse + ouverture.
 COUCHE 3: Tous [B1+] et [B2+]. Variété de connecteurs exigée. Nominalisations.
 COUCHE 4: Faux-amis, calques, boucles, "ne" manquant.
+COUCHE 5: Focus constructions et autodialogie attendus. Registre adapté à l'examen. Phrasé non-traduit exigé.
 SEUILS: 12-14/20 = attendu. 16+/20 = excellent.""",
 
     "C1": """GRILLE C1 : Tolérance TRÈS FAIBLE.
@@ -254,6 +287,7 @@ COUCHE 1: Raisonnement abstrait. Arguments multi-niveaux. Dialectique complète.
 COUCHE 2: TOUS les patterns y compris [C1+]. Problématisation. Auto-nuance.
 COUCHE 3: TOUS les patterns y compris [C1+]. Connecteurs rares. Inversions.
 COUCHE 4: Signaler TOUT. Tolérance quasi nulle.
+COUCHE 5: Voix native attendue. Rythme clausulaire français, phrasé idiomatique oral, couleur francophone naturelle.
 SEUILS: 14-16/20 = attendu. 18+/20 = excellent.""",
 }
 
@@ -261,13 +295,15 @@ SEUILS: 14-16/20 = attendu. 18+/20 = excellent.""",
 # PROMPT — LE DIAGNOSTIC (bilingual + corrected transcription)
 # ═══════════════════════════════════════════════════════════════
 
-SYSTEM_PROMPT_DIAGNOSTIC = """Tu es un correcteur expert TCF Tâche 3, spécialisé dans la correction des anglophones. Tu utilises « La Méthode en Couches » — un framework diagnostique à 4 couches.
+SYSTEM_PROMPT_DIAGNOSTIC = """Tu es un correcteur expert TCF Tâche 3, spécialisé dans la correction des anglophones. Tu utilises « La Méthode en Couches » — un framework diagnostique à 5 couches.
 
 {les_moules_des_idees}
 
 {les_moules}
 
 {les_reflexes_anglais}
+
+{la_voix}
 
 {grille}
 
@@ -347,11 +383,12 @@ Réponds UNIQUEMENT en JSON valide :
     "le_fond": <0-5>,
     "les_moules_des_idees": <0-5>,
     "les_moules": <0-5>,
-    "les_reflexes_anglais": <0-5>
+    "les_reflexes_anglais": <0-5>,
+    "la_voix": <0-5>
   }},
   "le_goulet": {{
-    "couche": <1-4>,
-    "nom": "<le_fond | les_moules_des_idees | les_moules | les_reflexes_anglais>",
+    "couche": <1-5>,
+    "nom": "<le_fond | les_moules_des_idees | les_moules | les_reflexes_anglais | la_voix>",
     "explication": "<FR|||LANG — cite un moment SPÉCIFIQUE du discours et explique ce qui aurait dû être dit>"
   }},
   "ce_qui_marche": "<FR|||LANG — minimum 3 observations positives spécifiques avec citations du discours>",
@@ -440,7 +477,7 @@ RÈGLES POUR LES EXERCICES :
 
 Réponds UNIQUEMENT en JSON valide :
 {{
-  "couche_ciblee": <1-4>,
+  "couche_ciblee": <1-5>,
   "nom_couche": "<nom>",
   "exercices": [
     {{
@@ -516,6 +553,8 @@ async def analyze_transcript(
         "{les_moules}", LES_MOULES
     ).replace(
         "{les_reflexes_anglais}", LES_REFLEXES_ANGLAIS
+    ).replace(
+        "{la_voix}", LA_VOIX
     ).replace(
         "{grille}", grille
     ).replace(
@@ -597,6 +636,7 @@ async def analyze_transcript(
         "les_moules_des_idees": carte.get("les_moules_des_idees", 0),
         "les_moules": carte.get("les_moules", 0),
         "les_reflexes_anglais": carte.get("les_reflexes_anglais", 0),
+        "la_voix": carte.get("la_voix", 0),
     }
     result["analysis"] = result.get("ce_qui_marche", "")
     result["recommendations"] = result.get("la_prochaine_etape", "")
@@ -783,8 +823,8 @@ def _demo_feedback(transcript: str, profile: ExamProfile | None = None) -> dict:
     ]
     result = {
         "note_globale": 10.0, "overall_score": 10.0,
-        "la_carte": {"le_fond": 3, "les_moules_des_idees": 2, "les_moules": 2, "les_reflexes_anglais": 3},
-        "scores": {"le_fond": 3, "les_moules_des_idees": 2, "les_moules": 2, "les_reflexes_anglais": 3},
+        "la_carte": {"le_fond": 3, "les_moules_des_idees": 2, "les_moules": 2, "les_reflexes_anglais": 3, "la_voix": 2},
+        "scores": {"le_fond": 3, "les_moules_des_idees": 2, "les_moules": 2, "les_reflexes_anglais": 3, "la_voix": 2},
         "le_goulet": {"couche": 3, "nom": "les_moules", "explication": "[DEMO] Configure API keys.|||[DEMO] Configure API keys."},
         "ce_qui_marche": f"[DEMO] {wc} words received.|||[DEMO] {wc} words received.",
         "analyse_par_couche": {"le_fond": "[DEMO]", "les_moules_des_idees": "[DEMO]", "les_moules": "[DEMO]", "les_reflexes_anglais": "[DEMO]"},

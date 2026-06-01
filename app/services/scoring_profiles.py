@@ -34,6 +34,7 @@ SCORING_PROFILES: dict[str, dict[str, float]] = {
         "les_moules_des_idees": 0.15,
         "les_moules": 0.25,
         "les_reflexes_anglais": 0.20,
+        "la_voix": 0.0,   # V-009.be: placeholder — CHADI calibrate weight
         "fluency": 0.20,
     },
     "tache_2": {
@@ -44,6 +45,7 @@ SCORING_PROFILES: dict[str, dict[str, float]] = {
         "les_moules_des_idees": 0.25,
         "les_moules": 0.20,
         "les_reflexes_anglais": 0.20,
+        "la_voix": 0.0,   # V-009.be: placeholder — CHADI calibrate weight
         "fluency": 0.20,
     },
     "tache_3": {
@@ -54,6 +56,7 @@ SCORING_PROFILES: dict[str, dict[str, float]] = {
         "les_moules_des_idees": 0.30,
         "les_moules": 0.20,
         "les_reflexes_anglais": 0.15,
+        "la_voix": 0.0,   # V-009.be: placeholder — CHADI calibrate weight
         "fluency": 0.10,
     },
     "legacy": {
@@ -65,6 +68,7 @@ SCORING_PROFILES: dict[str, dict[str, float]] = {
         "les_moules_des_idees": 0.25,
         "les_moules": 0.25,
         "les_reflexes_anglais": 0.25,
+        "la_voix": 0.0,   # V-009.be: 0 preserves legacy row invariant
         "fluency": 0.0,
     },
     # Writing never runs through this path; included so the validator has a
@@ -75,6 +79,7 @@ SCORING_PROFILES: dict[str, dict[str, float]] = {
         "les_moules_des_idees": 0.0,
         "les_moules": 0.0,
         "les_reflexes_anglais": 0.0,
+        "la_voix": 0.0,
         "fluency": 0.0,
     },
 }
@@ -120,6 +125,7 @@ def compute_weighted_note_globale(
         "les_moules_des_idees": _as_float(carte.get("les_moules_des_idees")) * 4,
         "les_moules": _as_float(carte.get("les_moules")) * 4,
         "les_reflexes_anglais": _as_float(carte.get("les_reflexes_anglais")) * 4,
+        "la_voix": _as_float(carte.get("la_voix")) * 4,  # V-009.be; weight 0.0 until Chadi calibrates
         "fluency": _as_float(fluency_score),
     }
 
