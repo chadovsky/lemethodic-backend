@@ -1883,6 +1883,665 @@ Stub -- spec TBD.
 
 ---
 
+---
+
+# Phase 2 BE additions (production-readiness pass, 2026-06-02)
+
+## BE-F-374 -- Recording management lifecycle (BE)
+Phase: 2
+Milestone: Phase 2
+
+**Filed:** 2026-06-02.
+**Status:** Queued.
+**Tag:** Phase 2 (BE).
+**Type:** BE schema and API.
+**Priority:** MEDIUM (GDPR posture; pairs with FE-F-374).
+
+**FE cross-ref:** F-374 in FE BACKLOG (recording list UI with replay, download, delete actions).
+
+**Scope:**
+Extend the `recordings` table with three columns:
+- `created_at` (TIMESTAMPTZ default now()): already exists in most schemas; verify and add if absent.
+- `retention_policy` (VARCHAR default 'standard'): values: `standard` (deleted on user request or account deletion), `dispute_hold` (retained while a dispute is pending), `export_pending` (retained until user data export is complete).
+- `deleted_at` (TIMESTAMPTZ nullable): soft-delete timestamp. Hard delete cascades 30 days after `deleted_at` is set (via a scheduled job or BE-side cleanup endpoint).
+
+New endpoints:
+- `DELETE /api/recordings/{id}` (auth required, owner check): sets `deleted_at = now()`. Returns 204. Returns 409 if `retention_policy = 'dispute_hold'` (cannot delete a recording while a dispute is open).
+- `GET /api/recordings/{id}/download` (auth required, owner check): returns a presigned DO Spaces URL for the audio file. TTL: 1 hour. Returns 404 if `deleted_at` is set.
+
+GDPR data export (F-384 scope): the data export endpoint includes recording metadata (Tâche type, duration, created_at, per-couche scores) and audio file presigned URLs for any recordings without `deleted_at`.
+
+Alembic migration: ALTER TABLE on `recordings`. Migration protocol: pg_dump OPTIONAL (adding nullable columns + no existing row mutations).
+
+**Acceptance:**
+- `deleted_at` is set correctly on DELETE.
+- Audio file download URL is returned for non-deleted recordings.
+- Data export includes recording metadata and audio URLs.
+- `dispute_hold` policy blocks deletion with 409.
+- Smoke test: create recording, delete, verify soft-delete; try download after delete (404); try download before delete (200 + presigned URL).
+
+**Dependencies:** F-380 BE (dispute_hold retention policy set when dispute is filed).
+
+**Owner:** BE.
+
+---
+
+## BE-F-376 -- Mock exam orchestration (BE)
+Phase: 2
+Milestone: Phase 2
+
+**Filed:** 2026-06-02.
+**Status:** Queued.
+**Tag:** Phase 2 (BE).
+**Type:** BE orchestration.
+**Priority:** HIGH (removes bientôt from /examen/[checkpoint]; pairs with FE-F-376).
+
+**FE cross-ref:** F-376 in FE BACKLOG (timed exam UI, section navigation, results display).
+
+**Scope:**
+New endpoint family for full timed mock exam:
+
+`POST /api/examen/checkpoints/{checkpoint_id}/start` (auth required): creates a new `exam_session` row with: user_id, checkpoint_id, started_at, section_order (list of 4 section IDs), total_duration_seconds, status (in_progress). Returns session_id, section_order, total_duration_seconds, per_section_duration_seconds.
+
+`POST /api/examen/sessions/{session_id}/sections/{section_id}/submit` (auth required): submits responses for one section. Validates ownership and session status. Marks section as submitted with submitted_at timestamp. Returns acknowledgement.
+
+`POST /api/examen/sessions/{session_id}/finalize` (auth required): called after all four sections are submitted (or on time-expiry signal from FE). Runs per-section scoring using the existing rubric infrastructure. Computes aggregated score. Sets status to 'completed'. Returns per_section_scores, aggregated_score, cefr_band, clb_band.
+
+New tables:
+- `exam_sessions`: id, user_id, checkpoint_id, started_at, completed_at, total_duration_seconds, status, per_section_scores (jsonb), aggregated_score, cefr_band.
+- `exam_section_submissions`: id, session_id, section_id, submitted_at, responses (jsonb), score.
+
+Alembic migration: new tables (additive). Migration protocol: pg_dump OPTIONAL.
+
+**Acceptance:**
+- Full exam session can be started, submitted section by section, and finalized.
+- Aggregated score and per-section breakdown are returned on finalize.
+- Session is tied to the authenticated user; other users cannot access it.
+- Smoke test covers: start, submit all four sections, finalize, verify scores.
+
+**Dependencies:** Existing scoring_rubrics infrastructure; F-418 (user subscription_tier for gating).
+
+**Owner:** BE.
+
+---
+
+## BE-F-379 -- Score prediction compute (BE)
+Phase: 2
+Milestone: Phase 2
+
+**Filed:** 2026-06-02.
+**Status:** Queued.
+**Tag:** Phase 2 (BE).
+**Type:** BE compute.
+**Priority:** HIGH (motivational surface; pairs with FE-F-379).
+
+**FE cross-ref:** F-379 in FE BACKLOG (predicted score display on /carte or /progression).
+
+**Scope:**
+New endpoint: `GET /api/users/me/score-prediction` (auth required). Returns a predicted exam score based on the user's last N Tâche attempts.
+
+Algorithm:
+- Pull the user's last N tache_attempts rows (N=5 by default, configurable via env var `PREDICTION_WINDOW_N`).
+- Weight each attempt by recency (most recent = weight 1.0, oldest = weight 0.5, linear decay).
+- Weight each attempt by couche alignment: if the user's Target Profile specifies a CLB threshold, weight couches more heavily that gate that threshold (Le Propos and Le Plan for B2+ targets; La Construction and Les Pièges Anglais for B1 targets).
+- Compute a weighted average per-couche score, then map to a CLB band using the scoring_rubrics couche_weights for the user's exam.
+- Return: predicted_clb_band, predicted_score (numeric), target_clb_band (from Target Profile), delta_clb (predicted minus target, negative means below target), attempts_used (N), confidence_level ("high" for N >= 5, "medium" for N = 3-4, insufficient for N < 3).
+
+Returns 204 with `{"confidence_level": "insufficient"}` if fewer than 3 attempts exist.
+
+**Acceptance:**
+- Returns a predicted score for users with 3 or more attempts.
+- Returns insufficient confidence signal for fewer than 3 attempts.
+- Prediction updates when new tache_attempts are added.
+- Smoke test: fixture user with 5 attempts at known scores; verify prediction is within expected range.
+
+**Dependencies:** tache_attempts table; scoring_rubrics table; target_profiles (for exam and threshold).
+
+**Owner:** BE.
+
+---
+
+## BE-F-380 -- Dispute queue (BE)
+Phase: 2
+Milestone: Phase 2
+
+**Filed:** 2026-06-02.
+**Status:** Queued.
+**Tag:** Phase 2 (BE).
+**Type:** BE schema and API.
+**Priority:** MEDIUM (trust mechanism; pairs with FE-F-380).
+
+**FE cross-ref:** F-380 in FE BACKLOG (dispute button, form, confirmation, status list).
+
+**Scope:**
+New table: `score_disputes`. Columns: id, user_id (FK users), tache_attempt_id (FK tache_attempts), ai_score_summary (jsonb -- snapshot of the AI scores at dispute time), user_comment (TEXT), status (VARCHAR: pending / reviewed / resolved), resolution_note (TEXT nullable), created_at, reviewed_at.
+
+New endpoints:
+- `POST /api/disputes` (auth required): creates a dispute row. Payload: tache_attempt_id, user_comment. Sets `retention_policy = 'dispute_hold'` on the associated recording (BE-F-374). Auto-triggers an email to the user acknowledging receipt with 5 business day SLA (via Postmark BE-F-400 when available; Resend fallback until then).
+- `GET /api/users/me/disputes` (auth required): returns the user's disputes with status.
+- `GET /api/admin/disputes` (admin-only): returns all disputes with status, filterable by status. Used by F-403 admin dashboard.
+- `PATCH /api/admin/disputes/{id}` (admin-only): sets status to reviewed or resolved, adds resolution_note. Triggers a notification to the user (BE-F-401-notifications).
+
+Alembic migration: new table (additive). Migration protocol: pg_dump OPTIONAL.
+
+**Acceptance:**
+- User can file a dispute and receive an acknowledgement email.
+- User can see their disputes with status via the API.
+- Admin can see all disputes and update status.
+- Recording is held under dispute_hold retention while dispute is open.
+- Smoke test covers: create dispute, fetch user disputes, admin fetch, admin update status.
+
+**Dependencies:** BE-F-374 (dispute_hold retention policy); BE-F-400 (Postmark auto-response email).
+
+**Owner:** BE.
+
+---
+
+# Phase 2.5 BE additions (pre-monetization production-readiness, 2026-06-02)
+
+## BE-F-382 -- Password reset endpoint (BE)
+Phase: 2.5
+Milestone: Phase 2.5
+
+**Filed:** 2026-06-02.
+**Status:** Note -- already shipped in F-310 Phase B (BE commit `e397122`, 2026-05-12). This entry documents the production configuration requirement.
+**Tag:** Phase 2.5 (configuration gate).
+**Type:** BE configuration.
+**Priority:** HIGH.
+
+**FE cross-ref:** F-382 in FE BACKLOG (password reset UI).
+
+**Note:**
+The password reset endpoints (`POST /api/auth/password-reset/request`, `POST /api/auth/password-reset/confirm`) were scaffolded in F-310 Phase B. They exist in production. However, they are inert without `RESEND_API_KEY` set in the DO environment.
+
+**Required action before F-382 FE ships:**
+- Confirm `RESEND_API_KEY` is set in the DigitalOcean App Platform environment variables for the production deployment.
+- Confirm `ENV=production` is set (required for F-310.1 client IP fix, also affects cookie flags).
+- Run a test reset cycle on a non-founder email to confirm end-to-end delivery.
+
+No code changes required. This is a configuration verification gate.
+
+**Acceptance:**
+- Password reset email is delivered to a non-founder test address.
+- Reset link works and the token is consumed on use (single-use).
+- Expired token returns an appropriate error.
+
+**Owner:** Chadi (env var configuration) + BE (verification run).
+
+---
+
+## BE-F-383 -- Email verification endpoint (BE)
+Phase: 2.5
+Milestone: Phase 2.5
+
+**Filed:** 2026-06-02.
+**Status:** Note -- already shipped in F-310 Phase B (BE commit `e397122`, 2026-05-12). This entry documents the lock policy decision and production configuration requirement.
+**Tag:** Phase 2.5 (policy decision + configuration gate).
+**Type:** BE configuration + policy.
+**Priority:** HIGH.
+
+**FE cross-ref:** F-383 in FE BACKLOG (verification pending screen, verification confirmation page).
+
+**Policy decision required (Chadi):**
+F-310 implemented a hard gate (`email_verified_at` required) but existing soft-beta accounts were grandfathered. For new accounts:
+- Grace period: how many days can an unverified account access the product before being locked? (Suggested: 7 days, then lock to read-only; 30 days, then full lock.)
+- Lock behavior: lock to read-only access (can replay old recordings, cannot start new Tâches) or full lock (must verify to do anything)?
+
+Document the policy decision here once Chadi confirms. The FE F-383 ticket implements the UX for whichever policy is chosen.
+
+**Required action before F-383 FE ships:**
+- Confirm `RESEND_API_KEY` is set in DO environment (same requirement as BE-F-382).
+- Confirm the lock policy (grace period duration and lock behavior).
+
+**Acceptance:**
+- Verification email is delivered on new account signup.
+- Verification link works and marks `email_verified_at` in the DB.
+- Lock policy is documented and enforced after the grace period.
+
+**Owner:** Chadi (policy decision + env var configuration) + BE (grace period enforcement).
+
+---
+
+## BE-F-384 -- Data export and account deletion (BE)
+Phase: 2.5
+Milestone: Phase 2.5
+
+**Filed:** 2026-06-02.
+**Status:** Queued.
+**Tag:** Phase 2.5 (BE).
+**Type:** BE schema and API.
+**Priority:** HIGH (GDPR rights; required before charging EU users).
+
+**FE cross-ref:** F-384 in FE BACKLOG (export button, deletion confirmation, sign-out on delete).
+
+**Scope:**
+
+**Data export endpoint:**
+`GET /api/users/me/export` (auth required): generates a JSON archive of all user data. Contents:
+- Account: id, email, created_at, email_verified_at, subscription_tier, target_profile (exam, threshold, deadline, persona), ui_language.
+- Tâche attempts: all tache_attempts rows with transcript_text, per_couche_scores, created_at, tache_type.
+- Recordings: all recordings metadata (id, tache_type, duration, created_at) and presigned DO Spaces audio URLs (1h TTL). Excludes soft-deleted recordings.
+- Detected modules: all session_detected_modules rows with module_id, confidence, supporting_quote, created_at.
+- Subscription history: LemonSqueezy order events logged to the DB.
+- Disputes: all score_disputes rows (BE-F-380).
+
+For large archives (many recordings), generate asynchronously: POST returns 202 + job_id, GET /api/users/me/export/{job_id} returns status and download_url when ready.
+
+**Account deletion endpoint:**
+`DELETE /api/users/me` (auth required): soft-delete the user account.
+- Sets `deleted_at = now()` on the users row.
+- Sets `deleted_at = now()` on all recordings.user_id rows.
+- Anonymizes transcript_text on tache_attempts (set to "[deleted]").
+- Cancels active LemonSqueezy subscription (via LemonSqueezy API call) if subscription_tier is not 'free'.
+- A scheduled job hard-deletes soft-deleted user data 30 days after `deleted_at`.
+
+Alembic migration: `deleted_at` on users table if not already present. Migration protocol: pg_dump REQUIRED (alters users table).
+
+**Acceptance:**
+- Data export contains all data categories listed above.
+- Audio presigned URLs in the export are valid for 1 hour.
+- Account deletion soft-deletes the user and all their data.
+- LemonSqueezy subscription is cancelled on deletion.
+- Hard-delete job runs 30 days after soft-delete.
+- Smoke test: create test user, populate with fixture data, export, verify contents, delete, verify soft-delete state.
+
+**Dependencies:** BE-F-374 (recording soft-delete pattern); BE-F-380 (disputes in export); F-421 LemonSqueezy (subscription cancellation API call).
+
+**Owner:** BE.
+
+---
+
+## BE-F-388 -- Audit logs and telemetry storage (BE)
+Phase: 2.5
+Milestone: Phase 2.5
+
+**Filed:** 2026-06-02.
+**Status:** Queued.
+**Tag:** Phase 2.5 (BE).
+**Type:** BE schema and middleware.
+**Priority:** HIGH (support debugging; required before charging users).
+
+**FE cross-ref:** None (BE-only). PostHog FE event firing (F-393) is the FE-side complement.
+
+**Scope:**
+New table: `user_action_log`. Columns:
+- id (serial PK)
+- user_id (UUID FK users, nullable -- null for unauthenticated events like login_failed)
+- action_type (VARCHAR): see taxonomy below
+- target_id (VARCHAR nullable): the ID of the resource being acted on (recording ID, dispute ID, etc.)
+- metadata (jsonb nullable): additional context (IP hash, user agent hash, error code, etc.)
+- created_at (TIMESTAMPTZ default now())
+
+Composite index on (user_id, created_at) for per-user audit queries. Index on (action_type, created_at) for support triage.
+
+**Canonical action taxonomy (seed list):**
+- login_success, login_failed, logout
+- signup_completed, email_verified, password_reset_requested, password_reset_completed
+- bienvenue_started, bienvenue_completed
+- ile_opened (target_id: ile_id), tache_submitted (target_id: recording_id), score_received (target_id: recording_id)
+- dispute_submitted (target_id: dispute_id), dispute_resolved (target_id: dispute_id)
+- subscription_started, subscription_cancelled, subscription_updated
+- account_deletion_requested, account_deleted
+- data_export_requested, data_export_completed
+
+**Middleware:** A FastAPI middleware (or per-endpoint decorator for high-value events) logs actions to `user_action_log` at the application layer. Login, signup, Tâche submission, dispute filing, and account changes are the P0 events. Île open and score events are P1.
+
+**Retention policy:** 90 days by default. A scheduled job or manual SQL deletes rows older than 90 days. Retention period is configurable via env var `AUDIT_LOG_RETENTION_DAYS`.
+
+Alembic migration: new table (additive). Migration protocol: pg_dump OPTIONAL.
+
+**Acceptance:**
+- P0 events are logged on every occurrence.
+- Logs are queryable by user_id and action_type.
+- Retention policy runs and removes old rows.
+- Smoke test: trigger each P0 action, verify log row exists with correct fields.
+
+**Owner:** BE.
+
+---
+
+# Phase 3 BE additions (growth surface, 2026-06-02)
+
+## BE-F-392 -- Public île access (BE)
+Phase: 3
+Milestone: Phase 3
+
+**Filed:** 2026-06-02.
+**Status:** Queued.
+**Tag:** Phase 3 (BE).
+**Type:** BE feature flag and partial grading.
+**Priority:** HIGH (pairs with FE-F-392 sample lesson preview).
+
+**FE cross-ref:** F-392 in FE BACKLOG (unauthenticated île preview).
+
+**Scope:**
+- Add a `preview_enabled` boolean column (default false) to the `islands` table. One île is designated as the preview île (Chadi sets this in the admin or via a seed script).
+- Extend `GET /api/ile/{id}` to accept unauthenticated requests when `preview_enabled = true`. Return full île content.
+- Extend the Tâche submission endpoint to accept an optional `preview_mode: true` flag. In preview mode: run the full Le Maître scoring pipeline, return per-couche scores and feedback, but do NOT persist the attempt to `tache_attempts` and do NOT update user progression. The response is identical to an authenticated attempt structurally.
+- A `GET /api/ile/preview` endpoint returns the current preview île ID and metadata (so the FE can route directly to it without hardcoding the île ID).
+
+Alembic migration: ALTER TABLE islands ADD COLUMN preview_enabled. Migration protocol: pg_dump OPTIONAL.
+
+**Acceptance:**
+- Unauthenticated visitor can fetch the preview île content.
+- Unauthenticated Tâche submission returns full scoring without persisting.
+- Preview mode does not affect user progression tables.
+- Smoke test: unauthenticated request to preview île returns 200; unauthenticated Tâche submit returns scores; verify no tache_attempts row created.
+
+**Owner:** BE.
+
+---
+
+## BE-F-393 -- Telemetry event capture (BE)
+Phase: 3
+Milestone: Phase 3
+
+**Filed:** 2026-06-02.
+**Status:** Queued.
+**Tag:** Phase 3 (BE).
+**Type:** BE event proxy.
+**Priority:** HIGH (pairs with FE-F-393 activation funnel telemetry).
+
+**FE cross-ref:** F-393 in FE BACKLOG (PostHog event wiring on FE).
+
+**Scope:**
+Some activation events are more reliably captured server-side (e.g., first_tache_submitted, subscription_started) because they are the source of truth. BE captures these events and proxies them to PostHog via the PostHog server-side SDK.
+
+Events captured server-side:
+- signup_completed: on successful /api/auth/register
+- first_tache_submitted: on first tache_attempts insert for a user
+- subscription_started: on LemonSqueezy webhook order_created (BE-F-421)
+- subscription_cancelled: on LemonSqueezy webhook subscription_cancelled
+
+FE-captured events (see FE-F-393 for wiring): bienvenue_started, bienvenue_completed, first_ile_opened, first_score_received, day7_active, day30_active.
+
+PostHog server SDK setup: `POSTHOG_API_KEY` and `POSTHOG_HOST` (EU endpoint) env vars. All server-side events include user_id as the distinct_id.
+
+**Acceptance:**
+- Server-side events appear in PostHog within 60 seconds of trigger.
+- User_id is correctly attached as distinct_id.
+- Events are EU-hosted (POSTHOG_HOST set to EU endpoint).
+- Smoke test: trigger signup, verify signup_completed event in PostHog.
+
+**Dependencies:** PostHog account with EU data residency; F-421 LemonSqueezy webhook (for subscription events).
+
+**Owner:** BE.
+
+---
+
+## BE-F-394 -- Search index (BE)
+Phase: 3
+Milestone: Phase 3
+
+**Filed:** 2026-06-02.
+**Status:** Queued.
+**Tag:** Phase 3 (BE).
+**Type:** BE search infrastructure.
+**Priority:** MEDIUM (pairs with FE-F-394 site-wide search).
+
+**FE cross-ref:** F-394 in FE BACKLOG (header search bar, /recherche results page).
+
+**Scope:**
+New endpoint: `GET /api/search?q={query}&types={types}&limit={limit}` (auth required). Parameters: q (search term, minimum 2 characters), types (comma-separated: pieges, iles, blog, bibliotheque; defaults to all), limit (default 10 per type, max 20 per type).
+
+Implementation options (Chadi to decide based on data volume):
+- Option A (simple, low volume): `pg_trgm` trigram similarity search on Postgres. Add GIN index on `pieges_catalog.title || ' ' || pieges_catalog.content`, `islands.title || ' ' || islands.description`, `corpus_chunks.chunk_fr`. Fast enough for the first 100K rows.
+- Option B (medium volume, Phase 3 growth): Postgres full-text search with `tsvector` columns and GIN indexes. More complex but handles French morphology better.
+- Option C (high volume, Phase 4+): external search service (Typesense, Meilisearch). Out of scope for Phase 3.
+
+Recommendation: start with Option A (trigram). Migrate to B or C if search latency exceeds 500ms at real traffic volumes.
+
+Response shape: `{results: [{type, id, title, excerpt, url_slug}], total_by_type: {pieges: N, iles: N, blog: N, bibliotheque: N}}`.
+
+**Acceptance:**
+- Search returns results across all four content types.
+- Results include title, excerpt, and URL slug.
+- Empty query or query under 2 characters returns 400.
+- Smoke test: seed fixture content, search for a known term, verify result in expected type.
+
+**Owner:** BE.
+
+---
+
+## BE-F-396 -- Content versioning schema (BE)
+Phase: 3
+Milestone: Phase 3
+
+**Filed:** 2026-06-02.
+**Status:** Queued.
+**Tag:** Phase 3 (BE).
+**Type:** BE schema.
+**Priority:** MEDIUM (protects in-progress users; required before large content updates).
+
+**FE cross-ref:** F-396 in FE BACKLOG (FE consumes content_version field; renders version-change prompt).
+
+**Scope:**
+Add `content_version` (INTEGER default 1) and `version_updated_at` (TIMESTAMPTZ) to: `islands`, `island_activities`, `pieges_catalog`. No other tables in Phase 3 scope.
+
+New table: `user_content_bindings`. Columns: user_id (FK users), content_type (VARCHAR: island | activity | piege), content_id (BIGINT), bound_version (INTEGER), bound_at (TIMESTAMPTZ). Primary key on (user_id, content_type, content_id). This table records which version a user is bound to for in-progress sessions.
+
+Version bump policy (enforced by application layer, not DB trigger):
+- Purely additive changes (new examples, typo fixes): no version bump required.
+- Structural changes (Tâche prompt change, scoring rubric change, island structure change): increment `content_version` and set `version_updated_at`.
+
+Version delta detection (for FE prompt):
+`GET /api/ile/{id}` includes `current_version` (from the islands table) and `user_bound_version` (from user_content_bindings if present). If `current_version > user_bound_version`, the FE renders a "This content has been updated" prompt.
+
+Migration policy documented in ARCHITECTURE.md section 18.
+
+Alembic migration: ALTER TABLE on islands, island_activities, pieges_catalog (additive columns) + new user_content_bindings table. Migration protocol: pg_dump OPTIONAL.
+
+**Acceptance:**
+- content_version column exists on all three tables.
+- user_content_bindings table records user-version bindings.
+- GET /api/ile/{id} returns version delta when user is bound to an older version.
+- Smoke test: create isle with version 1, bind user, bump version to 2, verify delta in API response.
+
+**Owner:** BE.
+
+---
+
+# Phase 4 BE additions (payment and operations, 2026-06-02)
+
+## BE-F-399 -- Sentry server SDK (BE)
+Phase: 4
+Milestone: Phase 4
+
+**Filed:** 2026-06-02.
+**Status:** Queued.
+**Tag:** Phase 4 (BE).
+**Type:** BE monitoring.
+**Priority:** HIGH (operational requirement; required before GA).
+
+**FE cross-ref:** F-399 in FE BACKLOG (Sentry browser SDK, source maps).
+
+**Scope:**
+Wire Sentry Python SDK into the FastAPI app. EU data residency (Sentry EU endpoint).
+
+Configuration:
+- `sentry_sdk.init(dsn=SENTRY_DSN, integrations=[FastApiIntegration()], traces_sample_rate=0.1, environment=ENV)`.
+- SENTRY_DSN env var set to the EU-hosted Sentry project DSN.
+- Attach user context to errors on authenticated requests: `sentry_sdk.set_user({"id": str(user.id)})`.
+- Source maps: not applicable for Python BE (stack traces resolve to source naturally).
+- Release tagging: set `release` in `sentry_sdk.init` to the current Git SHA (or app version from env var).
+
+Alerting policy (shared with FE-F-399): critical errors in payment endpoints (`/api/payments/*`) or user data endpoints (`/api/users/me/export`, `DELETE /api/users/me`) trigger an immediate email alert. All other errors go to the daily digest.
+
+**Acceptance:**
+- Sentry captures unhandled exceptions from the FastAPI app.
+- Errors appear in the EU Sentry instance.
+- User context is attached to errors from authenticated endpoints.
+- A test exception thrown in a safe endpoint confirms the event appears in Sentry within 60 seconds.
+
+**Owner:** BE.
+
+---
+
+## BE-F-400 -- Postmark email infrastructure (BE)
+Phase: 4
+Milestone: Phase 4
+
+**Filed:** 2026-06-02.
+**Status:** Queued.
+**Tag:** Phase 4 (BE).
+**Type:** BE email infrastructure.
+**Priority:** HIGH (transactional email completeness; lifecycle series).
+
+**FE cross-ref:** F-400 in FE BACKLOG (/contact form Postmark upgrade).
+
+**Scope:**
+
+**Postmark setup:** provision Postmark account with EU Data Processing Agreement. Verify lemethodic.com sending domain. `POSTMARK_API_KEY` env var.
+
+**Transactional templates (Postmark template IDs stored in env vars or a BE config table):**
+- signup_verification: verification link, 24h TTL, French and English versions.
+- password_reset: reset link, 1h TTL, French and English versions.
+- payment_receipt: LemonSqueezy order details, French and English versions.
+- dispute_response: dispute acknowledgement with 5 business day SLA, French and English versions.
+- account_deletion_confirmation: confirmation of self-serve deletion, French and English versions.
+
+**Lifecycle series (triggered by BE events, sent via Postmark):**
+- D0 welcome: fires on signup_completed event. Introduces La Méthode and suggests first action.
+- D3: fires if bienvenue_completed but no tache_submitted within 3 days. Surfaces free tier value.
+- D7: fires on day7_active or 7 days post-signup (whichever comes first). Progress check-in.
+- D14 inactive: fires if no session in 14 days since last session. Re-engagement offer.
+- D30 inactive: fires if no session in 30 days since last session. Save offer or escalation.
+- Pre-cancel save: fires on LemonSqueezy subscription_update with cancel-intent status.
+- Post-cancel feedback: fires on LemonSqueezy subscription_cancelled event.
+
+**Lifecycle scheduling:** implement via a daily scheduled job that queries user state and dispatches emails for users who meet each trigger condition. The job is idempotent (each user receives each lifecycle email at most once, tracked in a `lifecycle_emails_sent` table: user_id, email_type, sent_at).
+
+**Acceptance:**
+- All five transactional templates fire on their respective trigger events.
+- Each transactional template has a French and English version; language is selected by user.ui_language.
+- Lifecycle series fires correctly for a test user progressing through the funnel.
+- Lifecycle emails are idempotent (each fires at most once per user per trigger).
+
+**Dependencies:** POSTMARK_API_KEY set; F-421 LemonSqueezy webhook (for subscription events); BE-F-380 (for dispute_response trigger); BE-F-384 (for account_deletion_confirmation trigger).
+
+**Owner:** BE + Chadi (email copy authoring in FR and EN).
+
+---
+
+## BE-F-401-notifications -- In-app notifications table (BE)
+Phase: 4
+Milestone: Phase 4
+
+**Filed:** 2026-06-02.
+**Status:** Queued.
+**Tag:** Phase 4 (BE).
+**Type:** BE schema and API.
+**Priority:** MEDIUM (pairs with FE-F-401 in-app notifications).
+
+**Note:** This ticket uses the ID BE-F-401-notifications to avoid confusion with the shipped M5.5 rate-limiting ticket (F-401 in this BACKLOG, shipped 2026-05-31, commit e32f36e).
+
+**FE cross-ref:** F-401 in FE BACKLOG (bell icon, dropdown, /notifications page).
+
+**Scope:**
+New table: `notifications`. Columns: id (serial PK), user_id (FK users), notification_type (VARCHAR: dispute_response | payment_receipt | content_update | milestone_reached), payload (jsonb: type-specific details), read_at (TIMESTAMPTZ nullable), created_at (TIMESTAMPTZ default now()).
+
+Index on (user_id, read_at) for unread count queries. Index on (user_id, created_at) for notification list queries.
+
+New endpoints:
+- `GET /api/notifications` (auth required): returns the user's last 50 notifications, ordered by created_at DESC. Each row includes id, type, payload, read_at, created_at.
+- `GET /api/notifications/unread-count` (auth required): returns `{count: N}` for the bell icon badge.
+- `POST /api/notifications/{id}/read` (auth required, owner check): sets read_at = now(). Returns 204.
+- `POST /api/notifications/read-all` (auth required): sets read_at = now() on all unread notifications for the user. Returns 204.
+
+Admin send endpoint (for F-403 admin dashboard):
+- `POST /api/admin/notifications` (admin-only): sends a notification to one or all users. Payload: user_id (or null for broadcast), notification_type, payload.
+
+**Acceptance:**
+- Notifications are created by BE internal events (dispute resolved, subscription started).
+- Admin can send notifications via the admin endpoint.
+- Unread count returns correctly.
+- Mark as read works.
+- Smoke test covers all four endpoints.
+
+**Owner:** BE.
+
+---
+
+## BE-F-402-feedback -- Customer feedback storage (BE)
+Phase: 4
+Milestone: Phase 4
+
+**Filed:** 2026-06-02.
+**Status:** Queued.
+**Tag:** Phase 4 (BE).
+**Type:** BE schema and API.
+**Priority:** MEDIUM (pairs with FE-F-402 customer feedback prompts).
+
+**Note:** This ticket uses the ID BE-F-402-feedback to avoid confusion with the shipped M5.5 FK indexes ticket (F-402 in this BACKLOG, shipped 2026-05-31, commit a18c0dc).
+
+**FE cross-ref:** F-402 in FE BACKLOG (NPS prompt, exit survey).
+
+**Scope:**
+New table: `user_feedback`. Columns: id (serial PK), user_id (FK users), feedback_type (VARCHAR: nps | exit_survey | general), trigger_event (VARCHAR: first_tache | month_1 | renewal | cancel_initiated), response_data (jsonb: NPS score + comment, or exit survey reason + comment), created_at.
+
+New endpoints:
+- `POST /api/feedback` (auth required): creates a feedback row. Payload: feedback_type, trigger_event, response_data.
+- `GET /api/admin/feedback` (admin-only): returns all feedback rows with user_id, type, trigger, response_data, created_at. Filterable by type and trigger.
+- `GET /api/admin/feedback/summary` (admin-only): returns aggregate NPS score (average over last 90 days), response count by trigger, most common exit survey reasons.
+
+**Acceptance:**
+- Feedback rows are created on FE prompt submission.
+- Admin can view all feedback and aggregate summary.
+- Smoke test covers: create NPS feedback, create exit survey, fetch admin summary.
+
+**Owner:** BE.
+
+---
+
+## BE-F-403-admin -- Admin endpoints (BE)
+Phase: 4
+Milestone: Phase 4
+
+**Filed:** 2026-06-02.
+**Status:** Queued.
+**Tag:** Phase 4 (BE).
+**Type:** BE API.
+**Priority:** HIGH (operational requirement; founder must manage operations without DB access).
+
+**Note:** This ticket uses the ID BE-F-403-admin to avoid confusion with the shipped M5.5 N+1 fixes ticket (F-403 in this BACKLOG, shipped 2026-05-31, commit a487799).
+
+**FE cross-ref:** F-403 in FE BACKLOG (admin dashboard UI).
+
+**Scope:**
+Admin endpoints are gated by a new `is_admin` boolean on the `users` table (Alembic migration required) checked via a FastAPI dependency `require_admin`. The founder's account has `is_admin = true` set via a one-time admin seed script.
+
+**Users section:**
+- `GET /api/admin/users` (admin-only, already exists from M5.5 with pagination): extend to return subscription_tier, last_active_at, email_verified status.
+- `GET /api/admin/users/{id}` (admin-only): returns full user profile including Target Profile, session history (last 10 sessions), active subscription details.
+- `POST /api/admin/users/{id}/impersonate` (admin-only): returns a short-lived impersonation JWT (5 min TTL, non-refreshable, scoped to read-only) that the admin can use to view the user's app experience for support.
+
+**Revenue section:**
+- `GET /api/admin/revenue` (admin-only): pulls LemonSqueezy order and subscription data via the LemonSqueezy REST API (MRR, total orders, recent transactions). Cached for 5 minutes.
+
+**Content health section:**
+- `GET /api/admin/content-health` (admin-only): returns island count (live vs bientôt), pieges_catalog count (live vs bientôt), blog post count, vocab_chunks count by topic.
+
+**Dispute queue section:** see BE-F-380 (GET and PATCH /api/admin/disputes).
+
+**Telemetry section:**
+- `GET /api/admin/telemetry` (admin-only): returns activation funnel summary from the `user_action_log` table (signup_completed count, bienvenue_completed count, first_tache_submitted count, percent day7_active, percent day30_active). Rolling 30-day window.
+
+Alembic migration: ALTER TABLE users ADD COLUMN is_admin BOOLEAN DEFAULT false. Admin seed script sets `is_admin = true` for the founder email. Migration protocol: pg_dump REQUIRED.
+
+**Acceptance:**
+- All admin endpoints return 403 for non-admin users.
+- Users list, user detail, and impersonation work correctly.
+- Revenue section returns live LemonSqueezy data.
+- Content health section returns accurate counts.
+- Telemetry section returns funnel summary.
+- Smoke test covers all sections with a fixture admin user.
+
+**Dependencies:** BE-F-380 (dispute endpoints); F-421 LemonSqueezy (webhook for subscription data); BE-F-388 (audit_log for telemetry).
+
+**Owner:** BE.
+
+---
+
 ## P-211b -- Render-time student-facing filter for cluster lesson body
 Milestone: TBD
 
