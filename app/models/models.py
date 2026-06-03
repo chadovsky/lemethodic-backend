@@ -87,6 +87,18 @@ class User(Base):
     # subscription lifecycle events fire.
     subscription_tier = Column(String(20), nullable=False, default="free")
 
+    # F-417 — engagement + progress tracking. All nullable-or-defaulted so the
+    # ALTER is metadata-only in PG16 (no table rewrite). streak_last_active_date
+    # and last_couche_signals are nullable because they're populated lazily on
+    # first session post-migration.
+    streak_days = Column(Integer, nullable=False, default=0)
+    longest_streak_days = Column(Integer, nullable=False, default=0)
+    streak_last_active_date = Column(Date, nullable=True)
+    production_minutes_total = Column(Integer, nullable=False, default=0)
+    daily_target_minutes = Column(Integer, nullable=False, default=20)
+    tache_attempts = Column(Integer, nullable=False, default=0)
+    last_couche_signals = Column(JSONB, nullable=True)
+
     __table_args__ = (
         CheckConstraint(
             "strongest_skill IS NULL "

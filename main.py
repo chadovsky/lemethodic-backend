@@ -18,6 +18,7 @@ from app.routers import today
 from app.routers import clusters
 from app.routers import stripe_webhook  # F-310 Phase D — empty handler shell
 from app.routers import vocab  # F-325 — Le Vocabulaire browse API
+from app.routers import target_profile  # F-410 — target-profile endpoints
 from app.models.models import User
 from app.services.auth import get_current_user
 from app.services import storage
@@ -143,6 +144,7 @@ app.include_router(today.router)
 app.include_router(clusters.router)
 app.include_router(stripe_webhook.router)
 app.include_router(vocab.router)
+app.include_router(target_profile.router)
 
 # Serve static files
 import os
