@@ -1536,7 +1536,7 @@ Milestone: M4
 Milestone: M4
 
 **Filed:** 2026-05-12 (strategic session -- Decision 3, MVP). **Rescoped 2026-05-12 (Path C locked):** dropped OQLF as ingest source; corpus now sourced from Chadi's `.docx` tutoring archive in `C:\Users\pc\Downloads`. **Audit verified 2026-05-13** -- 35-file sample, verdict `mixed` (29% HIGH / 29% PARTIAL / 17% NEEDS_MANUAL / 26% SKIP); F-321 implementation = hybrid pipeline.
-**Status:** Phases B/C/D shipped 2026-05-13 (commit history). Phase E (seed) BLOCKED on Chadi review of `seeds/vocab/phase1_review.csv`.
+**Status:** Phases B/C/D shipped 2026-05-13 (commit history). Phase E (seed) SUPERSEDED on Chadi review of `seeds/vocab/phase1_review.csv`.
 **Tag:** Active -- Launch Critical (pre-launch).
 **Parent:** F-330.
 
@@ -1576,6 +1576,8 @@ Milestone: M4
 **Depends on:** F-320 (schema), F-321.audit (sample-audit gate -- verified).
 
 **Owner:** BE (pipeline shipped) + Chadi (artifact archive owner + offline `phase1_review.csv` review + post-extraction correction).
+
+**Superseded 2026-06-03:** The phase1_review.csv-based approach was rejected. Pièges database is reframed as a Phase 3 authoring task: founder authors 30 to 50 high-quality pièges from tutor knowledge, AI-assisted into structured pages (pattern, mistake, correct, examples). The Pièges SEO library will be built from those authored entries, not from extracted CSV chunks. See PEDAGOGY.md (FE repo) and ROADMAP.md Phase 3 for the new approach.
 
 ---
 
@@ -4656,4 +4658,153 @@ TBD tickets below have ambiguous milestone assignments. One-line questions for C
 - **W-004** -- Cross-surface retrieval API: M3 (diagnostic) or M4 (vocab) prerequisite?
 - **W-005** -- Review-queue admin surface: M4 prerequisite or polish-defer?
 
+## F-423: islands + user_progress schema + alembic migration
+
+**Status:** Queued
+**Phase:** Phase 2 (foundation)
+**Priority:** P0
+
+Create the islands directory table and user_progress tracking table.
+
+**Scope:**
+- New table: islands(theme: str, level: enum[a2,b1,c1], status: enum[shipped,bientot], prerequisites: list[str], estimated_minutes: int, created_at, updated_at)
+- New table: user_progress(user_id, theme, level, activities_completed: list[str], tache_attempts: int, last_couche_signals: jsonb, current_streak: int, last_session_at, created_at, updated_at)
+- Alembic migration created and tested locally before push
+- Migration auto-applies on push to master via DigitalOcean App Platform
+
+**Acceptance:**
+- Tables exist in dev and production after deploy
+- Endpoints exist to query and update user_progress
+- islands table seeded with the 3 Phase 2 themes (B1 entries) plus stub entries for A2 and C1 (status = bientot)
+
+**Dependencies:** none.
+**Branch:** master.
+
+---
+
+## F-424: target_profile persistence (replaces F-365 localStorage stub)
+
+**Status:** Queued
+**Phase:** Phase 2
+**Priority:** P0
+
+Replace the F-365 localStorage stub (lm.targetProfile.v1) with BE-backed target_profile persistence.
+
+**Scope:**
+- New table or jsonb column on users: target_profile(persona: enum[visa-urgent, habit-builder], primary_skill: enum[oral, writing, both], deadline_date: date_or_null, exam_target: enum[tcf-canada, dalf-c1, etc.], maitre_intensity: enum[soft, balanced, strict])
+- POST /api/user/target-profile (creates or updates)
+- GET /api/user/target-profile
+- FE migration: F-365 /bienvenue form posts to new endpoint; on success, removes localStorage key
+- Backwards compatible read: if BE returns null but localStorage has the v1 key, BE persists it and clears localStorage on next save
+
+**Acceptance:**
+- /bienvenue submission lands in BE
+- /carte and /parametres read from BE
+- localStorage stub cleared on first authenticated save
+
+**Dependencies:** none.
+**Branch:** master.
+
+---
+
+## F-425: 5-couche scoring per Tâche, level-weighted
+
+**Status:** Queued
+**Phase:** Phase 2
+**Priority:** P0
+
+Extend M3's existing 5-couche scoring to apply per-level couche weights when computing the overall Tâche score.
+
+**Scope:**
+- Read couche_weights from the île's MDX frontmatter (passed in by FE on submission)
+- Compute weighted overall score per the table in PEDAGOGY.md (A2: 35/10/35/15/5; B1: 25/20/25/20/10; C1: 15/25/15/20/25)
+- Return per-couche signals plus weighted overall to FE
+- Persist signals to user_progress.last_couche_signals
+- Update Le Maître's feedback prompt template to include per-couche commentary (extends existing M3 prompts with level awareness)
+
+**Acceptance:**
+- Submitting a Tâche at B1 returns weighted score per B1 weights
+- Per-couche signals visible to user (and to Le Maître for feedback rendering)
+- Score persists for streak and pass-rate tracking (F-428)
+
+**Dependencies:** F-423 (user_progress), existing M3 scoring infrastructure.
+**Branch:** master.
+
+---
+
+## F-426: Activity sub-type scoring endpoints
+
+**Status:** Queued
+**Phase:** Phase 2
+**Priority:** P0
+
+Add scoring endpoints for the four L'Activité sub-types. Coarser than Tâche; banks couche signals but does not gate level advancement.
+
+**Scope:**
+- POST /api/activite/comprehension/score (returns per-question correct/incorrect + comprehension couche signal)
+- POST /api/activite/reflexe/score (returns per-prompt correct/incorrect + pieges-anglais couche signal + streak bonus calc)
+- POST /api/activite/reemploi/score (returns per-item correct/incorrect with 1-line explanation + construction + plan couche signals)
+- POST /api/activite/conversation/score (returns end-of-conversation summary + musique + plan couche signals)
+- All endpoints persist to user_progress.last_couche_signals
+
+**Acceptance:**
+- All 4 endpoints respond correctly to FE submissions
+- Couche signals bank to user_progress
+- Réflexe streak tracking persists session-to-session
+
+**Dependencies:** F-423 (user_progress).
+**Branch:** master.
+
+---
+
+## F-427: Le Maître conversation orchestration
+
+**Status:** Queued
+**Phase:** Phase 2
+**Priority:** P1
+
+State machine and prompt orchestration for Le Maître conversations.
+
+**Scope:**
+- State machine: conversation lifecycle (open to 4-5 turns to close)
+- Prompt templates: per-intensity (soft/balanced/strict) and per-scenario
+- Voice integration: ElevenLabs founder-clone voice for Le Maître spoken turns
+- Per-turn signal computation (light scoring, no 5-couche)
+- End-of-conversation summary generation
+- Persistence: conversation transcripts stored, signals banked
+
+**Acceptance:**
+- Starting a conversation from /maitre/conversation/[scenario] initializes state
+- 4 to 5 turns executed correctly with voice and text alternation respected
+- End-of-conversation summary returned and persisted
+- Level-aware: prompts respect user's current_level for response expectations
+
+**Dependencies:** F-423 (user_progress), F-424 (intensity setting), existing M3 prompt infrastructure.
+**Branch:** master.
+
+---
+
+## F-428: Level advancement gate
+
+**Status:** Queued
+**Phase:** Phase 2 (stub) / Phase 5 (activation)
+**Priority:** P1
+
+Compute and gate level advancement based on 5-couche pass rate over current-level Tâches.
+
+**Scope:**
+- Compute pass rate over a sliding window (e.g. last N completed Tâches at current_level)
+- Threshold: configurable; starting value to calibrate empirically (around 70% weighted-score average; refine after Phase 2)
+- When threshold crossed, update user.current_level to next tier (a2 to b1 to c1)
+- Send notification to user (in-app + email if F-400 lands first; otherwise in-app only)
+- Endpoint: GET /api/user/level-advancement-status (returns current_level, progress to next, threshold info)
+
+**Acceptance:**
+- Pass rate calculation correct for sample data
+- Threshold cross triggers level update
+- For Phase 2, threshold is set high enough that no real user advances (stub mode; everyone stays at B1 since only B1 content exists)
+- Activates fully at Phase 5 when A2 and C1 content ships
+
+**Dependencies:** F-423 (user_progress), F-425 (Tâche scoring).
+**Branch:** master.
 
