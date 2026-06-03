@@ -2966,6 +2966,7 @@ Columns:
 - deadline_date (DATE nullable)
 - persona_tag (VARCHAR nullable -- visa_urgent | academic | professional | general | professional_advancement)
 - is_active (BOOL default true)
+- maitre_intensity (VARCHAR default 'balanced' — soft | balanced | strict; Le Maître presence level)
 - created_at, updated_at
 
 The profile drives: scoring_rubric weight selection (F-411), recommended cluster ordering, today's action urgency weighting (P-240), and the coming-soon gate on exam-specific content. Exams without a dedicated path show their content as bientôt via the coming-soon flag, not a missing product version.
@@ -2977,6 +2978,7 @@ Alembic migration: new table only (additive). Migration protocol: pg_dump OPTION
 **Files:** app/models/target_profiles.py (new), app/schemas/target_profiles.py (new), alembic/versions/*.
 
 **Owner:** BE.
+**Amended 2026-06-03:** Added maitre_intensity (absorbed from superseded F-424). FE wiring is FE F-431; FE settings toggle is FE F-430.
 
 ---
 
@@ -2994,13 +2996,14 @@ New table: scoring_rubrics. One row per exam-couche combination.
 Columns:
 - id (serial PK)
 - exam (VARCHAR -- same slug set as target_profiles.exam)
+- level (VARCHAR -- a1 | a2 | b1 | b2 | c1 | c2)
 - couche_key (VARCHAR -- le_propos | le_plan | la_construction | les_pieges_anglais | la_musique)
 - weight (DECIMAL(4,3) -- fraction summing to 1.0 per exam)
 - score_mapping (JSONB -- band to points: {A: 0-4, B: 5-9, C: 10-14, D: 15-20} or exam-specific rubric)
 - passing_threshold (DECIMAL nullable -- minimum score for this couche to pass this exam band)
 - notes (TEXT nullable)
 - created_at, updated_at
-- UNIQUE constraint on (exam, couche_key)
+- UNIQUE constraint on (exam, level, couche_key)
 
 The 5 couches: Le Propos, Le Plan, La Construction, Les Pièges Anglais, La Musique. Different exams weight them differently. TCF Canada's oral Tâche 3 weights La Construction and La Musique heavily (fluency markers). DELF B2 writing weights Le Propos and Le Plan higher (argumentation density). This rubric layer sits between the raw 0-20 per-couche score and the exam's actual grading band.
 
@@ -3011,6 +3014,7 @@ Alembic migration: new table + seed INSERT data. Migration protocol: pg_dump OPT
 **Files:** app/models/scoring_rubrics.py (new), app/schemas/scoring_rubrics.py (new), alembic/versions/*, scripts/seed_scoring_rubrics.py (new).
 
 **Owner:** BE (schema + API) + Chadi (rubric weights per exam -- requires calibration against real exam materials).
+**Amended 2026-06-03:** Added level dimension. scoring_rubrics is now the single canonical home for couche weights, keyed (exam, level, couche_key). MDX frontmatter no longer carries couche_weights (per PEDAGOGY.md). Absorbs superseded F-425's level-weighting requirement: the analysis path selects the rubric row by the user's exam (target_profiles) and the île's level, then applies weights at grade time.
 
 ---
 
@@ -3113,6 +3117,7 @@ Alembic migration: new table (additive). Migration protocol: pg_dump OPTIONAL.
 **Files:** app/models/island_activities.py (new), app/schemas/island_activities.py (new), alembic/versions/*.
 
 **Owner:** BE (schema + API) + Chadi (content authoring).
+**Phase 3 role (2026-06-03):** This table is the destination for the Phase 3 adaptive-séance migration. Phase 2 ships île activities as MDX (per PEDAGOGY.md, Option A). At Phase 3, authored activities migrate into this table to enable queryable, weakness-targeted, cross-île séance composition. Remains Post-launch P1.
 
 ---
 
@@ -3152,6 +3157,7 @@ Alembic migration: new table + seed data. Seed ASK required before prod executio
 **Files:** app/models/pieges_catalog.py (new), app/schemas/pieges_catalog.py (new), alembic/versions/*, scripts/seed_pieges_catalog.py (new).
 
 **Owner:** BE (schema + API) + Chadi (catalog authoring -- derived from 7,000+ hours of tutoring interference patterns).
+**Phase 3 role (2026-06-03):** Phase 2 carries piège flags inline in MDX chunks. At Phase 3 the canonical piège definitions live here (with seo_slug for the programmatic SEO library), and MDX chunks reference pieges_catalog.slug. Remains Post-launch P1.
 
 ---
 
@@ -3172,6 +3178,8 @@ Columns to add:
 - streak_last_active_date (DATE nullable -- date of last qualifying activity)
 - production_minutes_total (INT default 0 -- cumulative oral and written production minutes)
 - daily_target_minutes (INT default 20 -- user-configurable daily practice target)
+- tache_attempts (INT default 0 -- count of Tâche submissions at current level, for advancement gate F-428)
+- last_couche_signals (JSONB nullable -- most recent per-couche signal snapshot)
 
 Streak qualification: any recording submission or writing submission. Streak increments once per calendar day; resets to 0 if a calendar day is skipped. Timezone from user.ui_language locale, falling back to UTC.
 
@@ -3180,6 +3188,7 @@ Alembic migration: ALTER TABLE on users (or user_progress). Non-additive (existi
 **Files:** app/models/users.py (or user_progress.py), alembic/versions/*.
 
 **Owner:** BE.
+**Amended 2026-06-03:** Absorbed progress fields from superseded F-423. Activity completion is derived from item_exposures (F-414), not stored as a list. This table (or the users-table fields) is the canonical progress store for Phase 2.
 
 ---
 
@@ -4660,7 +4669,7 @@ TBD tickets below have ambiguous milestone assignments. One-line questions for C
 
 ## F-423: islands + user_progress schema + alembic migration
 
-**Status:** Queued
+**Status:** Superseded
 **Phase:** Phase 2 (foundation)
 **Priority:** P0
 
@@ -4679,12 +4688,13 @@ Create the islands directory table and user_progress tracking table.
 
 **Dependencies:** none.
 **Branch:** master.
+**Superseded 2026-06-03:** Under the Option A MDX content model, the FE knows îles from MDX files, so no islands directory table is needed. The user_progress fields fold into F-417 (see F-417 amendment). Activity-completion tracking uses item_exposures (F-414), not a list column.
 
 ---
 
 ## F-424: target_profile persistence (replaces F-365 localStorage stub)
 
-**Status:** Queued
+**Status:** Superseded
 **Phase:** Phase 2
 **Priority:** P0
 
@@ -4704,12 +4714,13 @@ Replace the F-365 localStorage stub (lm.targetProfile.v1) with BE-backed target_
 
 **Dependencies:** none.
 **Branch:** master.
+**Superseded 2026-06-03:** BE F-410 (target_profiles) already covers persistence, more completely (active + history). Salvaged: maitre_intensity column added to F-410 (see below); FE localStorage-to-BE wiring filed as FE F-431.
 
 ---
 
 ## F-425: 5-couche scoring per Tâche, level-weighted
 
-**Status:** Queued
+**Status:** Superseded
 **Phase:** Phase 2
 **Priority:** P0
 
@@ -4729,6 +4740,7 @@ Extend M3's existing 5-couche scoring to apply per-level couche weights when com
 
 **Dependencies:** F-423 (user_progress), existing M3 scoring infrastructure.
 **Branch:** master.
+**Superseded 2026-06-03:** Folded into F-411. scoring_rubrics gains a level dimension (see F-411 amendment); the analysis path reads level-weighted rubrics from F-411 at scoring time. No standalone scoring ticket needed.
 
 ---
 
@@ -4754,6 +4766,7 @@ Add scoring endpoints for the four L'Activité sub-types. Coarser than Tâche; b
 
 **Dependencies:** F-423 (user_progress).
 **Branch:** master.
+**Note 2026-06-03:** In Phase 2, activities are MDX-defined; these endpoints score the submitted answers (chip-tap / MCQ correctness, Réflexe streak). Conversation scoring routes to F-427.
 
 ---
 
