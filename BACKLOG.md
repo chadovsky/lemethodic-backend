@@ -2951,7 +2951,7 @@ Stub -- spec TBD.
 Milestone: Post-launch P1
 
 **Filed:** 2026-06-02.
-**Status:** Queued.
+**Status:** Shipped. SHA 28f5765 (2026-06-03). Migration a0b1c2d3e4f5 live on prod.
 **Tag:** Post-launch P1 (Section 5 -- AI infra).
 **Type:** BE schema.
 **Priority:** HIGH -- enables the multi-exam, multi-persona product spine.
@@ -2986,7 +2986,7 @@ Alembic migration: new table only (additive). Migration protocol: pg_dump OPTION
 Milestone: Post-launch P1
 
 **Filed:** 2026-06-02.
-**Status:** Queued.
+**Status:** Shipped. SHA 28f5765 (2026-06-03). Migration a0b1c2d3e4f5 live on prod. Seed (seed_scoring_rubrics.py) gated to scoring calibration round.
 **Tag:** Post-launch P1 (Section 5 -- AI infra).
 **Type:** BE schema + seed data.
 **Priority:** HIGH -- enables exam-specific scoring calibration across the 5 couches.
@@ -3165,7 +3165,7 @@ Alembic migration: new table + seed data. Seed ASK required before prod executio
 Milestone: Post-launch P1
 
 **Filed:** 2026-06-02.
-**Status:** Queued.
+**Status:** Shipped. SHA 28f5765 (2026-06-03). Migration a0b1c2d3e4f5 live on prod. Fields on users table.
 **Tag:** Post-launch P1 (engagement).
 **Type:** BE schema.
 **Priority:** MEDIUM -- streak that starts counting from first session is more valuable than one that starts later; ideally present before first cohort.
