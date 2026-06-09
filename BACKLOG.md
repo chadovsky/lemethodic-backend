@@ -102,12 +102,15 @@ In stated priority order. Full ticket bodies live below in the "Active -- Launch
 | 46 | **F-414** | item_exposures table (day-one tracking) |
 | 47 | **F-418** | users fields: subscription_tier, specific_intended_exam, accept_fallback |
 | 48 | **F-421** | LemonSqueezy webhook -- subscription_tier population (supersedes P-106 + F-310 Phase D) |
+| 49 | **F-438** | /île progress read + write endpoints (Section 3 BE wiring -- SHIPPED 2026-06-04) |
 
 **Tickets 31-34 (added 2026-05-31 M5.5 BE audit):** P-105 rescoped from 7-day trial logic to standalone tier enforcement; F-401/402/403 newly filed. Slot positions reflect pre-revenue priority order. **M5.5 fully SHIPPED 2026-05-31** (P-105 8b59c07, F-402 a18c0dc, F-403 a487799, F-401 e32f36e).
 
 **Tickets 39-45 (added 2026-05-12 strategic session):** slot positions pending Chadi triage. F-310 + F-311 are pre-launch blockers per Decision 4 -- should reorder toward the top of the queue when triage runs. F-322 / F-323 / F-324 (La Bibliothèque FE + Diagnostic-Vocab link) filed under Post-launch P1 with Sprint-2 priority.
 
 **Tickets 46-48 (added 2026-06-02):** F-414 item_exposures must be present from day one (no retrospective backfill). F-418 adds users fields needed for payment gating and exam routing. F-421 LemonSqueezy webhook supersedes the Stripe webhook scope from P-106 and F-310 Phase D -- LemonSqueezy operates as Merchant of Record without requiring a US LLC.
+
+**Ticket 49 (added 2026-06-04):** F-438 BE progress endpoints unblock FE F-431 /île wiring. No migration (F-417 fields already live). Global ID ceiling is now F-438 on the BE side; FE ceiling is F-437 per session brief. Next available: F-439.
 
 ---
 # Active -- Launch Critical (48 tickets, pre-launch)
@@ -3189,6 +3192,56 @@ Alembic migration: ALTER TABLE on users (or user_progress). Non-additive (existi
 
 **Owner:** BE.
 **Amended 2026-06-03:** Absorbed progress fields from superseded F-423. Activity completion is derived from item_exposures (F-414), not stored as a list. This table (or the users-table fields) is the canonical progress store for Phase 2.
+
+---
+
+## F-438 -- /île progress read + write endpoints
+Milestone: Section 3 (BE wiring)
+
+**Filed:** 2026-06-04.
+**Status:** Shipped. SHA TBD (squash-merge to master pending).
+**Tag:** Section 3 -- BE wiring.
+**Type:** BE endpoints.
+**Priority:** HIGH -- unblocks FE F-431 /île wiring (replacing localStorage stub).
+
+Two new endpoints on the users router:
+
+  GET  /api/users/me/progress
+      Returns: current_level (users.current_level), maitre_intensity (active
+      target_profile or null), and all 7 F-417 engagement fields (streak_days,
+      longest_streak_days, streak_last_active_date, production_minutes_total,
+      daily_target_minutes, tache_attempts, last_couche_signals).
+      Auth: bearer token required (401 unauthenticated).
+      Two DB queries: User (auth dep) + one TargetProfile lookup.
+
+  PATCH /api/users/me/progress
+      Body (all optional): { daily_target_minutes?: int(1-480), last_couche_signals?: object }
+      Server-managed fields (streak_days, longest_streak_days,
+      streak_last_active_date, tache_attempts) are NOT writable via this
+      endpoint. Returns ProgressResponse (same shape as GET).
+      Auth: bearer token required (401 unauthenticated).
+
+No migration -- all fields are on the users table (F-417 shipped 2026-06-03,
+SHA 28f5765). Additive endpoints only.
+
+Step 0 audit confirmed: existing /api/auth/me already returns current_level;
+/api/user/target-profile already returns maitre_intensity but 404s when no
+active profile. The new progress endpoint consolidates both into one null-safe
+call and adds the missing F-417 read/write surface.
+
+**New files:**
+  app/schemas/progress.py
+  tests/test_f438_ile_progress.py
+
+**Modified files:**
+  app/routers/users.py
+
+**Tests:** 10/10 passing (tests/test_f438_ile_progress.py).
+
+**Cross-refs:** F-417 (fields on users table), F-410 (target_profiles --
+maitre_intensity source), FE F-431 (interim localStorage stub being replaced).
+
+**Owner:** BE.
 
 ---
 

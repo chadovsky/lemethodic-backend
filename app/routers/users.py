@@ -22,11 +22,13 @@ from app.models.models import (
     UserLevelAssessment,
     UserPathEnrollment,
 )
+from app.models.target_profiles import TargetProfile
 from app.schemas.level import (
     AssignedBlock,
     LevelResponse,
     SelfReportedBlock,
 )
+from app.schemas.progress import ProgressPatch, ProgressResponse
 from app.services.auth import get_current_user
 from app.services.level_assignment import compute_agreement
 from app.services.user_profile import serialize_user
@@ -267,3 +269,85 @@ def recurring_modules(
     # Severity DESC, recurrence_count DESC. Stable on ties via module_id.
     out.sort(key=lambda r: (-r["severity"], -r["recurrence_count"], r["module_id"]))
     return {"recurring_modules": out}
+
+
+# ── F-438 — /île progress read + write ───────────────────────────────────────
+
+
+def _active_target_profile(db: Session, user_id: int) -> TargetProfile | None:
+    return (
+        db.query(TargetProfile)
+        .filter(
+            TargetProfile.user_id == user_id,
+            TargetProfile.is_active.is_(True),
+        )
+        .first()
+    )
+
+
+@router.get("/me/progress", response_model=ProgressResponse)
+def get_progress(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ProgressResponse:
+    """F-438 — consolidated progress read for the /île page.
+
+    Returns the user's onboarding current_level, their active target
+    profile's maitre_intensity (null when no profile exists), and all
+    seven F-417 engagement fields.  Two DB queries: the auth dependency
+    already loaded the User row; we issue one additional query for the
+    active TargetProfile.
+    """
+    profile = _active_target_profile(db, user.id)
+    return ProgressResponse(
+        current_level=user.current_level,
+        maitre_intensity=profile.maitre_intensity if profile else None,
+        streak_days=user.streak_days,
+        longest_streak_days=user.longest_streak_days,
+        streak_last_active_date=user.streak_last_active_date,
+        production_minutes_total=user.production_minutes_total,
+        daily_target_minutes=user.daily_target_minutes,
+        tache_attempts=user.tache_attempts,
+        last_couche_signals=user.last_couche_signals,
+    )
+
+
+@router.patch("/me/progress", response_model=ProgressResponse)
+def patch_progress(
+    payload: ProgressPatch,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ProgressResponse:
+    """F-438 — partial progress update for the /île page.
+
+    Writable by the FE:
+      - daily_target_minutes  (user-configurable practice target, 1–480 min)
+      - last_couche_signals   (per-île couche signal snapshot)
+
+    Server-managed (not accepted here):
+      streak_days, longest_streak_days, streak_last_active_date,
+      tache_attempts.  Those are incremented by recording/submission
+      endpoints, not by the FE directly.
+
+    All payload fields are optional — omit a field to leave it unchanged.
+    """
+    if payload.daily_target_minutes is not None:
+        user.daily_target_minutes = payload.daily_target_minutes
+    if payload.last_couche_signals is not None:
+        user.last_couche_signals = payload.last_couche_signals
+
+    db.commit()
+    db.refresh(user)
+
+    profile = _active_target_profile(db, user.id)
+    return ProgressResponse(
+        current_level=user.current_level,
+        maitre_intensity=profile.maitre_intensity if profile else None,
+        streak_days=user.streak_days,
+        longest_streak_days=user.longest_streak_days,
+        streak_last_active_date=user.streak_last_active_date,
+        production_minutes_total=user.production_minutes_total,
+        daily_target_minutes=user.daily_target_minutes,
+        tache_attempts=user.tache_attempts,
+        last_couche_signals=user.last_couche_signals,
+    )
