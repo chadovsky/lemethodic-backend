@@ -1,8 +1,8 @@
-"""F-438 — Pydantic schemas for /api/users/me/progress endpoints."""
+"""F-438/F-443 — Pydantic schemas for /api/users/me/progress and activity-calendar."""
 from __future__ import annotations
 
 import datetime
-from typing import Any, Optional
+from typing import Any, List, Optional
 
 from pydantic import BaseModel, Field
 
@@ -33,3 +33,21 @@ class ProgressPatch(BaseModel):
     """
     daily_target_minutes: Optional[int] = Field(None, ge=1, le=480)
     last_couche_signals: Optional[Any] = None
+
+
+# ── F-443 — activity calendar ─────────────────────────────────────────────────
+
+
+class DayActivity(BaseModel):
+    date: str        # ISO-8601 "YYYY-MM-DD"
+    count: int       # total activity events on that day
+    target_met: bool # count >= daily_target
+
+
+class ActivityCalendarResponse(BaseModel):
+    days: List[DayActivity]
+    daily_target: int
+    today_count: int
+    today_target: int
+    current_streak: int
+    longest_streak: int

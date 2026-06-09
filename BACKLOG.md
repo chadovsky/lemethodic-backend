@@ -103,6 +103,7 @@ In stated priority order. Full ticket bodies live below in the "Active -- Launch
 | 47 | **F-418** | users fields: subscription_tier, specific_intended_exam, accept_fallback |
 | 48 | **F-421** | LemonSqueezy webhook -- subscription_tier population (supersedes P-106 + F-310 Phase D) |
 | 49 | **F-438** | /île progress read + write endpoints (Section 3 BE wiring -- SHIPPED 2026-06-04) |
+| 50 | **F-443** | activity-calendar endpoint for heatmap (Section 3 BE wiring) |
 
 **Tickets 31-34 (added 2026-05-31 M5.5 BE audit):** P-105 rescoped from 7-day trial logic to standalone tier enforcement; F-401/402/403 newly filed. Slot positions reflect pre-revenue priority order. **M5.5 fully SHIPPED 2026-05-31** (P-105 8b59c07, F-402 a18c0dc, F-403 a487799, F-401 e32f36e).
 
@@ -111,6 +112,8 @@ In stated priority order. Full ticket bodies live below in the "Active -- Launch
 **Tickets 46-48 (added 2026-06-02):** F-414 item_exposures must be present from day one (no retrospective backfill). F-418 adds users fields needed for payment gating and exam routing. F-421 LemonSqueezy webhook supersedes the Stripe webhook scope from P-106 and F-310 Phase D -- LemonSqueezy operates as Merchant of Record without requiring a US LLC.
 
 **Ticket 49 (added 2026-06-04):** F-438 BE progress endpoints unblock FE F-431 /île wiring. No migration (F-417 fields already live). Global ID ceiling is now F-438 on the BE side; FE ceiling is F-437 per session brief. Next available: F-439.
+
+**Ticket 50 (added 2026-06-09):** F-443 activity-calendar endpoint unblocks FE calendar heatmap surface. No migration (reads existing tables). Global ID ceiling is now F-443 on the BE side. Next available: F-444.
 
 ---
 # Active -- Launch Critical (48 tickets, pre-launch)
@@ -3199,7 +3202,7 @@ Alembic migration: ALTER TABLE on users (or user_progress). Non-additive (existi
 Milestone: Section 3 (BE wiring)
 
 **Filed:** 2026-06-04.
-**Status:** Shipped. SHA TBD (squash-merge to master pending).
+**Status:** Shipped. SHA b9a66d0 (committed 2026-06-09).
 **Tag:** Section 3 -- BE wiring.
 **Type:** BE endpoints.
 **Priority:** HIGH -- unblocks FE F-431 /île wiring (replacing localStorage stub).
@@ -3240,6 +3243,61 @@ call and adds the missing F-417 read/write surface.
 
 **Cross-refs:** F-417 (fields on users table), F-410 (target_profiles --
 maitre_intensity source), FE F-431 (interim localStorage stub being replaced).
+
+**Owner:** BE.
+
+---
+
+## F-443 -- activity-calendar endpoint for heatmap
+Milestone: Section 3 (BE wiring)
+
+**Filed:** 2026-06-09.
+**Status:** Shipped. SHA TBD (squash-merge to master pending).
+**Tag:** Section 3 -- BE wiring.
+**Type:** BE endpoint.
+**Priority:** HIGH -- unblocks FE calendar heatmap surface on /ile.
+
+One new endpoint on the users router:
+
+  GET /api/users/me/activity-calendar?days=90 (default 90, cap 365)
+
+  Returns per-day activity counts aggregated from three existing tables
+  via a single UNION ALL query (no N+1, no new table):
+    recordings.created_at       -- oral recordings (Tache 1/2/3)
+    user_ecole_progress.completed_at -- ecole lesson completions
+    writing_submissions.submitted_at  -- writing submissions
+
+  Response contract:
+    {
+      "days": [{"date": "2026-06-01", "count": 3, "target_met": true}],
+      "daily_target": 2,
+      "today_count": 1,
+      "today_target": 2,
+      "current_streak": 5,
+      "longest_streak": 12
+    }
+
+  daily_target = 2 (module-level constant; TODO per-user target in a
+  future settings ticket). days array is fully zero-filled (every date
+  in the window, not just active days). Streak anchors to yesterday when
+  today's target is not yet met. Auth-gated (401 unauthenticated).
+
+No migration -- reads only from existing tables (recordings, F-077;
+user_ecole_progress, F-087; writing_submissions, F-224).
+
+**New / changed files:**
+  app/schemas/progress.py   (DayActivity + ActivityCalendarResponse added)
+  app/routers/users.py      (_compute_streaks helper + activity_calendar endpoint)
+  tests/test_f443_activity_calendar.py
+
+**Tests:** 10/10 passing (tests/test_f443_activity_calendar.py).
+Scenarios: unauthenticated 401, out-of-range days 422, empty-history all-zeros,
+partial-week counts, mixed sources (recording + ecole), streak math, window
+exclusion, default days=90 length, custom days=7 length.
+
+**Cross-refs:** F-438 (progress endpoints on same router), F-414
+(item_exposures -- when shipped, add as a 4th source in the UNION ALL).
+FE surface: /ile calendar heatmap.
 
 **Owner:** BE.
 

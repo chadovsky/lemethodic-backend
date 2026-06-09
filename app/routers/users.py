@@ -8,9 +8,9 @@ import datetime as _dt
 from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Query, Response
 from pydantic import BaseModel
-from sqlalchemy import String, cast, distinct, func
+from sqlalchemy import Date, String, cast, distinct, func, select, union_all
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -19,16 +19,23 @@ from app.models.models import (
     RemediationModule,
     SessionDetectedModule,
     User,
+    UserEcoleProgress,
     UserLevelAssessment,
     UserPathEnrollment,
 )
+from app.models.writing import WritingSubmission
 from app.models.target_profiles import TargetProfile
 from app.schemas.level import (
     AssignedBlock,
     LevelResponse,
     SelfReportedBlock,
 )
-from app.schemas.progress import ProgressPatch, ProgressResponse
+from app.schemas.progress import (
+    ActivityCalendarResponse,
+    DayActivity,
+    ProgressPatch,
+    ProgressResponse,
+)
 from app.services.auth import get_current_user
 from app.services.level_assignment import compute_agreement
 from app.services.user_profile import serialize_user
@@ -350,4 +357,122 @@ def patch_progress(
         daily_target_minutes=user.daily_target_minutes,
         tache_attempts=user.tache_attempts,
         last_couche_signals=user.last_couche_signals,
+    )
+
+
+# ── F-443 — activity calendar ─────────────────────────────────────────────────
+
+# TODO: per-user daily_target — future settings ticket
+_DAILY_TARGET = 2
+
+
+def _compute_streaks(
+    day_map: dict,
+    today: _dt.date,
+    target: int,
+) -> tuple:
+    """Return (current_streak, longest_streak) from a {date: count} map.
+
+    current_streak: consecutive days with count >= target ending at today
+    (or yesterday when today is not yet met).
+    longest_streak: longest such run within the map window.
+    """
+    # Walk backwards from today; allow yesterday as the streak anchor when
+    # the user hasn't hit today's target yet.
+    d = today if day_map.get(today, 0) >= target else today - _dt.timedelta(days=1)
+    current = 0
+    while day_map.get(d, 0) >= target:
+        current += 1
+        d -= _dt.timedelta(days=1)
+
+    if not day_map:
+        return current, 0
+
+    min_d = min(day_map)
+    max_d = max(day_map)
+    longest = run = 0
+    d = min_d
+    while d <= max_d:
+        if day_map.get(d, 0) >= target:
+            run += 1
+            if run > longest:
+                longest = run
+        else:
+            run = 0
+        d += _dt.timedelta(days=1)
+
+    return current, longest
+
+
+@router.get("/me/activity-calendar", response_model=ActivityCalendarResponse)
+def activity_calendar(
+    days: int = Query(90, ge=1, le=365),
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> ActivityCalendarResponse:
+    """F-443 — per-day activity counts for the calendar heatmap.
+
+    Aggregates completion events from three sources:
+      recordings.created_at       — oral recordings (Tache 1/2/3)
+      user_ecole_progress.completed_at — ecole lesson completions
+      writing_submissions.submitted_at  — writing submissions
+
+    Returns the full day array (every date in the window, zero-filled),
+    plus streak and today stats.  No N+1 — single UNION ALL query.
+    """
+    today = _dt.date.today()
+    since = today - _dt.timedelta(days=days - 1)
+    since_dt = _dt.datetime.combine(since, _dt.time.min)
+
+    q_recordings = select(
+        cast(Recording.created_at, Date).label("d")
+    ).where(
+        Recording.user_id == user.id,
+        Recording.created_at >= since_dt,
+    )
+
+    q_ecole = select(
+        cast(UserEcoleProgress.completed_at, Date).label("d")
+    ).where(
+        UserEcoleProgress.user_id == user.id,
+        UserEcoleProgress.completed_at.isnot(None),
+        UserEcoleProgress.completed_at >= since_dt,
+    )
+
+    q_writing = select(
+        cast(WritingSubmission.submitted_at, Date).label("d")
+    ).where(
+        WritingSubmission.user_id == user.id,
+        WritingSubmission.submitted_at >= since_dt,
+    )
+
+    sub = union_all(q_recordings, q_ecole, q_writing).subquery()
+    rows = db.execute(
+        select(sub.c.d, func.count().label("cnt"))
+        .group_by(sub.c.d)
+        .order_by(sub.c.d)
+    ).all()
+
+    day_map = {row.d: row.cnt for row in rows}
+
+    result_days = []
+    for i in range(days):
+        d = since + _dt.timedelta(days=i)
+        cnt = day_map.get(d, 0)
+        result_days.append(DayActivity(
+            date=d.isoformat(),
+            count=cnt,
+            target_met=cnt >= _DAILY_TARGET,
+        ))
+
+    today_count = day_map.get(today, 0)
+    current_streak, longest_streak = _compute_streaks(day_map, today, _DAILY_TARGET)
+
+    return ActivityCalendarResponse(
+        days=result_days,
+        daily_target=_DAILY_TARGET,
+        today_count=today_count,
+        today_target=_DAILY_TARGET,
+        current_streak=current_streak,
+        longest_streak=longest_streak,
     )
