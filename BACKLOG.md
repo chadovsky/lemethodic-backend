@@ -3252,7 +3252,7 @@ maitre_intensity source), FE F-431 (interim localStorage stub being replaced).
 Milestone: Section 3 (BE wiring)
 
 **Filed:** 2026-06-09.
-**Status:** Shipped. SHA TBD (squash-merge to master pending).
+**Status:** Shipped. SHA d96cef5 (committed 2026-06-09).
 **Tag:** Section 3 -- BE wiring.
 **Type:** BE endpoint.
 **Priority:** HIGH -- unblocks FE calendar heatmap surface on /ile.
