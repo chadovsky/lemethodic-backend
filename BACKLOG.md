@@ -104,6 +104,7 @@ In stated priority order. Full ticket bodies live below in the "Active -- Launch
 | 48 | **F-421** | LemonSqueezy webhook -- subscription_tier population (supersedes P-106 + F-310 Phase D) |
 | 49 | **F-438** | /île progress read + write endpoints (Section 3 BE wiring -- SHIPPED 2026-06-04) |
 | 50 | **F-443** | activity-calendar endpoint for heatmap (Section 3 BE wiring) |
+| 51 | **F-485** | user-global per-skill CEFR estimates store (Section 3 BE wiring) |
 
 **Tickets 31-34 (added 2026-05-31 M5.5 BE audit):** P-105 rescoped from 7-day trial logic to standalone tier enforcement; F-401/402/403 newly filed. Slot positions reflect pre-revenue priority order. **M5.5 fully SHIPPED 2026-05-31** (P-105 8b59c07, F-402 a18c0dc, F-403 a487799, F-401 e32f36e).
 
@@ -114,6 +115,8 @@ In stated priority order. Full ticket bodies live below in the "Active -- Launch
 **Ticket 49 (added 2026-06-04):** F-438 BE progress endpoints unblock FE F-431 /île wiring. No migration (F-417 fields already live). Global ID ceiling is now F-438 on the BE side; FE ceiling is F-437 per session brief. Next available: F-439.
 
 **Ticket 50 (added 2026-06-09):** F-443 activity-calendar endpoint unblocks FE calendar heatmap surface. No migration (reads existing tables). Global ID ceiling is now F-443 on the BE side. Next available: F-444.
+
+**Ticket 51 (added 2026-06-26):** F-485 adds the user-global per-skill CEFR estimates store -- the one piece F-410 target_profiles lacks. F-485 is a NEW table (user_skill_estimates), NOT a change to F-410: F-410 stays the persona-scoped target store (exam, threshold_band, deadline_date, persona_tag, maitre_intensity); F-485 is the persona-independent coarse per-skill estimate that carries across personas. ID claimed from the shared FE+BE namespace (FE ceiling F-484, BE ceiling F-443 -> next free F-485). Additive migration. NOT the persona-scoped recency-decayed mastery engine (later ticket). Next available: F-486.
 
 ---
 # Active -- Launch Critical (48 tickets, pre-launch)
@@ -3298,6 +3301,63 @@ exclusion, default days=90 length, custom days=7 length.
 **Cross-refs:** F-438 (progress endpoints on same router), F-414
 (item_exposures -- when shipped, add as a 4th source in the UNION ALL).
 FE surface: /ile calendar heatmap.
+
+
+## F-485 -- user-global per-skill CEFR estimates store
+Milestone: Section 3 (BE wiring)
+
+**Filed:** 2026-06-26.
+**Status:** In review (PR open against master, not merged -- Chadi gates the squash).
+**Tag:** Section 3 -- BE wiring.
+**Type:** BE model + migration + endpoints.
+**Priority:** MEDIUM -- persists the per-skill CEFR estimate the FE currently
+holds only client-side; the one piece F-410 target_profiles does not cover.
+
+**Reconciliation note:** the original F-485 brief assumed target_profiles was
+an unbuilt stub. It is not: F-410 shipped target_profiles (commit 28f5765) as
+the persona-scoped target store (exam, threshold_band, deadline_date,
+persona_tag, maitre_intensity). F-485 does NOT duplicate or alter that table.
+F-485 builds ONLY the persona-independent, user-global per-skill CEFR estimate
+layer in a NEW table. This is deliberately NOT the persona-scoped
+recency-decayed mastery engine (per (skill, topic)) -- that remains a later,
+persona-scoped ticket.
+
+New table user_skill_estimates (one row per user, UNIQUE(user_id)):
+  id, user_id (FK users.id, unique + indexed), estimates JSONB default {},
+  created_at, updated_at.
+  estimates shape:
+    {"CO": {"level": "B1", "updated_at": iso}, "CE": {...}, "EO": {...}, "EE": {...}}
+
+Two endpoints on the users router (mirror /me/progress auth + resolution):
+  GET /api/users/me/skill-estimates
+    Returns the user's estimates; empty default (estimates {}) when no row
+    exists -- never 404.
+  PUT /api/users/me/skill-estimates
+    Per-skill MERGE upsert: provided skills overwrite (server stamps their
+    updated_at); omitted skills are retained untouched, so a single-skill
+    diagnostic write never wipes the others. Each level validated against the
+    A1..C1 enum and each skill code against CO|CE|EO|EE; invalid -> 422, no write.
+
+Migration b5c6d7e8f9a0 (down_revision a0b1c2d3e4f5). 100% additive (single
+CREATE TABLE on a new object, zero touch on existing tables). pg_dump tiering:
+OPTIONAL. Tested locally reversible: upgrade -> downgrade -1 -> upgrade clean.
+
+**New / changed files:**
+  app/models/user_skill_estimates.py     (new)
+  app/schemas/skill_estimates.py         (new)
+  alembic/versions/b5c6d7e8f9a0_f485_user_skill_estimates.py  (new)
+  app/routers/users.py                   (HTTPException import + 2 endpoints)
+  tests/test_f485_skill_estimates.py     (new)
+
+**Tests:** 7/7 passing (tests/test_f485_skill_estimates.py).
+Scenarios: unauthenticated 401 (both), GET empty default for fresh user,
+PUT then GET reflects write (server stamps updated_at), partial PUT merges
+without clobbering other skills, invalid level 422, invalid skill code 422.
+
+**Cross-refs:** F-410 (target_profiles -- the persona-scoped target store this
+layer complements but does not touch), F-438 (progress endpoints on same
+router). FE surface: diagnostic per-skill level write (mirrors FE
+lm.* localStorage estimate carried across personas).
 
 **Owner:** BE.
 
