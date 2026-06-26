@@ -8,7 +8,7 @@ import datetime as _dt
 from datetime import date
 from typing import Optional
 
-from fastapi import APIRouter, Depends, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
 from sqlalchemy import Date, String, cast, distinct, func, select, union_all
 from sqlalchemy.orm import Session
@@ -25,6 +25,7 @@ from app.models.models import (
 )
 from app.models.writing import WritingSubmission
 from app.models.target_profiles import TargetProfile
+from app.models.user_skill_estimates import UserSkillEstimate
 from app.schemas.level import (
     AssignedBlock,
     LevelResponse,
@@ -35,6 +36,10 @@ from app.schemas.progress import (
     DayActivity,
     ProgressPatch,
     ProgressResponse,
+)
+from app.schemas.skill_estimates import (
+    SkillEstimatesRead,
+    SkillEstimatesUpdate,
 )
 from app.services.auth import get_current_user
 from app.services.level_assignment import compute_agreement
@@ -476,3 +481,82 @@ def activity_calendar(
         current_streak=current_streak,
         longest_streak=longest_streak,
     )
+
+
+# ── F-485 - user-global per-skill CEFR estimates ──────────────────────────────
+
+# A1..C1 (no C2 at this layer). FE submits uppercase CEFR codes.
+_VALID_SKILL_LEVELS = {"A1", "A2", "B1", "B2", "C1"}
+# The four exam skills: Compréhension Orale / Écrite, Expression Orale / Écrite.
+_VALID_SKILLS = {"CO", "CE", "EO", "EE"}
+
+
+@router.get("/me/skill-estimates", response_model=SkillEstimatesRead)
+def get_skill_estimates(
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SkillEstimatesRead:
+    """F-485 - read the user's per-skill CEFR estimates.
+
+    Returns the full per-skill map. When the user has no estimates row yet,
+    returns the empty default (estimates {}) rather than a 404, so the FE can
+    treat "never estimated" and "estimated empty" identically.
+    """
+    row = (
+        db.query(UserSkillEstimate)
+        .filter(UserSkillEstimate.user_id == user.id)
+        .first()
+    )
+    return SkillEstimatesRead(estimates=row.estimates if row else {})
+
+
+@router.put("/me/skill-estimates", response_model=SkillEstimatesRead)
+def put_skill_estimates(
+    payload: SkillEstimatesUpdate,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> SkillEstimatesRead:
+    """F-485 - partial upsert of the user's per-skill CEFR estimates.
+
+    Per-skill MERGE semantics: skills present in the payload overwrite the
+    stored value (the server stamps their `updated_at`); skills omitted from
+    the payload are retained untouched. This means a single-skill diagnostic
+    write (e.g. only "EO") never wipes the other skills. Creates the row on
+    first write.
+
+    Each submitted level is validated against the A1..C1 enum and each skill
+    code against the CO|CE|EO|EE set; an invalid value yields 422 and no write.
+    """
+    incoming = payload.estimates or {}
+
+    for skill, value in incoming.items():
+        if skill not in _VALID_SKILLS:
+            raise HTTPException(
+                status_code=422,
+                detail=f"skill must be one of {sorted(_VALID_SKILLS)}",
+            )
+        if value.level not in _VALID_SKILL_LEVELS:
+            raise HTTPException(
+                status_code=422,
+                detail=f"level must be one of {sorted(_VALID_SKILL_LEVELS)}",
+            )
+
+    row = (
+        db.query(UserSkillEstimate)
+        .filter(UserSkillEstimate.user_id == user.id)
+        .first()
+    )
+    if row is None:
+        row = UserSkillEstimate(user_id=user.id, estimates={})
+        db.add(row)
+
+    now_iso = _dt.datetime.utcnow().isoformat()
+    # Copy into a new dict so reassignment marks the JSONB column dirty.
+    merged = dict(row.estimates or {})
+    for skill, value in incoming.items():
+        merged[skill] = {"level": value.level, "updated_at": now_iso}
+    row.estimates = merged
+
+    db.commit()
+    db.refresh(row)
+    return SkillEstimatesRead(estimates=row.estimates)
